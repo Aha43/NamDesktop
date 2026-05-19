@@ -1,0 +1,29 @@
+SHELL := cmd.exe
+.SHELLFLAGS := /C
+
+APP_NAME   := NamDesktop
+MAIN_CLASS := namdesktop.app.NamDesktopMain
+MAIN_JAR   := $(APP_NAME).jar
+
+SRC_DIR     := src
+LIB_DIR     := lib
+BUILD_DIR   := build
+CLASSES_DIR := $(BUILD_DIR)/classes
+APP_DIR     := $(BUILD_DIR)/app
+APP_LIB_DIR := $(APP_DIR)/lib
+
+.PHONY: clean app run all
+
+all: app
+
+clean:
+	powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "if (Test-Path '$(BUILD_DIR)') { Remove-Item -Recurse -Force '$(BUILD_DIR)' }"
+
+app: clean
+	powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "New-Item -ItemType Directory -Force '$(CLASSES_DIR)' | Out-Null; New-Item -ItemType Directory -Force '$(APP_LIB_DIR)' | Out-Null"
+	powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "$$sources = Get-ChildItem -Path '$(SRC_DIR)' -Recurse -Filter '*.java' | ForEach-Object { $$_.FullName }; javac -cp '$(LIB_DIR)/*' -d '$(CLASSES_DIR)' $$sources"
+	jar --create --file $(APP_DIR)/$(MAIN_JAR) --main-class $(MAIN_CLASS) -C $(CLASSES_DIR) .
+	powershell.exe -ExecutionPolicy Bypass -NoProfile -Command "Copy-Item -Path '$(LIB_DIR)/*.jar' -Destination '$(APP_LIB_DIR)'"
+
+run: app
+	java -cp "$(APP_DIR)/$(MAIN_JAR);$(APP_LIB_DIR)/*" $(MAIN_CLASS)
