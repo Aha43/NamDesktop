@@ -19,6 +19,7 @@ public final class TreePanel extends JPanel {
         model = new WorkspaceTreeModel(workspace);
         tree = new JTree(model);
         tree.setRootVisible(true);
+        tree.setCellRenderer(new NodeCellRenderer());
         tree.expandRow(0);
 
         var contextMenu = new NodeTreeContextMenu(tree, model, service);

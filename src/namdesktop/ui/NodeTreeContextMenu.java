@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import namdesktop.model.NamNode;
+import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -12,6 +13,7 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     private final JTree tree;
     private final WorkspaceTreeModel model;
     private final NamWorkspaceService service;
+    private final JMenuItem markDoneItem;
     private final JMenuItem deleteItem;
 
     private NamNode targetNode;
@@ -23,20 +25,24 @@ public final class NodeTreeContextMenu extends JPopupMenu {
 
         var addItem = new JMenuItem("Add child");
         var renameItem = new JMenuItem("Rename");
+        markDoneItem = new JMenuItem("Mark done");
         deleteItem = new JMenuItem("Delete");
 
         addItem.addActionListener(e -> addChild());
         renameItem.addActionListener(e -> rename());
+        markDoneItem.addActionListener(e -> markDone());
         deleteItem.addActionListener(e -> delete());
 
         add(addItem);
         add(renameItem);
+        add(markDoneItem);
         addSeparator();
         add(deleteItem);
     }
 
     public void show(Component invoker, int x, int y, NamNode node) {
         this.targetNode = node;
+        markDoneItem.setEnabled(node.getStatus() != NodeStatus.DONE);
         deleteItem.setEnabled(model.getRoot() != node);
         super.show(invoker, x, y);
     }
@@ -60,6 +66,15 @@ public final class NodeTreeContextMenu extends JPopupMenu {
         if (title == null || title.isBlank()) return;
         try {
             service.renameNode(targetNode.getId(), title.strip());
+            reload();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private void markDone() {
+        try {
+            service.markDone(targetNode.getId());
             reload();
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());

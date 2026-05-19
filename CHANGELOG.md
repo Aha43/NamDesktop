@@ -16,3 +16,4 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 - Workspace loaded from `~/.namdesktop/workspace.json` on startup; falls back to a default workspace if the file is absent.
 - `NamWorkspaceService` command layer for all workspace mutations (`addChild`, `renameNode`, `deleteLeaf`, `markDone`).
 - Right-click context menu on the node tree for adding, renaming, and deleting nodes.
+- "Mark done" context menu action; done nodes render with strikethrough and grey text.
