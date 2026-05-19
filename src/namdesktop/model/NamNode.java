@@ -29,4 +29,7 @@ public final class NamNode {
 
     public List<UUID> getChildIds() { return childIds; }
     public void setChildIds(List<UUID> childIds) { this.childIds = childIds; }
+
+    @Override
+    public String toString() { return title; }
 }
