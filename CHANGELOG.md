@@ -9,3 +9,4 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Initial project scaffold.
+- `NamNode` and `NamWorkspace` domain model with `NodeStatus` enum (`namdesktop.model` package).
