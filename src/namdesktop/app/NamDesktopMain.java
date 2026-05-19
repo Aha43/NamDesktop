@@ -2,6 +2,7 @@ package namdesktop.app;
 
 import javax.swing.*;
 import com.formdev.flatlaf.FlatLightLaf;
+import namdesktop.ui.MainFrame;
 
 public final class NamDesktopMain {
 
@@ -14,9 +15,8 @@ public final class NamDesktopMain {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
-        var frame = new JFrame(AppInfo.NAME + " " + AppInfo.version());
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        var frame = new MainFrame();
+        frame.setTitle(AppInfo.NAME + " " + AppInfo.version());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
