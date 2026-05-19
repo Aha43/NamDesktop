@@ -2,6 +2,7 @@ package namdesktop.app;
 
 import namdesktop.model.NamWorkspace;
 import namdesktop.persist.JsonWorkspaceRepository;
+import namdesktop.service.NamWorkspaceService;
 import namdesktop.ui.MainFrame;
 
 import javax.swing.*;
@@ -22,16 +23,18 @@ public final class NamDesktopMain {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
-        var workspace = loadWorkspace();
-        var frame = new MainFrame(workspace);
+        var repository = new JsonWorkspaceRepository();
+        var workspace = loadWorkspace(repository);
+        var service = new NamWorkspaceService(workspace, repository, WORKSPACE_PATH);
+        var frame = new MainFrame(workspace, service);
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
     }
 
-    private static NamWorkspace loadWorkspace() {
+    private static NamWorkspace loadWorkspace(JsonWorkspaceRepository repository) {
         try {
-            return new JsonWorkspaceRepository().load(WORKSPACE_PATH);
+            return repository.load(WORKSPACE_PATH);
         } catch (Exception e) {
             System.err.println("Failed to load workspace, starting with default: " + e.getMessage());
             return NamWorkspace.createDefault();

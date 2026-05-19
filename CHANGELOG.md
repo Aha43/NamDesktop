@@ -15,3 +15,4 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 - `WorkspaceTreeModel` and `TreePanel` display the node tree in the left panel.
 - Workspace loaded from `~/.namdesktop/workspace.json` on startup; falls back to a default workspace if the file is absent.
 - `NamWorkspaceService` command layer for all workspace mutations (`addChild`, `renameNode`, `deleteLeaf`, `markDone`).
+- Right-click context menu on the node tree for adding, renaming, and deleting nodes.
