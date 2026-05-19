@@ -1,9 +1,18 @@
 package namdesktop.app;
 
+import namdesktop.model.NamWorkspace;
+import namdesktop.persist.JsonWorkspaceRepository;
+import namdesktop.service.NamWorkspaceService;
+import namdesktop.ui.MainFrame;
+
 import javax.swing.*;
 import com.formdev.flatlaf.FlatLightLaf;
+import java.nio.file.Path;
 
 public final class NamDesktopMain {
+
+    private static final Path WORKSPACE_PATH = Path.of(
+            System.getProperty("user.home"), ".namdesktop", "workspace.json");
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(NamDesktopMain::start);
@@ -14,10 +23,21 @@ public final class NamDesktopMain {
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
-        var frame = new JFrame(AppInfo.NAME + " " + AppInfo.version());
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(800, 600);
+        var repository = new JsonWorkspaceRepository();
+        var workspace = loadWorkspace(repository);
+        var service = new NamWorkspaceService(workspace, repository, WORKSPACE_PATH);
+        var frame = new MainFrame(workspace, service);
+        frame.setTitle(AppInfo.NAME + " " + AppInfo.version());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private static NamWorkspace loadWorkspace(JsonWorkspaceRepository repository) {
+        try {
+            return repository.load(WORKSPACE_PATH);
+        } catch (Exception e) {
+            System.err.println("Failed to load workspace, starting with default: " + e.getMessage());
+            return NamWorkspace.createDefault();
+        }
     }
 }
