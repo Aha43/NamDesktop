@@ -10,3 +10,4 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Initial project scaffold.
 - `NamNode` and `NamWorkspace` domain model with `NodeStatus` enum (`namdesktop.model` package).
+- `WorkspaceRepository` interface and `JsonWorkspaceRepository` implementation for JSON persistence (`namdesktop.persist` package).
