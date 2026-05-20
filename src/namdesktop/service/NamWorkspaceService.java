@@ -48,6 +48,12 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public UUID addInboxItem(String title) throws IOException {
+        var inboxId = workspace.getInboxNodeId();
+        if (inboxId == null) throw new IllegalStateException("Workspace has no inbox node");
+        return addChild(inboxId, title);
+    }
+
     public void markDone(UUID nodeId) throws IOException {
         require(nodeId).setStatus(NodeStatus.DONE);
         repository.save(path, workspace);

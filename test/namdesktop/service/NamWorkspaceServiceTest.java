@@ -117,6 +117,28 @@ class NamWorkspaceServiceTest {
                 () -> service.deleteLeaf(rootId));
     }
 
+    // --- addInboxItem ---
+
+    @Test
+    void addInboxItem_addsToInboxChildIds() throws IOException {
+        var id = service.addInboxItem("Task");
+        assertTrue(workspace.getNode(workspace.getInboxNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void addInboxItem_savesWorkspace() throws IOException {
+        service.addInboxItem("Task");
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void addInboxItem_throwsIfInboxMissing() {
+        var ws = new NamWorkspace(); // no inboxNodeId set
+        var svc = new NamWorkspaceService(ws, repository, Path.of("unused"));
+        assertThrows(IllegalStateException.class, () -> svc.addInboxItem("Task"));
+    }
+
     // --- markDone ---
 
     @Test
