@@ -28,6 +28,7 @@ public final class MainFrame extends JFrame {
     private final NextActionsPanel nextActionsPanel;
     private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
+    private final SearchPanel      searchPanel;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
         this.workspace        = workspace;
@@ -39,6 +40,7 @@ public final class MainFrame extends JFrame {
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
         this.backlogPanel     = new BacklogPanel(workspace, service);
+        this.searchPanel      = new SearchPanel(workspace, service);
 
         this.navPanel = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -51,6 +53,9 @@ public final class MainFrame extends JFrame {
         manageTagsButton.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service).setVisible(true));
         toolbar.add(manageTagsButton);
+        var searchButton = new JButton("Search");
+        searchButton.addActionListener(e -> openSearch());
+        toolbar.add(searchButton);
         toolbar.add(Box.createHorizontalGlue());
         var exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> System.exit(0));
@@ -59,9 +64,12 @@ public final class MainFrame extends JFrame {
         var manageTagsItem = new JMenuItem("Manage Tags…");
         manageTagsItem.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service).setVisible(true));
+        var searchItem = new JMenuItem("Search…");
+        searchItem.addActionListener(e -> openSearch());
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
+        fileMenu.add(searchItem);
         fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
@@ -99,6 +107,11 @@ public final class MainFrame extends JFrame {
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
+    }
+
+    private void openSearch() {
+        contentArea.setContent(searchPanel);
+        searchPanel.refresh();
     }
 
     private void rebuildSavedViewsNav() {

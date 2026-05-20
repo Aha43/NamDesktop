@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `SearchPanel` — text field with live keystroke updates; results table (Title, Type, Project); double-click opens `ActionDialog` or `ProjectDialog`; search field auto-focused on nav selection. Closes #77.
+
+- `SearchResultRow(UUID id, String title, String type, String parentTitle, NodeStatus status)` record in `namdesktop.lens`.
+- `SearchLens.search(NamWorkspace, String)` — case-insensitive substring match on title and tags; excludes structural and non-active nodes; results ordered Inbox → Action → Project → Backlog. Closes #76.
+
 - "Manage Tags…" button added to toolbar; Exit button pushed to far right via `Box.createHorizontalGlue()`.
 - Saved views now restored in the nav on startup — `MainFrame` calls `rebuildSavedViews` at construction time.
 
