@@ -64,6 +64,11 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void markActive(UUID nodeId) throws IOException {
+        require(nodeId).setStatus(NodeStatus.ACTIVE);
+        repository.save(path, workspace);
+    }
+
     public void convertInboxItemToProject(UUID id) throws IOException {
         convertFromInbox(id, workspace.getProjectsNodeId());
     }

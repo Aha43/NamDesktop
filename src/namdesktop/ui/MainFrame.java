@@ -26,7 +26,7 @@ public final class MainFrame extends JFrame {
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);
-        this.projectsPanel    = new ProjectsPanel(workspace);
+        this.projectsPanel    = new ProjectsPanel(workspace, service);
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);

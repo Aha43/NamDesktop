@@ -159,6 +159,27 @@ class NamWorkspaceServiceTest {
                 () -> service.markDone(UUID.randomUUID()));
     }
 
+    // --- markActive ---
+
+    @Test
+    void markActive_setsStatusActive() throws IOException {
+        service.markDone(rootId);
+        service.markActive(rootId);
+        assertEquals(NodeStatus.ACTIVE, workspace.getNode(rootId).orElseThrow().getStatus());
+    }
+
+    @Test
+    void markActive_savesWorkspace() throws IOException {
+        service.markActive(rootId);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void markActive_throwsForUnknownNode() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.markActive(UUID.randomUUID()));
+    }
+
     // --- updateDescription ---
 
     @Test
