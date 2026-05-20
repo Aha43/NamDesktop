@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NodeDialog` toolbar with a Mark done / Mark active toggle button; status persists immediately.
+- `NamWorkspaceService.markActive()` reverses `markDone`, setting status back to ACTIVE.
 - Double-clicking a project opens `NodeDialog` for that node; description persists across restarts.
 - Double-clicking a next action opens `NodeDialog` for that node; description is saved on confirm and persists across restarts.
 - `NodeDialog`: modal dialog showing node title and an editable description text area with Save/Cancel; reusable for actions and projects.
