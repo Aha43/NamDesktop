@@ -69,4 +69,10 @@ public final class NamWorkspace {
                 .filter(Objects::nonNull)
                 .toList();
     }
+
+    public Optional<NamNode> getParent(UUID childId) {
+        return nodes.values().stream()
+                .filter(n -> n.getChildIds().contains(childId))
+                .findFirst();
+    }
 }

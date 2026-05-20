@@ -17,7 +17,13 @@ public final class BacklogLens {
         return workspace.getNodes().values().stream()
                 .filter(n -> !structural.contains(n.getId()))
                 .filter(n -> n.getStatus() == NodeStatus.BACKLOG)
-                .map(n -> new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus()))
+                .map(n -> {
+                    var parent = workspace.getParent(n.getId())
+                            .filter(p -> !structural.contains(p.getId()))
+                            .orElse(null);
+                    return new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus(),
+                            parent != null ? parent.getTitle() : null);
+                })
                 .toList();
     }
 

@@ -34,9 +34,10 @@ class BacklogLensTest {
 
         var rows = lens.items(workspace);
         assertEquals(1, rows.size());
-        assertEquals("Write tests",   rows.get(0).title());
+        assertEquals("Write tests",      rows.get(0).title());
         assertEquals(NodeStatus.BACKLOG, rows.get(0).status());
-        assertEquals(node.getId(),    rows.get(0).id());
+        assertEquals(node.getId(),       rows.get(0).id());
+        assertNull(rows.get(0).parentTitle());
     }
 
     @Test
@@ -70,6 +71,18 @@ class BacklogLensTest {
         var rows = lens.items(workspace);
         assertEquals(1, rows.size());
         assertEquals("Future task", rows.get(0).title());
+        assertEquals("My Project",  rows.get(0).parentTitle());
+    }
+
+    @Test
+    void items_parentTitleIsNullForStandaloneAction() {
+        var actionNode = new NamNode(UUID.randomUUID(), "Someday task");
+        actionNode.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(actionNode.getId(), actionNode);
+
+        var rows = lens.items(workspace);
+        assertEquals(1, rows.size());
+        assertNull(rows.get(0).parentTitle());
     }
 
     @Test

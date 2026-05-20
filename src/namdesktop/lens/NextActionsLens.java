@@ -17,7 +17,13 @@ public final class NextActionsLens {
         return workspace.getNodes().values().stream()
                 .filter(n -> !structural.contains(n.getId()))
                 .filter(n -> n.getStatus() == NodeStatus.NEXT)
-                .map(n -> new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus()))
+                .map(n -> {
+                    var parent = workspace.getParent(n.getId())
+                            .filter(p -> !structural.contains(p.getId()))
+                            .orElse(null);
+                    return new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus(),
+                            parent != null ? parent.getTitle() : null);
+                })
                 .toList();
     }
 

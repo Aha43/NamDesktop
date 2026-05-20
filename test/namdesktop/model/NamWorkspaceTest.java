@@ -120,6 +120,37 @@ class NamWorkspaceTest {
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }
 
+    // --- getParent ---
+
+    @Test
+    void getParent_returnsParentForKnownChild() {
+        var ws = NamWorkspace.createDefault();
+        var parent = new NamNode(UUID.randomUUID(), "Parent");
+        var child  = new NamNode(UUID.randomUUID(), "Child");
+        ws.getNodes().put(parent.getId(), parent);
+        ws.getNodes().put(child.getId(),  child);
+        parent.getChildIds().add(child.getId());
+
+        var result = ws.getParent(child.getId());
+        assertTrue(result.isPresent());
+        assertEquals("Parent", result.get().getTitle());
+    }
+
+    @Test
+    void getParent_returnsEmptyForRootNode() {
+        var ws = NamWorkspace.createDefault();
+        assertTrue(ws.getParent(ws.getRootNodeId()).isEmpty());
+    }
+
+    @Test
+    void getParent_returnsEmptyForOrphanNode() {
+        var ws = NamWorkspace.createDefault();
+        var orphan = new NamNode(UUID.randomUUID(), "Orphan");
+        ws.getNodes().put(orphan.getId(), orphan);
+
+        assertTrue(ws.getParent(orphan.getId()).isEmpty());
+    }
+
     @Test
     void getInboxItems_returnsEmptyInitially() {
         var ws = NamWorkspace.createDefault();

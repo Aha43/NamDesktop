@@ -58,7 +58,7 @@ public final class BacklogPanel extends JPanel {
 
     private static final class BacklogTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Status"};
+        private static final String[] COLUMNS = {"Title", "Project", "Status"};
         private List<BacklogItemRow> rows = List.of();
 
         void setRows(List<BacklogItemRow> rows) {
@@ -77,7 +77,8 @@ public final class BacklogPanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.status();
+                case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
+                case 2 -> r.status();
                 default -> null;
             };
         }
