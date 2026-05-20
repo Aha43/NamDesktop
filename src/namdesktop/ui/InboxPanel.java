@@ -88,7 +88,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void process(InboxItemRow row) {
-        var options = new String[]{"Single action", "Project"};
+        var options = new String[]{"Next action", "Project"};
         var choice = JOptionPane.showOptionDialog(
                 parent(),
                 "What is \"" + row.title() + "\"?",
