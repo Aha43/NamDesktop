@@ -30,8 +30,7 @@ public final class SearchLens {
     }
 
     private boolean matches(NamNode node, String query) {
-        if (node.getTitle().toLowerCase().contains(query)) return true;
-        return node.getTags().stream().anyMatch(t -> t.toLowerCase().contains(query));
+        return node.getTitle().toLowerCase().contains(query);
     }
 
     private SearchResultRow toRow(NamWorkspace ws, NamNode node, Set<UUID> structural) {

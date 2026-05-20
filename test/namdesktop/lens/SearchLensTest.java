@@ -58,28 +58,6 @@ class SearchLensTest {
     }
 
     @Test
-    void search_tagMatch() {
-        var node = new NamNode(UUID.randomUUID(), "Write report");
-        node.setStatus(NodeStatus.NEXT);
-        node.getTags().add("@computer");
-        workspace.getNodes().put(node.getId(), node);
-
-        var results = lens.search(workspace, "@computer");
-        assertEquals(1, results.size());
-        assertEquals("Write report", results.get(0).title());
-    }
-
-    @Test
-    void search_tagMatch_caseInsensitive() {
-        var node = new NamNode(UUID.randomUUID(), "Task");
-        node.setStatus(NodeStatus.NEXT);
-        node.getTags().add("@computer");
-        workspace.getNodes().put(node.getId(), node);
-
-        assertEquals(1, lens.search(workspace, "@COMPUTER").size());
-    }
-
-    @Test
     void search_excludesDoneNodes() {
         var node = new NamNode(UUID.randomUUID(), "Done task");
         node.setStatus(NodeStatus.DONE);
