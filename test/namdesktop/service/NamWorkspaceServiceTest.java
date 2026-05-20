@@ -159,6 +159,85 @@ class NamWorkspaceServiceTest {
                 () -> service.markDone(UUID.randomUUID()));
     }
 
+    // --- convertInboxItemToProject ---
+
+    @Test
+    void convertInboxItemToProject_movesNodeToProjects() throws IOException {
+        var id = service.addInboxItem("Task");
+        repository.saveCount = 0;
+        service.convertInboxItemToProject(id);
+        assertTrue(workspace.getNode(workspace.getProjectsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertInboxItemToProject_removesFromInbox() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        assertFalse(workspace.getNode(workspace.getInboxNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertInboxItemToProject_savesWorkspace() throws IOException {
+        var id = service.addInboxItem("Task");
+        repository.saveCount = 0;
+        service.convertInboxItemToProject(id);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void convertInboxItemToProject_throwsForUnknownId() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertInboxItemToProject(UUID.randomUUID()));
+    }
+
+    @Test
+    void convertInboxItemToProject_throwsIfNotInboxChild() throws IOException {
+        var id = service.addChild(rootId, "NotAnInboxItem");
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertInboxItemToProject(id));
+    }
+
+    // --- convertInboxItemToNextAction ---
+
+    @Test
+    void convertInboxItemToNextAction_movesNodeToNextActions() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertInboxItemToNextAction_removesFromInbox() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        assertFalse(workspace.getNode(workspace.getInboxNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertInboxItemToNextAction_savesWorkspace() throws IOException {
+        var id = service.addInboxItem("Task");
+        repository.saveCount = 0;
+        service.convertInboxItemToNextAction(id);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void convertInboxItemToNextAction_throwsForUnknownId() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertInboxItemToNextAction(UUID.randomUUID()));
+    }
+
+    @Test
+    void convertInboxItemToNextAction_throwsIfNotInboxChild() throws IOException {
+        var id = service.addChild(rootId, "NotAnInboxItem");
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertInboxItemToNextAction(id));
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {
