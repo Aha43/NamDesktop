@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class JsonWorkspaceRepository implements WorkspaceRepository {
 
@@ -32,13 +33,11 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setRootNodeId(file.rootNodeId);
         workspace.setNodes(file.nodes);
         workspace.setInboxNodeId(file.inboxNodeId);
-        if (workspace.getInboxNodeId() == null) {
-            var inbox = new NamNode(UUID.randomUUID(), "Inbox");
-            workspace.getNodes().put(inbox.getId(), inbox);
-            workspace.getNode(workspace.getRootNodeId())
-                     .ifPresent(root -> root.getChildIds().add(0, inbox.getId()));
-            workspace.setInboxNodeId(inbox.getId());
-        }
+        workspace.setProjectsNodeId(file.projectsNodeId);
+        workspace.setNextActionsNodeId(file.nextActionsNodeId);
+        migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
+        migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
+        migrate(workspace, "Next Actions", workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
         return workspace;
     }
 
@@ -46,17 +45,30 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
     public void save(Path path, NamWorkspace workspace) throws IOException {
         Files.createDirectories(path.getParent());
         var file = new WorkspaceFile();
-        file.formatVersion = FORMAT_VERSION;
-        file.rootNodeId = workspace.getRootNodeId();
-        file.inboxNodeId = workspace.getInboxNodeId();
-        file.nodes = workspace.getNodes();
+        file.formatVersion      = FORMAT_VERSION;
+        file.rootNodeId         = workspace.getRootNodeId();
+        file.inboxNodeId        = workspace.getInboxNodeId();
+        file.projectsNodeId     = workspace.getProjectsNodeId();
+        file.nextActionsNodeId  = workspace.getNextActionsNodeId();
+        file.nodes              = workspace.getNodes();
         mapper.writeValue(path.toFile(), file);
+    }
+
+    private static void migrate(NamWorkspace workspace, String title, UUID currentId, Consumer<UUID> setter) {
+        if (currentId != null) return;
+        var node = new NamNode(UUID.randomUUID(), title);
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(workspace.getRootNodeId())
+                 .ifPresent(root -> root.getChildIds().add(node.getId()));
+        setter.accept(node.getId());
     }
 
     private static final class WorkspaceFile {
         public int formatVersion;
         public UUID rootNodeId;
         public UUID inboxNodeId;
+        public UUID projectsNodeId;
+        public UUID nextActionsNodeId;
         public Map<UUID, NamNode> nodes;
     }
 }

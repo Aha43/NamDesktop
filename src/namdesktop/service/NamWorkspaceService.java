@@ -59,6 +59,27 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void convertInboxItemToProject(UUID id) throws IOException {
+        convertFromInbox(id, workspace.getProjectsNodeId());
+    }
+
+    public void convertInboxItemToNextAction(UUID id) throws IOException {
+        convertFromInbox(id, workspace.getNextActionsNodeId());
+    }
+
+    private void convertFromInbox(UUID id, UUID targetId) throws IOException {
+        require(id);
+        var inbox = workspace.getNode(workspace.getInboxNodeId())
+                .orElseThrow(() -> new IllegalStateException("Workspace has no inbox node"));
+        if (!inbox.getChildIds().remove(id)) {
+            throw new IllegalArgumentException("Node is not an inbox item: " + id);
+        }
+        workspace.getNode(targetId)
+                .orElseThrow(() -> new IllegalStateException("Target area node not found"))
+                .getChildIds().add(id);
+        repository.save(path, workspace);
+    }
+
     private NamNode require(UUID nodeId) {
         return workspace.getNode(nodeId)
                 .orElseThrow(() -> new IllegalArgumentException("Node not found: " + nodeId));

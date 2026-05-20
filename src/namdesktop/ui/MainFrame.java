@@ -16,14 +16,18 @@ public final class MainFrame extends JFrame {
             new NavigationEntry("raw-tree",     "Raw Tree")
     );
 
-    private final ContentArea contentArea;
-    private final TreePanel   treePanel;
-    private final InboxPanel  inboxPanel;
+    private final ContentArea      contentArea;
+    private final TreePanel        treePanel;
+    private final InboxPanel       inboxPanel;
+    private final ProjectsPanel    projectsPanel;
+    private final NextActionsPanel nextActionsPanel;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
-        this.contentArea = new ContentArea();
-        this.treePanel   = new TreePanel(workspace, service);
-        this.inboxPanel  = new InboxPanel(workspace, service);
+        this.contentArea      = new ContentArea();
+        this.treePanel        = new TreePanel(workspace, service);
+        this.inboxPanel       = new InboxPanel(workspace, service);
+        this.projectsPanel    = new ProjectsPanel(workspace);
+        this.nextActionsPanel = new NextActionsPanel(workspace);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -37,8 +41,10 @@ public final class MainFrame extends JFrame {
 
     private void onNavSelected(NavigationEntry entry) {
         switch (entry.id()) {
-            case "inbox"    -> { contentArea.setContent(inboxPanel); inboxPanel.refresh(); }
-            case "raw-tree" -> contentArea.setContent(treePanel);
+            case "inbox"    -> { contentArea.setContent(inboxPanel);    inboxPanel.refresh(); }
+            case "projects"      -> { contentArea.setContent(projectsPanel);    projectsPanel.refresh(); }
+            case "next-actions"  -> { contentArea.setContent(nextActionsPanel); nextActionsPanel.refresh(); }
+            case "raw-tree"      -> contentArea.setContent(treePanel);
             default         -> contentArea.setContent(placeholder(entry.title()));
         }
     }
