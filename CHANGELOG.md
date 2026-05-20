@@ -16,6 +16,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- `registeredTags` not persisted to `workspace.json` — tags created upfront via "New tag…" were lost on restart. Added `registeredTags` to `WorkspaceFile` DTO and wired load/save.
 - `deleteTag` now also removes from `registeredTags`, so unused (registry-only) tags can actually be deleted. Confirmation wording when count is 0 changed to "Remove from tag list?" rather than the destructive node-removal wording.
 
 - `NamWorkspaceService.renameTag(String, String)` — renames a tag across all nodes, deduplicates if target already present, saves once only if any node was changed.
