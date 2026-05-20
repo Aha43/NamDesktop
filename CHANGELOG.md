@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NodeDialog`: modal dialog showing node title and an editable description text area with Save/Cancel; reusable for actions and projects.
 - `description` field on `NamNode` (nullable String, serialised automatically by Jackson).
 - `NamWorkspaceService.updateDescription(UUID, String)` — sets description on a node and saves.
 
