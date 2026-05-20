@@ -351,6 +351,79 @@ class NamWorkspaceServiceTest {
                 () -> service.convertInboxItemToNextAction(id));
     }
 
+    // --- convertProjectToAction ---
+
+    @Test
+    void convertProjectToAction_topLevel_movesToNextActions() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        repository.saveCount = 0;
+        service.convertProjectToAction(id);
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertProjectToAction_topLevel_removesFromProjects() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        service.convertProjectToAction(id);
+        assertFalse(workspace.getNode(workspace.getProjectsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertProjectToAction_topLevel_setsStatusNext() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        service.convertProjectToAction(id);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(id).orElseThrow().getStatus());
+    }
+
+    @Test
+    void convertProjectToAction_subProject_staysUnderParent() throws IOException {
+        var projectId = service.addInboxItem("Project");
+        service.convertInboxItemToProject(projectId);
+        var subId = service.addChild(projectId, "Sub");
+        service.convertProjectToAction(subId);
+        assertTrue(workspace.getNode(projectId).orElseThrow().getChildIds().contains(subId));
+        assertFalse(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(subId));
+    }
+
+    @Test
+    void convertProjectToAction_subProject_setsStatusNext() throws IOException {
+        var projectId = service.addInboxItem("Project");
+        service.convertInboxItemToProject(projectId);
+        var subId = service.addChild(projectId, "Sub");
+        service.convertProjectToAction(subId);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(subId).orElseThrow().getStatus());
+    }
+
+    @Test
+    void convertProjectToAction_savesWorkspace() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        repository.saveCount = 0;
+        service.convertProjectToAction(id);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void convertProjectToAction_throwsIfHasChildren() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        service.addChild(id, "Child action");
+        assertThrows(IllegalStateException.class,
+                () -> service.convertProjectToAction(id));
+    }
+
+    @Test
+    void convertProjectToAction_throwsForUnknownId() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertProjectToAction(UUID.randomUUID()));
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {

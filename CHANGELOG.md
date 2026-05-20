@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NamWorkspaceService.convertProjectToAction(UUID)` — demotes a leaf project back to an action; top-level projects move to the Actions area with status `NEXT`; sub-projects stay under their parent project and get status `NEXT`; throws `IllegalStateException` if the project has children.
+- "Convert to action" button in `ProjectDialog` toolbar — converts the project and closes; shows an error if the project still has child actions. Closes #58.
+
+
+
 - `ProjectDialog` "Add action" button — creates a child action directly under the project and refreshes the list immediately.
 - `ProjectDialog` accepts an optional `initialSelection` UUID — scrolls to and selects that action row on open.
 - `ActionDialog` context row — when an action belongs to a project, shows a "Project: [name]" label (tooltip shows breadcrumb path excluding root, e.g. `Projects > My Project`) and an "Open project" button that closes the action dialog and opens `ProjectDialog` with the action pre-selected. Closes #54.

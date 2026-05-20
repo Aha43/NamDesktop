@@ -96,6 +96,22 @@ public final class NamWorkspaceService {
         convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
     }
 
+    public void convertProjectToAction(UUID id) throws IOException {
+        var node = require(id);
+        if (!node.getChildIds().isEmpty()) {
+            throw new IllegalStateException("Cannot convert a project that has child actions");
+        }
+        var parent = findParent(id);
+        if (parent != null && parent.getId().equals(workspace.getProjectsNodeId())) {
+            parent.getChildIds().remove(id);
+            workspace.getNode(workspace.getNextActionsNodeId())
+                    .orElseThrow(() -> new IllegalStateException("Actions area node not found"))
+                    .getChildIds().add(id);
+        }
+        node.setStatus(NodeStatus.NEXT);
+        repository.save(path, workspace);
+    }
+
     private void convertFromArea(UUID id, UUID sourceId, UUID targetId, String sourceName) throws IOException {
         require(id);
         var source = workspace.getNode(sourceId)
