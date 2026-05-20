@@ -115,7 +115,7 @@ class NamWorkspaceTest {
         var ws = NamWorkspace.createDefault();
         assertNotNull(ws.getNextActionsNodeId());
         var nextActions = ws.getNode(ws.getNextActionsNodeId()).orElseThrow();
-        assertEquals("Next Actions", nextActions.getTitle());
+        assertEquals("Actions", nextActions.getTitle());
         assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }

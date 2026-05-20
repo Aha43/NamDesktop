@@ -180,6 +180,27 @@ class NamWorkspaceServiceTest {
                 () -> service.markNext(UUID.randomUUID()));
     }
 
+    // --- markBacklog ---
+
+    @Test
+    void markBacklog_setsStatusBacklog() throws IOException {
+        service.markNext(rootId);
+        service.markBacklog(rootId);
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(rootId).orElseThrow().getStatus());
+    }
+
+    @Test
+    void markBacklog_savesWorkspace() throws IOException {
+        service.markBacklog(rootId);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void markBacklog_throwsForUnknownNode() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.markBacklog(UUID.randomUUID()));
+    }
+
     // --- updateDescription ---
 
     @Test
@@ -314,6 +335,13 @@ class NamWorkspaceServiceTest {
     void convertInboxItemToNextAction_throwsForUnknownId() {
         assertThrows(IllegalArgumentException.class,
                 () -> service.convertInboxItemToNextAction(UUID.randomUUID()));
+    }
+
+    @Test
+    void convertInboxItemToNextAction_setsStatusNext() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(id).orElseThrow().getStatus());
     }
 
     @Test
