@@ -45,7 +45,7 @@ public final class NextActionsPanel extends JPanel {
                 if (row < 0) return;
                 var selected = tableModel.getRow(row);
                 new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
-                        selected.id(), workspace, service).setVisible(true);
+                        selected.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
             }
         });
 

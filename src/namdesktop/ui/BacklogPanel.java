@@ -45,7 +45,7 @@ public final class BacklogPanel extends JPanel {
                 if (row < 0) return;
                 var selected = tableModel.getRow(row);
                 new ActionDialog(SwingUtilities.getWindowAncestor(BacklogPanel.this),
-                        selected.id(), workspace, service, false).setVisible(true);
+                        selected.id(), workspace, service, false, BacklogPanel.this::refresh).setVisible(true);
             }
         });
 

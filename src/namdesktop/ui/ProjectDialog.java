@@ -19,7 +19,11 @@ public final class ProjectDialog extends NodeDialog {
     private java.util.List<UUID> childIds;
 
     public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
-        super(parent, nodeId, workspace, service);
+        this(parent, nodeId, workspace, service, () -> {});
+    }
+
+    public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
+        super(parent, nodeId, workspace, service, onChanged);
         this.nodeId    = nodeId;
         this.workspace = workspace;
         this.service   = service;
