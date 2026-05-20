@@ -29,6 +29,10 @@ public final class ProjectDialog extends NodeDialog {
     }
 
     public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
+        this(parent, nodeId, workspace, service, onChanged, null);
+    }
+
+    public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged, UUID initialSelection) {
         super(parent, nodeId, workspace, service, onChanged);
         this.nodeId    = nodeId;
         this.workspace = workspace;
@@ -74,6 +78,21 @@ public final class ProjectDialog extends NodeDialog {
         setSize(500, 580);
 
         refreshChildList();
+
+        if (initialSelection != null) {
+            selectRow(initialSelection);
+        }
+    }
+
+    private void selectRow(UUID targetId) {
+        var rows = tableModel.getRowCount();
+        for (int i = 0; i < rows; i++) {
+            if (tableModel.getRow(i).getId().equals(targetId)) {
+                actionsTable.setRowSelectionInterval(i, i);
+                actionsTable.scrollRectToVisible(actionsTable.getCellRect(i, 0, true));
+                break;
+            }
+        }
     }
 
     private void addAction() {
