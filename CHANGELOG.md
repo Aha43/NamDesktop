@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NodeDialog` toolbar: Delete button with confirmation dialog; non-leaf nodes show an error instead of deleting.
 - `NodeDialog` toolbar with a Mark done / Mark active toggle button; status persists immediately.
 - `NamWorkspaceService.markActive()` reverses `markDone`, setting status back to ACTIVE.
 - Double-clicking a project opens `NodeDialog` for that node; description persists across restarts.

@@ -32,9 +32,14 @@ public final class NodeDialog extends JDialog {
         statusButton = new JButton(statusLabel());
         statusButton.addActionListener(e -> toggleStatus());
 
+        var deleteButton = new JButton("Delete");
+        deleteButton.addActionListener(e -> delete(node.getTitle()));
+
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(statusButton);
+        toolbar.addSeparator();
+        toolbar.add(deleteButton);
 
         descriptionArea = new JTextArea(node.getDescription() != null ? node.getDescription() : "");
         descriptionArea.setLineWrap(true);
@@ -80,6 +85,24 @@ public final class NodeDialog extends JDialog {
             statusButton.setText(statusLabel());
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void delete(String title) {
+        var choice = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to delete \"" + title + "\"? This cannot be undone.",
+                "Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (choice != JOptionPane.YES_OPTION) return;
+        try {
+            service.deleteLeaf(nodeId);
+            dispose();
+        } catch (IllegalStateException e) {
+            JOptionPane.showMessageDialog(this,
+                    "This item has sub-items and cannot be deleted directly.",
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to delete: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
