@@ -80,6 +80,24 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void createSavedView(String name, List<String> tags) throws IOException {
+        var trimmed = name.strip();
+        if (trimmed.isEmpty()) throw new IllegalArgumentException("View name must not be blank");
+        var views = workspace.getSavedViews();
+        if (views.stream().anyMatch(v -> v.name().equals(trimmed))) {
+            throw new IllegalArgumentException("A view named \"" + trimmed + "\" already exists");
+        }
+        views.add(new namdesktop.model.SavedView(trimmed, List.copyOf(tags)));
+        repository.save(path, workspace);
+    }
+
+    public void deleteSavedView(String name) throws IOException {
+        var views = workspace.getSavedViews();
+        if (views.removeIf(v -> v.name().equals(name))) {
+            repository.save(path, workspace);
+        }
+    }
+
     public void registerTag(String tag) throws IOException {
         var normalised = tag.strip().toLowerCase();
         var registered = workspace.getRegisteredTags();

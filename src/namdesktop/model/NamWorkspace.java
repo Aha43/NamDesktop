@@ -16,6 +16,7 @@ public final class NamWorkspace {
     private UUID nextActionsNodeId;
     private Map<UUID, NamNode> nodes = new LinkedHashMap<>();
     private List<String> registeredTags = new ArrayList<>();
+    private List<SavedView> savedViews = new ArrayList<>();
 
     public NamWorkspace() {}
 
@@ -89,6 +90,9 @@ public final class NamWorkspace {
 
     public List<String> getRegisteredTags() { return registeredTags; }
     public void setRegisteredTags(List<String> tags) { this.registeredTags = tags != null ? tags : new ArrayList<>(); }
+
+    public List<SavedView> getSavedViews() { return savedViews; }
+    public void setSavedViews(List<SavedView> views) { this.savedViews = views != null ? views : new ArrayList<>(); }
 
     public List<NamNode> buildPath(UUID nodeId) {
         var path = new ArrayList<NamNode>();

@@ -352,6 +352,50 @@ class NamWorkspaceServiceTest {
                 () -> service.convertInboxItemToNextAction(id));
     }
 
+    // --- createSavedView / deleteSavedView ---
+
+    @Test
+    void createSavedView_addsView() throws IOException {
+        service.createSavedView("My view", List.of("@computer"));
+        assertEquals(1, workspace.getSavedViews().size());
+        assertEquals("My view", workspace.getSavedViews().get(0).name());
+        assertEquals(List.of("@computer"), workspace.getSavedViews().get(0).tags());
+    }
+
+    @Test
+    void createSavedView_savesWorkspace() throws IOException {
+        service.createSavedView("My view", List.of("@computer"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void createSavedView_throwsOnBlankName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createSavedView("  ", List.of("@computer")));
+    }
+
+    @Test
+    void createSavedView_throwsOnDuplicateName() throws IOException {
+        service.createSavedView("My view", List.of("@computer"));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createSavedView("My view", List.of("@home")));
+    }
+
+    @Test
+    void deleteSavedView_removesView() throws IOException {
+        service.createSavedView("My view", List.of("@computer"));
+        repository.saveCount = 0;
+        service.deleteSavedView("My view");
+        assertTrue(workspace.getSavedViews().isEmpty());
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteSavedView_isNoOpWhenNotFound() throws IOException {
+        service.deleteSavedView("nonexistent");
+        assertEquals(0, repository.saveCount);
+    }
+
     // --- addTag / removeTag / updateTags ---
 
     @Test

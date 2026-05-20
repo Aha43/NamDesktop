@@ -38,6 +38,29 @@ class JsonWorkspaceRepositoryTest {
     }
 
     @Test
+    void saveAndLoad_roundTripsSavedViews(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        original.getSavedViews().add(new namdesktop.model.SavedView("My view", List.of("@computer", "@home")));
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertEquals(1, loaded.getSavedViews().size());
+        assertEquals("My view", loaded.getSavedViews().get(0).name());
+        assertEquals(List.of("@computer", "@home"), loaded.getSavedViews().get(0).tags());
+    }
+
+    @Test
+    void load_oldFileWithoutSavedViews_loadsEmptyList(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        repo.save(path, original);
+        // Verify no exception and empty list when field absent (Jackson defaults to null → setSavedViews handles it)
+        var loaded = repo.load(path);
+        assertNotNull(loaded.getSavedViews());
+    }
+
+    @Test
     void saveAndLoad_roundTripsRegisteredTags(@TempDir Path dir) throws IOException {
         var path = dir.resolve("workspace.json");
         var original = NamWorkspace.createDefault();

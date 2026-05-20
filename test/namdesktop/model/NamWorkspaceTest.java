@@ -121,6 +121,23 @@ class NamWorkspaceTest {
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }
 
+    // --- savedViews ---
+
+    @Test
+    void savedViews_defaultsToEmptyList() {
+        var ws = NamWorkspace.createDefault();
+        assertNotNull(ws.getSavedViews());
+        assertTrue(ws.getSavedViews().isEmpty());
+    }
+
+    @Test
+    void setSavedViews_withNull_setsEmptyList() {
+        var ws = NamWorkspace.createDefault();
+        ws.setSavedViews(null);
+        assertNotNull(ws.getSavedViews());
+        assertTrue(ws.getSavedViews().isEmpty());
+    }
+
     // --- allTags ---
 
     @Test

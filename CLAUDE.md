@@ -59,6 +59,10 @@ Run `pwsh scripts/download-libs.ps1` to download all of the above from Maven Cen
 - **Always run `make run` after every change** — even trivial ones — so the user can test
   before committing. Never skip this step.
 - **Always run `make test` before committing** to confirm existing tests still pass.
+- **One issue at a time.** After completing an issue, stop and wait for the user to confirm
+  before starting the next one — even when multiple issues are planned for the same sprint.
+  If a change is purely internal (model/service with full unit test coverage and no UI),
+  say so explicitly and still wait for a go-ahead before moving on.
 
 ### Definition of Done for feature issues
 

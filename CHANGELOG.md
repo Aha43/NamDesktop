@@ -8,6 +8,22 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Manage Tags…" button added to toolbar; Exit button pushed to far right via `Box.createHorizontalGlue()`.
+- Saved views now restored in the nav on startup — `MainFrame` calls `rebuildSavedViews` at construction time.
+
+- Dynamic nav panel — saved views appear below a `JSeparator` divider after the standard entries; `NavigationPanel.rebuildSavedViews(List<SavedView>)` repopulates the section; divider rows are non-selectable. Closes #74.
+- `SavedViewPanel` — shows `ContextLens` results pre-filtered to the saved view's tags; header with view name, tag list, and "Delete view" button (confirmation dialog); double-click opens `ActionDialog`; on delete navigates back to Context and rebuilds the nav.
+
+- "Save as view…" button in `ContextPanel` filter header — enabled when ≥1 tag is checked; prompts for a name, calls `createSavedView`, shows an error dialog on blank or duplicate name. Closes #73.
+
+- `SavedView(String name, List<String> tags)` record in `namdesktop.model`.
+- `savedViews` field on `NamWorkspace` (defaults to empty list; null-safe setter).
+- `NamWorkspaceService.createSavedView(String, List<String>)` — trims name, throws on blank or duplicate, saves once.
+- `NamWorkspaceService.deleteSavedView(String)` — removes by name, no-op if not found, saves only if removed.
+- `savedViews` persisted in `WorkspaceFile`; old files without the field deserialise cleanly. Closes #72.
+
+
+
 - Tags column added to Next Actions, Backlog, and Projects panels, and to the ProjectDialog child action list. Closes #66, #69.
 - Match count label and Clear button added to ContextPanel filter header. Closes #67, #68.
 - `registeredTags` field on `NamWorkspace` — persists tags created up-front before they are applied to any node; `allTags()` merges registered tags with node tags.
