@@ -6,7 +6,7 @@ import namdesktop.service.NamWorkspaceService;
 import namdesktop.ui.MainFrame;
 
 import javax.swing.*;
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
 import java.nio.file.Path;
 
 public final class NamDesktopMain {
@@ -19,7 +19,7 @@ public final class NamDesktopMain {
     }
 
     private static void start() {
-        FlatLightLaf.setup();
+        FlatDarkLaf.setup();
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
