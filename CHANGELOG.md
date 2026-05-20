@@ -9,6 +9,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - JUnit 5 (`junit-platform-console-standalone-1.10.2`) wired into the project; `make test` compiles and runs the test suite.
+- Unit tests for `NamWorkspace` (8 tests covering `createDefault`, `getNode`, and `getChildren`).
 
 ### Added
 
