@@ -11,19 +11,29 @@ public final class NamWorkspace {
 
     private UUID rootNodeId;
     private UUID inboxNodeId;
+    private UUID projectsNodeId;
+    private UUID nextActionsNodeId;
     private Map<UUID, NamNode> nodes = new LinkedHashMap<>();
 
     public NamWorkspace() {}
 
     public static NamWorkspace createDefault() {
-        var workspace = new NamWorkspace();
-        var root  = new NamNode(UUID.randomUUID(), "NAM");
-        var inbox = new NamNode(UUID.randomUUID(), "Inbox");
-        workspace.nodes.put(root.getId(),  root);
-        workspace.nodes.put(inbox.getId(), inbox);
+        var workspace    = new NamWorkspace();
+        var root         = new NamNode(UUID.randomUUID(), "NAM");
+        var inbox        = new NamNode(UUID.randomUUID(), "Inbox");
+        var projects     = new NamNode(UUID.randomUUID(), "Projects");
+        var nextActions  = new NamNode(UUID.randomUUID(), "Next Actions");
+        workspace.nodes.put(root.getId(),        root);
+        workspace.nodes.put(inbox.getId(),       inbox);
+        workspace.nodes.put(projects.getId(),    projects);
+        workspace.nodes.put(nextActions.getId(), nextActions);
         root.getChildIds().add(inbox.getId());
-        workspace.rootNodeId  = root.getId();
-        workspace.inboxNodeId = inbox.getId();
+        root.getChildIds().add(projects.getId());
+        root.getChildIds().add(nextActions.getId());
+        workspace.rootNodeId       = root.getId();
+        workspace.inboxNodeId      = inbox.getId();
+        workspace.projectsNodeId   = projects.getId();
+        workspace.nextActionsNodeId = nextActions.getId();
         return workspace;
     }
 
@@ -32,6 +42,12 @@ public final class NamWorkspace {
 
     public UUID getInboxNodeId() { return inboxNodeId; }
     public void setInboxNodeId(UUID inboxNodeId) { this.inboxNodeId = inboxNodeId; }
+
+    public UUID getProjectsNodeId() { return projectsNodeId; }
+    public void setProjectsNodeId(UUID projectsNodeId) { this.projectsNodeId = projectsNodeId; }
+
+    public UUID getNextActionsNodeId() { return nextActionsNodeId; }
+    public void setNextActionsNodeId(UUID nextActionsNodeId) { this.nextActionsNodeId = nextActionsNodeId; }
 
     public Map<UUID, NamNode> getNodes() { return nodes; }
     public void setNodes(Map<UUID, NamNode> nodes) { this.nodes = nodes; }

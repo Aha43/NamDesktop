@@ -24,11 +24,14 @@ class NamWorkspaceTest {
     }
 
     @Test
-    void createDefault_rootHasInboxAsOnlyChild() {
+    void createDefault_rootHasThreeChildren() {
         var ws = NamWorkspace.createDefault();
         var rootChildren = ws.getChildren(ws.getRootNodeId());
-        assertEquals(1, rootChildren.size());
-        assertEquals(ws.getInboxNodeId(), rootChildren.get(0).getId());
+        assertEquals(3, rootChildren.size());
+        var childIds = rootChildren.stream().map(NamNode::getId).toList();
+        assertTrue(childIds.contains(ws.getInboxNodeId()));
+        assertTrue(childIds.contains(ws.getProjectsNodeId()));
+        assertTrue(childIds.contains(ws.getNextActionsNodeId()));
     }
 
     @Test
@@ -85,7 +88,7 @@ class NamWorkspaceTest {
         assertEquals("Real", children.get(0).getTitle());
     }
 
-    // --- inbox ---
+    // --- well-known areas ---
 
     @Test
     void createDefault_hasInboxNode() {
@@ -95,6 +98,26 @@ class NamWorkspaceTest {
         assertEquals("Inbox", inbox.getTitle());
         assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
                 .getChildIds().contains(ws.getInboxNodeId()));
+    }
+
+    @Test
+    void createDefault_hasProjectsNode() {
+        var ws = NamWorkspace.createDefault();
+        assertNotNull(ws.getProjectsNodeId());
+        var projects = ws.getNode(ws.getProjectsNodeId()).orElseThrow();
+        assertEquals("Projects", projects.getTitle());
+        assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
+                .getChildIds().contains(ws.getProjectsNodeId()));
+    }
+
+    @Test
+    void createDefault_hasNextActionsNode() {
+        var ws = NamWorkspace.createDefault();
+        assertNotNull(ws.getNextActionsNodeId());
+        var nextActions = ws.getNode(ws.getNextActionsNodeId()).orElseThrow();
+        assertEquals("Next Actions", nextActions.getTitle());
+        assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
+                .getChildIds().contains(ws.getNextActionsNodeId()));
     }
 
     @Test

@@ -56,6 +56,6 @@ test: classes
 		-cp "$(LIB_DIR)/*:$(JUNIT_JAR):$(CLASSES_DIR)" \
 		-d $(TEST_CLASSES) \
 		$(TEST_SOURCES)
-	java -jar $(JUNIT_JAR) execute \
-		--class-path "$(CLASSES_DIR):$(TEST_CLASSES):$(LIB_DIR)/*" \
+	java -cp "$(CLASSES_DIR):$(TEST_CLASSES):$(LIB_DIR)/*:$(JUNIT_JAR)" \
+		org.junit.platform.console.ConsoleLauncher execute \
 		--scan-class-path "$(TEST_CLASSES)"
