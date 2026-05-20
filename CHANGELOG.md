@@ -9,6 +9,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - `ProjectDialog` "Add action" button — creates a child action directly under the project and refreshes the list immediately.
+- `ProjectDialog` action list upgraded from `JList<String>` to a two-column `JTable` (Title, Status); DONE rows rendered in grey matching the style of other panels. Closes #53.
 
 ### Fixed
 
