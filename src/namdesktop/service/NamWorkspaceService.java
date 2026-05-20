@@ -64,8 +64,8 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
-    public void markActive(UUID nodeId) throws IOException {
-        require(nodeId).setStatus(NodeStatus.ACTIVE);
+    public void markNext(UUID nodeId) throws IOException {
+        require(nodeId).setStatus(NodeStatus.NEXT);
         repository.save(path, workspace);
     }
 

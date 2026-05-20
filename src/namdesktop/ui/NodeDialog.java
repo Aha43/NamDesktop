@@ -72,14 +72,14 @@ public class NodeDialog extends JDialog {
     }
 
     private String statusLabel() {
-        return currentStatus == NodeStatus.DONE ? "Mark active" : "Mark done";
+        return currentStatus == NodeStatus.DONE ? "Mark next" : "Mark done";
     }
 
     private void toggleStatus() {
         try {
             if (currentStatus == NodeStatus.DONE) {
-                service.markActive(nodeId);
-                currentStatus = NodeStatus.ACTIVE;
+                service.markNext(nodeId);
+                currentStatus = NodeStatus.NEXT;
             } else {
                 service.markDone(nodeId);
                 currentStatus = NodeStatus.DONE;

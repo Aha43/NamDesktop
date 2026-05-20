@@ -162,22 +162,22 @@ class NamWorkspaceServiceTest {
     // --- markActive ---
 
     @Test
-    void markActive_setsStatusActive() throws IOException {
+    void markNext_setsStatusNext() throws IOException {
         service.markDone(rootId);
-        service.markActive(rootId);
-        assertEquals(NodeStatus.ACTIVE, workspace.getNode(rootId).orElseThrow().getStatus());
+        service.markNext(rootId);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(rootId).orElseThrow().getStatus());
     }
 
     @Test
-    void markActive_savesWorkspace() throws IOException {
-        service.markActive(rootId);
+    void markNext_savesWorkspace() throws IOException {
+        service.markNext(rootId);
         assertEquals(1, repository.saveCount);
     }
 
     @Test
-    void markActive_throwsForUnknownNode() {
+    void markNext_throwsForUnknownNode() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.markActive(UUID.randomUUID()));
+                () -> service.markNext(UUID.randomUUID()));
     }
 
     // --- updateDescription ---

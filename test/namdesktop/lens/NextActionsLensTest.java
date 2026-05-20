@@ -36,7 +36,7 @@ class NextActionsLensTest {
         var rows = lens.items(workspace);
         assertEquals(1, rows.size());
         assertEquals("Call dentist",   rows.get(0).title());
-        assertEquals(NodeStatus.ACTIVE, rows.get(0).status());
+        assertEquals(NodeStatus.BACKLOG, rows.get(0).status());
         assertEquals(node.getId(),      rows.get(0).id());
     }
 

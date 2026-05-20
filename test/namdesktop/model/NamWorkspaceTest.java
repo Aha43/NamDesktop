@@ -20,7 +20,7 @@ class NamWorkspaceTest {
         var ws = NamWorkspace.createDefault();
         var root = ws.getNode(ws.getRootNodeId()).orElseThrow();
         assertEquals("NAM", root.getTitle());
-        assertEquals(NodeStatus.ACTIVE, root.getStatus());
+        assertEquals(NodeStatus.BACKLOG, root.getStatus());
     }
 
     @Test

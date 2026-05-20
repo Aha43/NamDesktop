@@ -9,7 +9,7 @@ public final class NamNode {
     private UUID id;
     private String title;
     private String description;
-    private NodeStatus status = NodeStatus.ACTIVE;
+    private NodeStatus status = NodeStatus.BACKLOG;
     private List<UUID> childIds = new ArrayList<>();
 
     public NamNode() {}
