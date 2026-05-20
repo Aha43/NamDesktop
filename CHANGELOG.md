@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Manage Tags…" button added to toolbar; Exit button pushed to far right via `Box.createHorizontalGlue()`.
+- Saved views now restored in the nav on startup — `MainFrame` calls `rebuildSavedViews` at construction time.
+
 - Dynamic nav panel — saved views appear below a `JSeparator` divider after the standard entries; `NavigationPanel.rebuildSavedViews(List<SavedView>)` repopulates the section; divider rows are non-selectable. Closes #74.
 - `SavedViewPanel` — shows `ContextLens` results pre-filtered to the saved view's tags; header with view name, tag list, and "Delete view" button (confirmation dialog); double-click opens `ActionDialog`; on delete navigates back to Context and rebuilds the nav.
 

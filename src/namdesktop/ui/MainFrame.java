@@ -47,6 +47,11 @@ public final class MainFrame extends JFrame {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
+        var manageTagsButton = new JButton("Manage Tags…");
+        manageTagsButton.addActionListener(e ->
+                new TagManagementDialog(this, workspace, service).setVisible(true));
+        toolbar.add(manageTagsButton);
+        toolbar.add(Box.createHorizontalGlue());
         var exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> System.exit(0));
         toolbar.add(exitButton);
@@ -69,6 +74,8 @@ public final class MainFrame extends JFrame {
         add(splitPane, BorderLayout.CENTER);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
+
+        navPanel.rebuildSavedViews(workspace.getSavedViews());
     }
 
     private void onNavSelected(NavigationEntry entry) {
