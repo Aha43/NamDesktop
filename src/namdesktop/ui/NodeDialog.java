@@ -17,12 +17,18 @@ public class NodeDialog extends JDialog {
     private final JButton statusButton;
     private final JToolBar toolbar;
     private final JPanel centre;
+    private final Runnable onChanged;
     private NodeStatus currentStatus;
 
     public NodeDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
+        this(parent, nodeId, workspace, service, () -> {});
+    }
+
+    public NodeDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
         super(parent, ModalityType.APPLICATION_MODAL);
-        this.nodeId  = nodeId;
-        this.service = service;
+        this.nodeId    = nodeId;
+        this.service   = service;
+        this.onChanged = onChanged;
 
         var node = workspace.getNode(nodeId).orElseThrow();
         currentStatus = node.getStatus();
@@ -86,6 +92,7 @@ public class NodeDialog extends JDialog {
                 currentStatus = NodeStatus.NEXT;
             }
             statusButton.setText(statusLabel());
+            notifyChanged();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -99,6 +106,7 @@ public class NodeDialog extends JDialog {
         if (choice != JOptionPane.YES_OPTION) return;
         try {
             service.deleteLeaf(nodeId);
+            notifyChanged();
             dispose();
         } catch (IllegalStateException e) {
             JOptionPane.showMessageDialog(this,
@@ -113,12 +121,15 @@ public class NodeDialog extends JDialog {
     private void save() {
         try {
             service.updateDescription(nodeId, descriptionArea.getText());
+            notifyChanged();
             dispose();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    protected void notifyChanged() { onChanged.run(); }
 
     protected void addToolbarButton(JButton button) {
         toolbar.addSeparator();

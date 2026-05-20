@@ -45,7 +45,7 @@ public final class ProjectsPanel extends JPanel {
                 if (row < 0) return;
                 var selected = tableModel.getRow(row);
                 new ProjectDialog(SwingUtilities.getWindowAncestor(ProjectsPanel.this),
-                        selected.id(), workspace, service).setVisible(true);
+                        selected.id(), workspace, service, ProjectsPanel.this::refresh).setVisible(true);
             }
         });
 

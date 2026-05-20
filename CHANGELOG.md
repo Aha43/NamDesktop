@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Parent panel now refreshes immediately after any dialog mutation (mark done/next, delete, move to backlog, make project, save description) — no longer requires navigating away and back.
+
 ### Added
 
 - Menu bar with **File → Exit** and a top-level toolbar **Exit** button; placeholders for future menu/toolbar items.
