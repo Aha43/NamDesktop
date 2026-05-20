@@ -75,6 +75,10 @@ Use a dedicated test sprint when:
 - edge cases are discovered after review
 - confidence feels lower than the code size suggests
 
+### Testing preference
+
+Prefer small, focused unit tests around domain model, command layer, persistence, and ordering rules before UI tests. Swing UI tests can wait unless behaviour cannot be verified elsewhere.
+
 ## Conventions
 
 - All Swing work must happen on the Event Dispatch Thread (`SwingUtilities.invokeLater`).
