@@ -44,7 +44,7 @@ public final class NextActionsPanel extends JPanel {
                 var row = table.rowAtPoint(e.getPoint());
                 if (row < 0) return;
                 var selected = tableModel.getRow(row);
-                new NodeDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
                         selected.id(), workspace, service).setVisible(true);
             }
         });

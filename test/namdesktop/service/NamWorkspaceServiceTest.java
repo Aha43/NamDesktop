@@ -201,6 +201,49 @@ class NamWorkspaceServiceTest {
                 () -> service.updateDescription(UUID.randomUUID(), "text"));
     }
 
+    // --- convertNextActionToProject ---
+
+    @Test
+    void convertNextActionToProject_movesNodeToProjects() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        repository.saveCount = 0;
+        service.convertNextActionToProject(id);
+        assertTrue(workspace.getNode(workspace.getProjectsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertNextActionToProject_removesFromNextActions() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        service.convertNextActionToProject(id);
+        assertFalse(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void convertNextActionToProject_savesWorkspace() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        repository.saveCount = 0;
+        service.convertNextActionToProject(id);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void convertNextActionToProject_throwsForUnknownId() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertNextActionToProject(UUID.randomUUID()));
+    }
+
+    @Test
+    void convertNextActionToProject_throwsIfNotNextActionsChild() throws IOException {
+        var id = service.addInboxItem("Task");
+        assertThrows(IllegalArgumentException.class,
+                () -> service.convertNextActionToProject(id));
+    }
+
     // --- convertInboxItemToProject ---
 
     @Test

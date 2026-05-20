@@ -70,19 +70,23 @@ public final class NamWorkspaceService {
     }
 
     public void convertInboxItemToProject(UUID id) throws IOException {
-        convertFromInbox(id, workspace.getProjectsNodeId());
+        convertFromArea(id, workspace.getInboxNodeId(), workspace.getProjectsNodeId(), "inbox");
     }
 
     public void convertInboxItemToNextAction(UUID id) throws IOException {
-        convertFromInbox(id, workspace.getNextActionsNodeId());
+        convertFromArea(id, workspace.getInboxNodeId(), workspace.getNextActionsNodeId(), "inbox");
     }
 
-    private void convertFromInbox(UUID id, UUID targetId) throws IOException {
+    public void convertNextActionToProject(UUID id) throws IOException {
+        convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
+    }
+
+    private void convertFromArea(UUID id, UUID sourceId, UUID targetId, String sourceName) throws IOException {
         require(id);
-        var inbox = workspace.getNode(workspace.getInboxNodeId())
-                .orElseThrow(() -> new IllegalStateException("Workspace has no inbox node"));
-        if (!inbox.getChildIds().remove(id)) {
-            throw new IllegalArgumentException("Node is not an inbox item: " + id);
+        var source = workspace.getNode(sourceId)
+                .orElseThrow(() -> new IllegalStateException("Source area node not found"));
+        if (!source.getChildIds().remove(id)) {
+            throw new IllegalArgumentException("Node is not a " + sourceName + " item: " + id);
         }
         workspace.getNode(targetId)
                 .orElseThrow(() -> new IllegalStateException("Target area node not found"))

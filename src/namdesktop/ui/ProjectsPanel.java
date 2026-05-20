@@ -44,7 +44,7 @@ public final class ProjectsPanel extends JPanel {
                 var row = table.rowAtPoint(e.getPoint());
                 if (row < 0) return;
                 var selected = tableModel.getRow(row);
-                new NodeDialog(SwingUtilities.getWindowAncestor(ProjectsPanel.this),
+                new ProjectDialog(SwingUtilities.getWindowAncestor(ProjectsPanel.this),
                         selected.id(), workspace, service).setVisible(true);
             }
         });
