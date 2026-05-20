@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -349,6 +350,66 @@ class NamWorkspaceServiceTest {
         var id = service.addChild(rootId, "NotAnInboxItem");
         assertThrows(IllegalArgumentException.class,
                 () -> service.convertInboxItemToNextAction(id));
+    }
+
+    // --- addTag / removeTag / updateTags ---
+
+    @Test
+    void addTag_addsTagToNode() throws IOException {
+        service.addTag(rootId, "@computer");
+        assertTrue(workspace.getNode(rootId).orElseThrow().getTags().contains("@computer"));
+    }
+
+    @Test
+    void addTag_normalisesToLowercase() throws IOException {
+        service.addTag(rootId, "@Computer");
+        assertTrue(workspace.getNode(rootId).orElseThrow().getTags().contains("@computer"));
+    }
+
+    @Test
+    void addTag_ignoresDuplicate() throws IOException {
+        service.addTag(rootId, "@home");
+        repository.saveCount = 0;
+        service.addTag(rootId, "@home");
+        assertEquals(0, repository.saveCount);
+        assertEquals(1, workspace.getNode(rootId).orElseThrow().getTags().size());
+    }
+
+    @Test
+    void addTag_savesWorkspace() throws IOException {
+        service.addTag(rootId, "@home");
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void addTag_throwsForUnknownNode() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.addTag(UUID.randomUUID(), "@home"));
+    }
+
+    @Test
+    void removeTag_removesExistingTag() throws IOException {
+        service.addTag(rootId, "@home");
+        repository.saveCount = 0;
+        service.removeTag(rootId, "@home");
+        assertFalse(workspace.getNode(rootId).orElseThrow().getTags().contains("@home"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void removeTag_isNoOpForAbsentTag() throws IOException {
+        service.removeTag(rootId, "@home");
+        assertEquals(0, repository.saveCount);
+    }
+
+    @Test
+    void updateTags_replacesTags() throws IOException {
+        service.addTag(rootId, "@old");
+        repository.saveCount = 0;
+        service.updateTags(rootId, List.of("@computer", "@home"));
+        var tags = workspace.getNode(rootId).orElseThrow().getTags();
+        assertEquals(List.of("@computer", "@home"), tags);
+        assertEquals(1, repository.saveCount);
     }
 
     // --- convertProjectToAction ---

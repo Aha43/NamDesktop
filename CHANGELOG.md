@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `List<String> tags` field on `NamNode` — defaults to empty list; `setTags(null)` safe (coerces to empty list); serialised automatically by Jackson, old files without `tags` deserialise cleanly.
+- `NamWorkspaceService.addTag(UUID, String)` — normalises to lowercase/trimmed, deduplicates, saves.
+- `NamWorkspaceService.removeTag(UUID, String)` — no-op if absent, saves only when changed.
+- `NamWorkspaceService.updateTags(UUID, List<String>)` — bulk replace used by the UI on Save.
+- Tags editor row in `NodeDialog` — comma-separated text field below the description area; saved together with the description on the Save button. Closes #60.
+
+
+
 - `NamWorkspaceService.convertProjectToAction(UUID)` — demotes a leaf project back to an action; top-level projects move to the Actions area with status `NEXT`; sub-projects stay under their parent project and get status `NEXT`; throws `IllegalStateException` if the project has children.
 - "Convert to action" button in `ProjectDialog` toolbar — converts the project and closes; shows an error if the project still has child actions. Closes #58.
 

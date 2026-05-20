@@ -120,6 +120,23 @@ class NamWorkspaceTest {
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }
 
+    // --- tags ---
+
+    @Test
+    void newNode_hasEmptyTagList() {
+        var node = new NamNode(UUID.randomUUID(), "Test");
+        assertNotNull(node.getTags());
+        assertTrue(node.getTags().isEmpty());
+    }
+
+    @Test
+    void setTags_withNull_setsEmptyList() {
+        var node = new NamNode(UUID.randomUUID(), "Test");
+        node.setTags(null);
+        assertNotNull(node.getTags());
+        assertTrue(node.getTags().isEmpty());
+    }
+
     // --- buildPath ---
 
     @Test

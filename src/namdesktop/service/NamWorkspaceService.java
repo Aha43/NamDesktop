@@ -7,6 +7,7 @@ import namdesktop.persist.WorkspaceRepository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
 
 public final class NamWorkspaceService {
@@ -72,6 +73,28 @@ public final class NamWorkspaceService {
     public void markBacklog(UUID nodeId) throws IOException {
         require(nodeId).setStatus(NodeStatus.BACKLOG);
         repository.save(path, workspace);
+    }
+
+    public void updateTags(UUID nodeId, List<String> tags) throws IOException {
+        require(nodeId).setTags(new java.util.ArrayList<>(tags));
+        repository.save(path, workspace);
+    }
+
+    public void addTag(UUID nodeId, String tag) throws IOException {
+        var normalised = tag.strip().toLowerCase();
+        var tags = require(nodeId).getTags();
+        if (!tags.contains(normalised)) {
+            tags.add(normalised);
+            repository.save(path, workspace);
+        }
+    }
+
+    public void removeTag(UUID nodeId, String tag) throws IOException {
+        var normalised = tag.strip().toLowerCase();
+        var tags = require(nodeId).getTags();
+        if (tags.remove(normalised)) {
+            repository.save(path, workspace);
+        }
     }
 
     public void convertInboxItemToProject(UUID id) throws IOException {
