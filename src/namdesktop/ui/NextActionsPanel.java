@@ -4,21 +4,26 @@ import namdesktop.lens.NextActionItemRow;
 import namdesktop.lens.NextActionsLens;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 public final class NextActionsPanel extends JPanel {
 
     private final NamWorkspace workspace;
+    private final NamWorkspaceService service;
     private final NextActionsTableModel tableModel;
 
-    public NextActionsPanel(NamWorkspace workspace) {
+    public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
         this.workspace  = workspace;
+        this.service    = service;
         this.tableModel = new NextActionsTableModel();
 
         JTable table = new JTable(tableModel) {
@@ -32,6 +37,17 @@ public final class NextActionsPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() != 2) return;
+                var row = table.rowAtPoint(e.getPoint());
+                if (row < 0) return;
+                var selected = tableModel.getRow(row);
+                new NodeDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                        selected.id(), workspace, service).setVisible(true);
+            }
+        });
 
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
