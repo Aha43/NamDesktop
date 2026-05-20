@@ -2,6 +2,7 @@ package namdesktop.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -118,6 +119,30 @@ class NamWorkspaceTest {
         assertEquals("Actions", nextActions.getTitle());
         assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
                 .getChildIds().contains(ws.getNextActionsNodeId()));
+    }
+
+    // --- allTags ---
+
+    @Test
+    void allTags_returnsEmptyWhenNoNodeHasTags() {
+        var ws = NamWorkspace.createDefault();
+        assertTrue(ws.allTags().isEmpty());
+    }
+
+    @Test
+    void allTags_returnsSortedUnionAcrossAllNodes() {
+        var ws = NamWorkspace.createDefault();
+        var a = new NamNode(UUID.randomUUID(), "A");
+        var b = new NamNode(UUID.randomUUID(), "B");
+        a.getTags().add("@home");
+        a.getTags().add("@computer");
+        b.getTags().add("@computer");
+        b.getTags().add("@errands");
+        ws.getNodes().put(a.getId(), a);
+        ws.getNodes().put(b.getId(), b);
+
+        var tags = ws.allTags();
+        assertEquals(List.of("@computer", "@errands", "@home"), tags);
     }
 
     // --- tags ---
