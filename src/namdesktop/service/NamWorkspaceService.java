@@ -54,6 +54,11 @@ public final class NamWorkspaceService {
         return addChild(inboxId, title);
     }
 
+    public void updateDescription(UUID nodeId, String description) throws IOException {
+        require(nodeId).setDescription(description);
+        repository.save(path, workspace);
+    }
+
     public void markDone(UUID nodeId) throws IOException {
         require(nodeId).setStatus(NodeStatus.DONE);
         repository.save(path, workspace);

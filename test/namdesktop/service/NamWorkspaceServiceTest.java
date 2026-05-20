@@ -159,6 +159,27 @@ class NamWorkspaceServiceTest {
                 () -> service.markDone(UUID.randomUUID()));
     }
 
+    // --- updateDescription ---
+
+    @Test
+    void updateDescription_setsDescription() throws IOException {
+        service.updateDescription(rootId, "A detailed description");
+        assertEquals("A detailed description",
+                workspace.getNode(rootId).orElseThrow().getDescription());
+    }
+
+    @Test
+    void updateDescription_savesWorkspace() throws IOException {
+        service.updateDescription(rootId, "Some text");
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void updateDescription_throwsForUnknownNode() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.updateDescription(UUID.randomUUID(), "text"));
+    }
+
     // --- convertInboxItemToProject ---
 
     @Test
