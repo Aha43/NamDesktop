@@ -132,7 +132,7 @@ public final class ProjectDialog extends NodeDialog {
 
     private static final class ActionsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Status"};
+        private static final String[] COLUMNS = {"Title", "Tags", "Status"};
         private List<NamNode> rows = List.of();
 
         void setRows(List<NamNode> rows) {
@@ -151,7 +151,8 @@ public final class ProjectDialog extends NodeDialog {
             var n = rows.get(row);
             return switch (col) {
                 case 0 -> n.getTitle();
-                case 1 -> n.getStatus();
+                case 1 -> String.join(", ", n.getTags());
+                case 2 -> n.getStatus();
                 default -> null;
             };
         }

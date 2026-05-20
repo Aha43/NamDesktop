@@ -80,6 +80,15 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void registerTag(String tag) throws IOException {
+        var normalised = tag.strip().toLowerCase();
+        var registered = workspace.getRegisteredTags();
+        if (!registered.contains(normalised)) {
+            registered.add(normalised);
+            repository.save(path, workspace);
+        }
+    }
+
     public void addTag(UUID nodeId, String tag) throws IOException {
         var normalised = tag.strip().toLowerCase();
         var tags = require(nodeId).getTags();
@@ -95,6 +104,26 @@ public final class NamWorkspaceService {
         if (tags.remove(normalised)) {
             repository.save(path, workspace);
         }
+    }
+
+    public void renameTag(String oldTag, String newTag) throws IOException {
+        var changed = false;
+        for (var node : workspace.getNodes().values()) {
+            var tags = node.getTags();
+            if (!tags.contains(oldTag)) continue;
+            tags.remove(oldTag);
+            if (!tags.contains(newTag)) tags.add(newTag);
+            changed = true;
+        }
+        if (changed) repository.save(path, workspace);
+    }
+
+    public void deleteTag(String tag) throws IOException {
+        var changed = workspace.getRegisteredTags().remove(tag);
+        for (var node : workspace.getNodes().values()) {
+            if (node.getTags().remove(tag)) changed = true;
+        }
+        if (changed) repository.save(path, workspace);
     }
 
     public void convertInboxItemToProject(UUID id) throws IOException {

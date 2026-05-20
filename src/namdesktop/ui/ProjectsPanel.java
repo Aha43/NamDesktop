@@ -58,7 +58,7 @@ public final class ProjectsPanel extends JPanel {
 
     private static final class ProjectsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Status"};
+        private static final String[] COLUMNS = {"Title", "Tags", "Status"};
         private List<ProjectItemRow> rows = List.of();
 
         void setRows(List<ProjectItemRow> rows) {
@@ -77,7 +77,8 @@ public final class ProjectsPanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.status();
+                case 1 -> String.join(", ", r.tags());
+                case 2 -> r.status();
                 default -> null;
             };
         }

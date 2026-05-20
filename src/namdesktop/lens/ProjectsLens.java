@@ -10,7 +10,7 @@ public final class ProjectsLens {
         var projectsId = workspace.getProjectsNodeId();
         if (projectsId == null) return List.of();
         return workspace.getChildren(projectsId).stream()
-                .map(n -> new ProjectItemRow(n.getId(), n.getTitle(), n.getStatus()))
+                .map(n -> new ProjectItemRow(n.getId(), n.getTitle(), n.getStatus(), List.copyOf(n.getTags())))
                 .toList();
     }
 }

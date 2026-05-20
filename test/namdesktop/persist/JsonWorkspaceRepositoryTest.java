@@ -38,6 +38,18 @@ class JsonWorkspaceRepositoryTest {
     }
 
     @Test
+    void saveAndLoad_roundTripsRegisteredTags(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        original.getRegisteredTags().add("@computer");
+        original.getRegisteredTags().add("@home");
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertEquals(List.of("@computer", "@home"), loaded.getRegisteredTags());
+    }
+
+    @Test
     void saveAndLoad_roundTripsTags(@TempDir Path dir) throws IOException {
         var path = dir.resolve("workspace.json");
         var original = NamWorkspace.createDefault();

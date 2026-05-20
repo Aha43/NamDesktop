@@ -46,7 +46,13 @@ public final class MainFrame extends JFrame {
         exitButton.addActionListener(e -> System.exit(0));
         toolbar.add(exitButton);
 
+        var manageTagsItem = new JMenuItem("Manage Tags…");
+        manageTagsItem.addActionListener(e ->
+                new TagManagementDialog(this, workspace, service).setVisible(true));
+
         var fileMenu = new JMenu("File");
+        fileMenu.add(manageTagsItem);
+        fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
         fileMenu.add(exitItem);

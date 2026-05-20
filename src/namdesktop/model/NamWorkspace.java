@@ -15,6 +15,7 @@ public final class NamWorkspace {
     private UUID projectsNodeId;
     private UUID nextActionsNodeId;
     private Map<UUID, NamNode> nodes = new LinkedHashMap<>();
+    private List<String> registeredTags = new ArrayList<>();
 
     public NamWorkspace() {}
 
@@ -78,12 +79,16 @@ public final class NamWorkspace {
     }
 
     public List<String> allTags() {
-        return nodes.values().stream()
-                .flatMap(n -> n.getTags().stream())
+        return java.util.stream.Stream.concat(
+                        registeredTags.stream(),
+                        nodes.values().stream().flatMap(n -> n.getTags().stream()))
                 .distinct()
                 .sorted()
                 .toList();
     }
+
+    public List<String> getRegisteredTags() { return registeredTags; }
+    public void setRegisteredTags(List<String> tags) { this.registeredTags = tags != null ? tags : new ArrayList<>(); }
 
     public List<NamNode> buildPath(UUID nodeId) {
         var path = new ArrayList<NamNode>();

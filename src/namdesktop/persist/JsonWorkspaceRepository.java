@@ -35,6 +35,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setInboxNodeId(file.inboxNodeId);
         workspace.setProjectsNodeId(file.projectsNodeId);
         workspace.setNextActionsNodeId(file.nextActionsNodeId);
+        workspace.setRegisteredTags(file.registeredTags);
         migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
         migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
         migrate(workspace, "Actions",      workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
@@ -51,6 +52,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         file.projectsNodeId     = workspace.getProjectsNodeId();
         file.nextActionsNodeId  = workspace.getNextActionsNodeId();
         file.nodes              = workspace.getNodes();
+        file.registeredTags     = workspace.getRegisteredTags();
         mapper.writeValue(path.toFile(), file);
     }
 
@@ -70,5 +72,6 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         public UUID projectsNodeId;
         public UUID nextActionsNodeId;
         public Map<UUID, NamNode> nodes;
+        public java.util.List<String> registeredTags;
     }
 }

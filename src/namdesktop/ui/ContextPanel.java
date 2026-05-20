@@ -23,12 +23,23 @@ public final class ContextPanel extends JPanel {
     private final ContextTableModel tableModel;
     private final JPanel tagSelectorPanel;
     private final List<JCheckBox> tagBoxes = new ArrayList<>();
+    private JLabel matchLabel;
 
     public ContextPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
         this.workspace  = workspace;
         this.service    = service;
         this.tableModel = new ContextTableModel();
+
+        matchLabel = new JLabel("0 matches");
+        var clearButton = new JButton("Clear");
+        clearButton.addActionListener(e -> {
+            tagBoxes.forEach(b -> b.setSelected(false));
+            refreshResults();
+        });
+        var selectorHeader = new JPanel(new BorderLayout());
+        selectorHeader.add(matchLabel,  BorderLayout.WEST);
+        selectorHeader.add(clearButton, BorderLayout.EAST);
 
         tagSelectorPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 4));
         tagSelectorPanel.setBorder(BorderFactory.createTitledBorder("Filter by tags (AND)"));
@@ -56,7 +67,11 @@ public final class ContextPanel extends JPanel {
             }
         });
 
-        add(tagSelectorPanel,         BorderLayout.NORTH);
+        var northPanel = new JPanel(new BorderLayout());
+        northPanel.add(selectorHeader,  BorderLayout.NORTH);
+        northPanel.add(tagSelectorPanel, BorderLayout.CENTER);
+
+        add(northPanel,               BorderLayout.NORTH);
         add(new JScrollPane(table),   BorderLayout.CENTER);
     }
 
@@ -94,7 +109,9 @@ public final class ContextPanel extends JPanel {
                 .filter(JCheckBox::isSelected)
                 .map(JCheckBox::getText)
                 .toList();
-        tableModel.setRows(new ContextLens().items(workspace, selected));
+        var rows = new ContextLens().items(workspace, selected);
+        tableModel.setRows(rows);
+        matchLabel.setText(rows.size() + (rows.size() == 1 ? " match" : " matches"));
     }
 
     private static final class ContextTableModel extends AbstractTableModel {
