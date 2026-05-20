@@ -16,7 +16,7 @@ public class NodeDialog extends JDialog {
     private final UUID nodeId;
     private final NamWorkspaceService service;
     private final JTextArea descriptionArea;
-    private final JTextField tagsField;
+    private final TagsField tagsField;
     private final JButton statusButton;
     private final JToolBar toolbar;
     private final JPanel centre;
@@ -57,14 +57,15 @@ public class NodeDialog extends JDialog {
         descriptionArea.setWrapStyleWord(true);
         var scrollPane = new JScrollPane(descriptionArea);
 
-        tagsField = new JTextField(String.join(", ", node.getTags()));
+        tagsField = new TagsField(this, workspace::allTags);
+        tagsField.setText(String.join(", ", node.getTags()));
         tagsField.setToolTipText("Comma-separated tags, e.g. @computer, @home");
         var tagsLabel = new JLabel("Tags:");
         tagsLabel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
         var tagsRow = new JPanel(new BorderLayout());
         tagsRow.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
-        tagsRow.add(tagsLabel,  BorderLayout.WEST);
-        tagsRow.add(tagsField,  BorderLayout.CENTER);
+        tagsRow.add(tagsLabel, BorderLayout.WEST);
+        tagsRow.add(tagsField, BorderLayout.CENTER);
 
         var saveButton   = new JButton("Save");
         var cancelButton = new JButton("Cancel");
@@ -75,10 +76,14 @@ public class NodeDialog extends JDialog {
         footer.add(cancelButton);
         footer.add(saveButton);
 
+        // Inner panel keeps description + tags together; leaves centre's SOUTH free for subclasses
+        var descPanel = new JPanel(new BorderLayout());
+        descPanel.add(scrollPane, BorderLayout.CENTER);
+        descPanel.add(tagsRow,    BorderLayout.SOUTH);
+
         centre = new JPanel(new BorderLayout());
         centre.add(toolbar,    BorderLayout.NORTH);
-        centre.add(scrollPane, BorderLayout.CENTER);
-        centre.add(tagsRow,    BorderLayout.SOUTH);
+        centre.add(descPanel,  BorderLayout.CENTER);
 
         setLayout(new BorderLayout());
         add(titleLabel, BorderLayout.NORTH);

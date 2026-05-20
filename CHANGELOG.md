@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `TagsField` — custom `JTextField` subclass with autocomplete popup; filters existing tags from `allTags()` by the current token (substring match, case-insensitive), excludes tags already present in the field; keyboard navigation (↑↓ to move, Enter/Tab to select, Escape to dismiss). Closes #63.
+
+### Fixed
+
+- `NodeDialog` layout bug: tags row and `addBelowDescription` both used `BorderLayout.SOUTH` on the centre panel, causing subclasses (`ProjectDialog`, `ActionDialog`) to silently overwrite the tags row. Fixed by nesting description + tags in an inner panel, leaving `centre`'s SOUTH free for subclasses.
+
+
+
 - `NamWorkspace.allTags()` — returns a sorted, deduplicated union of all tags across all nodes.
 - `ContextLens` / `ContextItemRow` — filters NEXT actions by a required set of tags (AND semantics); excludes structural nodes; includes `parentTitle` and `tags` fields.
 - `ContextPanel` — "Context" nav view with a wrapping checkbox panel (one per known tag) and a results table (Title, Project, Tags); no tags checked shows all NEXT actions; double-click opens `ActionDialog`. Closes #61.
