@@ -11,6 +11,7 @@ public final class NamNode {
     private String description;
     private NodeStatus status = NodeStatus.BACKLOG;
     private List<UUID> childIds = new ArrayList<>();
+    private List<String> tags = new ArrayList<>();
 
     public NamNode() {}
 
@@ -33,6 +34,9 @@ public final class NamNode {
 
     public List<UUID> getChildIds() { return childIds; }
     public void setChildIds(List<UUID> childIds) { this.childIds = childIds; }
+
+    public List<String> getTags() { return tags; }
+    public void setTags(List<String> tags) { this.tags = tags != null ? tags : new ArrayList<>(); }
 
     @Override
     public String toString() { return title; }

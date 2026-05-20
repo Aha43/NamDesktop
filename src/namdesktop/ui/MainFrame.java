@@ -13,6 +13,7 @@ public final class MainFrame extends JFrame {
             new NavigationEntry("inbox",        "Inbox"),
             new NavigationEntry("projects",     "Projects"),
             new NavigationEntry("next-actions", "Next Actions"),
+            new NavigationEntry("context",      "Context"),
             new NavigationEntry("backlog",      "Backlog"),
             new NavigationEntry("raw-tree",     "Raw Tree")
     );
@@ -22,6 +23,7 @@ public final class MainFrame extends JFrame {
     private final InboxPanel       inboxPanel;
     private final ProjectsPanel    projectsPanel;
     private final NextActionsPanel nextActionsPanel;
+    private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
@@ -30,6 +32,7 @@ public final class MainFrame extends JFrame {
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service);
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
+        this.contextPanel     = new ContextPanel(workspace, service);
         this.backlogPanel     = new BacklogPanel(workspace, service);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
@@ -62,6 +65,7 @@ public final class MainFrame extends JFrame {
             case "inbox"    -> { contentArea.setContent(inboxPanel);    inboxPanel.refresh(); }
             case "projects"      -> { contentArea.setContent(projectsPanel);    projectsPanel.refresh(); }
             case "next-actions"  -> { contentArea.setContent(nextActionsPanel); nextActionsPanel.refresh(); }
+            case "context"       -> { contentArea.setContent(contextPanel);     contextPanel.refresh(); }
             case "backlog"       -> { contentArea.setContent(backlogPanel);     backlogPanel.refresh(); }
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default         -> contentArea.setContent(placeholder(entry.title()));

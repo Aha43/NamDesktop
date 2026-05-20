@@ -77,6 +77,14 @@ public final class NamWorkspace {
                 .findFirst();
     }
 
+    public List<String> allTags() {
+        return nodes.values().stream()
+                .flatMap(n -> n.getTags().stream())
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
     public List<NamNode> buildPath(UUID nodeId) {
         var path = new ArrayList<NamNode>();
         var current = getNode(nodeId);

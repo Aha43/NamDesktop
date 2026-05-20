@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -34,6 +35,20 @@ class JsonWorkspaceRepositoryTest {
         assertEquals(original.getInboxNodeId(),       loaded.getInboxNodeId());
         assertEquals(original.getProjectsNodeId(),    loaded.getProjectsNodeId());
         assertEquals(original.getNextActionsNodeId(), loaded.getNextActionsNodeId());
+    }
+
+    @Test
+    void saveAndLoad_roundTripsTags(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        var node = original.getNode(original.getInboxNodeId()).orElseThrow();
+        node.getTags().add("@computer");
+        node.getTags().add("@home");
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        var loadedNode = loaded.getNode(original.getInboxNodeId()).orElseThrow();
+        assertEquals(List.of("@computer", "@home"), loadedNode.getTags());
     }
 
     @Test

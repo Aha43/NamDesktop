@@ -7,6 +7,8 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class NodeDialog extends JDialog {
@@ -14,6 +16,7 @@ public class NodeDialog extends JDialog {
     private final UUID nodeId;
     private final NamWorkspaceService service;
     private final JTextArea descriptionArea;
+    private final JTextField tagsField;
     private final JButton statusButton;
     private final JToolBar toolbar;
     private final JPanel centre;
@@ -54,6 +57,15 @@ public class NodeDialog extends JDialog {
         descriptionArea.setWrapStyleWord(true);
         var scrollPane = new JScrollPane(descriptionArea);
 
+        tagsField = new JTextField(String.join(", ", node.getTags()));
+        tagsField.setToolTipText("Comma-separated tags, e.g. @computer, @home");
+        var tagsLabel = new JLabel("Tags:");
+        tagsLabel.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+        var tagsRow = new JPanel(new BorderLayout());
+        tagsRow.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        tagsRow.add(tagsLabel,  BorderLayout.WEST);
+        tagsRow.add(tagsField,  BorderLayout.CENTER);
+
         var saveButton   = new JButton("Save");
         var cancelButton = new JButton("Cancel");
         saveButton.addActionListener(e -> save());
@@ -66,6 +78,7 @@ public class NodeDialog extends JDialog {
         centre = new JPanel(new BorderLayout());
         centre.add(toolbar,    BorderLayout.NORTH);
         centre.add(scrollPane, BorderLayout.CENTER);
+        centre.add(tagsRow,    BorderLayout.SOUTH);
 
         setLayout(new BorderLayout());
         add(titleLabel, BorderLayout.NORTH);
@@ -121,12 +134,22 @@ public class NodeDialog extends JDialog {
     private void save() {
         try {
             service.updateDescription(nodeId, descriptionArea.getText());
+            service.updateTags(nodeId, parseTags(tagsField.getText()));
             notifyChanged();
             dispose();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private static List<String> parseTags(String text) {
+        var result = new ArrayList<String>();
+        for (var part : text.split(",")) {
+            var tag = part.strip().toLowerCase();
+            if (!tag.isEmpty()) result.add(tag);
+        }
+        return result;
     }
 
     protected void notifyChanged() { onChanged.run(); }
