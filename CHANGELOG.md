@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NamWorkspaceService.convertNextActionToProject()` — moves a next action to the Projects area; refactored shared logic into `convertFromArea()` helper.
+
+### Added
+
 - `NodeDialog` toolbar: Delete button with confirmation dialog; non-leaf nodes show an error instead of deleting.
 - `NodeDialog` toolbar with a Mark done / Mark active toggle button; status persists immediately.
 - `NamWorkspaceService.markActive()` reverses `markDone`, setting status back to ACTIVE.
