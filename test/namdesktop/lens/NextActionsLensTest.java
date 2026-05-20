@@ -37,6 +37,7 @@ class NextActionsLensTest {
         assertEquals("Call dentist", rows.get(0).title());
         assertEquals(NodeStatus.NEXT, rows.get(0).status());
         assertEquals(node.getId(),    rows.get(0).id());
+        assertNull(rows.get(0).parentTitle());
     }
 
     @Test
@@ -70,6 +71,18 @@ class NextActionsLensTest {
         var rows = lens.items(workspace);
         assertEquals(1, rows.size());
         assertEquals("Write report", rows.get(0).title());
+        assertEquals("My Project",   rows.get(0).parentTitle());
+    }
+
+    @Test
+    void items_parentTitleIsNullForStandaloneAction() {
+        var actionNode = new NamNode(UUID.randomUUID(), "Buy milk");
+        actionNode.setStatus(NodeStatus.NEXT);
+        workspace.getNodes().put(actionNode.getId(), actionNode);
+
+        var rows = lens.items(workspace);
+        assertEquals(1, rows.size());
+        assertNull(rows.get(0).parentTitle());
     }
 
     @Test

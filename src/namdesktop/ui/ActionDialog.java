@@ -6,7 +6,9 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class ActionDialog extends NodeDialog {
 
@@ -30,6 +32,39 @@ public final class ActionDialog extends NodeDialog {
             backlogButton.addActionListener(e -> moveToBacklog(nodeId, service));
             addToolbarButton(backlogButton);
         }
+
+        var structural = structuralIds(workspace);
+        workspace.getParent(nodeId)
+                .filter(p -> !structural.contains(p.getId()))
+                .ifPresent(projectNode -> addContextRow(parent, nodeId, projectNode.getId(), projectNode.getTitle(), workspace, service, onChanged));
+    }
+
+    private void addContextRow(Window parent, UUID actionId, UUID projectId, String projectTitle,
+                               NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
+        var path = workspace.buildPath(projectId);
+        var breadcrumb = path.stream().skip(1).map(n -> n.getTitle()).collect(Collectors.joining(" > "));
+
+        var label = new JLabel("Project: " + projectTitle);
+        label.setToolTipText(breadcrumb);
+
+        var openButton = new JButton("Open project");
+        openButton.addActionListener(e -> {
+            dispose();
+            new ProjectDialog(parent, projectId, workspace, service, onChanged, actionId).setVisible(true);
+        });
+
+        var row = new JPanel(new BorderLayout(8, 0));
+        row.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+        row.add(label,      BorderLayout.CENTER);
+        row.add(openButton, BorderLayout.EAST);
+
+        addBelowDescription(row);
+    }
+
+    private static Set<UUID> structuralIds(NamWorkspace workspace) {
+        return Set.of(workspace.getRootNodeId(), workspace.getInboxNodeId(),
+                workspace.getProjectsNodeId(), workspace.getNextActionsNodeId())
+                .stream().filter(id -> id != null).collect(Collectors.toSet());
     }
 
     private void makeProject(UUID nodeId, NamWorkspaceService service) {

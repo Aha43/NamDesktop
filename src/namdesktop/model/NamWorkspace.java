@@ -1,5 +1,6 @@
 package namdesktop.model;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,5 +69,21 @@ public final class NamWorkspace {
                 .map(nodes::get)
                 .filter(Objects::nonNull)
                 .toList();
+    }
+
+    public Optional<NamNode> getParent(UUID childId) {
+        return nodes.values().stream()
+                .filter(n -> n.getChildIds().contains(childId))
+                .findFirst();
+    }
+
+    public List<NamNode> buildPath(UUID nodeId) {
+        var path = new ArrayList<NamNode>();
+        var current = getNode(nodeId);
+        while (current.isPresent()) {
+            path.add(0, current.get());
+            current = getParent(current.get().getId());
+        }
+        return List.copyOf(path);
     }
 }

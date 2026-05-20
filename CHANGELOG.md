@@ -6,6 +6,16 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `ProjectDialog` "Add action" button — creates a child action directly under the project and refreshes the list immediately.
+- `ProjectDialog` accepts an optional `initialSelection` UUID — scrolls to and selects that action row on open.
+- `ActionDialog` context row — when an action belongs to a project, shows a "Project: [name]" label (tooltip shows breadcrumb path excluding root, e.g. `Projects > My Project`) and an "Open project" button that closes the action dialog and opens `ProjectDialog` with the action pre-selected. Closes #54.
+- `NamWorkspace.getParent(UUID)` — finds the parent node of any child by scanning childId lists.
+- `NamWorkspace.buildPath(UUID)` — returns the ordered list of nodes from root to the given node; used for breadcrumb display. Closes #55.
+- "Project" column in Next Actions and Backlog tables — shows the parent node title for actions that belong to a project; blank for standalone actions. Closes #52.
+- `ProjectDialog` action list upgraded from `JList<String>` to a two-column `JTable` (Title, Status); DONE rows rendered in grey matching the style of other panels. Closes #53.
+
 ### Fixed
 
 - Parent panel now refreshes immediately after any dialog mutation (mark done/next, delete, move to backlog, make project, save description) — no longer requires navigating away and back.
