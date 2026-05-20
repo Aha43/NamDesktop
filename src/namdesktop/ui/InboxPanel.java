@@ -4,24 +4,31 @@ import namdesktop.lens.InboxItemRow;
 import namdesktop.lens.InboxLens;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.List;
 
 public final class InboxPanel extends JPanel {
 
     private final NamWorkspace workspace;
+    private final NamWorkspaceService service;
     private final InboxTableModel tableModel;
+    private JTable table;
 
-    public InboxPanel(NamWorkspace workspace) {
+    public InboxPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
         this.workspace  = workspace;
+        this.service    = service;
         this.tableModel = new InboxTableModel();
 
-        JTable table = new JTable(tableModel) {
+        table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
@@ -32,12 +39,100 @@ public final class InboxPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
+            @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
+        });
 
+        var toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        var addButton = new JButton("Add item");
+        addButton.addActionListener(e -> addItem());
+        toolbar.add(addButton);
+
+        add(toolbar, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     public void refresh() {
         tableModel.setRows(new InboxLens().items(workspace));
+    }
+
+    private void showMenu(MouseEvent e) {
+        var row = table.rowAtPoint(e.getPoint());
+        if (row < 0) return;
+        table.setRowSelectionInterval(row, row);
+
+        var selected = tableModel.getRow(row);
+        var renameItem   = new JMenuItem("Rename");
+        var markDoneItem = new JMenuItem("Mark done");
+        var deleteItem   = new JMenuItem("Delete");
+
+        markDoneItem.setEnabled(selected.status() != NodeStatus.DONE);
+
+        renameItem.addActionListener(ev   -> rename(selected));
+        markDoneItem.addActionListener(ev -> markDone(selected));
+        deleteItem.addActionListener(ev   -> delete(selected));
+
+        var menu = new JPopupMenu();
+        menu.add(renameItem);
+        menu.add(markDoneItem);
+        menu.addSeparator();
+        menu.add(deleteItem);
+        menu.show(table, e.getX(), e.getY());
+    }
+
+    private void addItem() {
+        var title = JOptionPane.showInputDialog(
+                parent(), "Enter item title:", "Add Item", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.addInboxItem(title.strip());
+            refresh();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private void rename(InboxItemRow row) {
+        var title = (String) JOptionPane.showInputDialog(
+                parent(), "Enter new title:", "Rename",
+                JOptionPane.PLAIN_MESSAGE, null, null, row.title());
+        if (title == null || title.isBlank()) return;
+        try {
+            service.renameNode(row.id(), title.strip());
+            refresh();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private void markDone(InboxItemRow row) {
+        try {
+            service.markDone(row.id());
+            refresh();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private void delete(InboxItemRow row) {
+        try {
+            service.deleteLeaf(row.id());
+            refresh();
+        } catch (IllegalStateException e) {
+            showError("This item has sub-items and cannot be deleted directly.");
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private Window parent() {
+        return SwingUtilities.getWindowAncestor(this);
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(parent(), message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private static final class InboxTableModel extends AbstractTableModel {

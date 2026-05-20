@@ -23,7 +23,7 @@ public final class MainFrame extends JFrame {
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
         this.contentArea = new ContentArea();
         this.treePanel   = new TreePanel(workspace, service);
-        this.inboxPanel  = new InboxPanel(workspace);
+        this.inboxPanel  = new InboxPanel(workspace, service);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
