@@ -2,15 +2,20 @@ APP_NAME   := NamDesktop
 MAIN_CLASS := namdesktop.app.NamDesktopMain
 MAIN_JAR   := $(APP_NAME).jar
 
-SRC_DIR     := src
-LIB_DIR     := lib
-BUILD_DIR   := build
-CLASSES_DIR := $(BUILD_DIR)/classes
-APP_DIR     := $(BUILD_DIR)/app
+SRC_DIR      := src
+LIB_DIR      := lib
+TEST_LIB_DIR := lib/test
+BUILD_DIR    := build
+CLASSES_DIR  := $(BUILD_DIR)/classes
+TEST_CLASSES := $(BUILD_DIR)/test-classes
+APP_DIR      := $(BUILD_DIR)/app
 
-SOURCES := $(shell find $(SRC_DIR) -name "*.java")
+SOURCES      := $(shell find $(SRC_DIR) -name "*.java")
+TEST_SOURCES := $(shell find test -name "*.java" 2>/dev/null)
 
-.PHONY: clean classes jar app run all
+JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
+
+.PHONY: clean classes jar app run all test
 
 all: app
 
@@ -43,3 +48,14 @@ run: app
 	java \
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
 		$(MAIN_CLASS)
+
+test: classes
+	rm -rf $(TEST_CLASSES)
+	mkdir -p $(TEST_CLASSES)
+	javac \
+		-cp "$(LIB_DIR)/*:$(JUNIT_JAR):$(CLASSES_DIR)" \
+		-d $(TEST_CLASSES) \
+		$(TEST_SOURCES)
+	java -jar $(JUNIT_JAR) execute \
+		--class-path "$(CLASSES_DIR):$(TEST_CLASSES):$(LIB_DIR)/*" \
+		--scan-class-path "$(TEST_CLASSES)"
