@@ -9,12 +9,13 @@ import java.awt.*;
 import java.io.IOException;
 import java.util.UUID;
 
-public final class NodeDialog extends JDialog {
+public class NodeDialog extends JDialog {
 
     private final UUID nodeId;
     private final NamWorkspaceService service;
     private final JTextArea descriptionArea;
     private final JButton statusButton;
+    private final JToolBar toolbar;
     private NodeStatus currentStatus;
 
     public NodeDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
@@ -35,7 +36,7 @@ public final class NodeDialog extends JDialog {
         var deleteButton = new JButton("Delete");
         deleteButton.addActionListener(e -> delete(node.getTitle()));
 
-        var toolbar = new JToolBar();
+        toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(statusButton);
         toolbar.addSeparator();
@@ -115,5 +116,10 @@ public final class NodeDialog extends JDialog {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    protected void addToolbarButton(JButton button) {
+        toolbar.addSeparator();
+        toolbar.add(button);
     }
 }

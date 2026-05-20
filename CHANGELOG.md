@@ -9,6 +9,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - `NamWorkspaceService.convertNextActionToProject()` — moves a next action to the Projects area; refactored shared logic into `convertFromArea()` helper.
+- `ActionDialog extends NodeDialog` — adds a "Make project" toolbar button that promotes the action and closes the dialog; `NextActionsPanel` now opens `ActionDialog` on double-click.
+- `NodeDialog.addToolbarButton(JButton)` — protected hook for subclasses to append buttons to the toolbar.
 
 ### Added
 
