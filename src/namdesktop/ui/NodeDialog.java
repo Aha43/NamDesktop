@@ -16,6 +16,7 @@ public class NodeDialog extends JDialog {
     private final JTextArea descriptionArea;
     private final JButton statusButton;
     private final JToolBar toolbar;
+    private final JPanel centre;
     private NodeStatus currentStatus;
 
     public NodeDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
@@ -56,7 +57,7 @@ public class NodeDialog extends JDialog {
         footer.add(cancelButton);
         footer.add(saveButton);
 
-        var centre = new JPanel(new BorderLayout());
+        centre = new JPanel(new BorderLayout());
         centre.add(toolbar,    BorderLayout.NORTH);
         centre.add(scrollPane, BorderLayout.CENTER);
 
@@ -121,5 +122,9 @@ public class NodeDialog extends JDialog {
     protected void addToolbarButton(JButton button) {
         toolbar.addSeparator();
         toolbar.add(button);
+    }
+
+    protected void addBelowDescription(JComponent component) {
+        centre.add(component, BorderLayout.SOUTH);
     }
 }

@@ -11,11 +11,17 @@ import java.util.UUID;
 public final class ActionDialog extends NodeDialog {
 
     public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
+        this(parent, nodeId, workspace, service, true);
+    }
+
+    public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, boolean showMakeProject) {
         super(parent, nodeId, workspace, service);
 
-        var makeProjectButton = new JButton("Make project");
-        makeProjectButton.addActionListener(e -> makeProject(nodeId, service));
-        addToolbarButton(makeProjectButton);
+        if (showMakeProject) {
+            var makeProjectButton = new JButton("Make project");
+            makeProjectButton.addActionListener(e -> makeProject(nodeId, service));
+            addToolbarButton(makeProjectButton);
+        }
     }
 
     private void makeProject(UUID nodeId, NamWorkspaceService service) {
