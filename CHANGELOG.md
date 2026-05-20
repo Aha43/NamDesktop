@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Menu bar with **File → Exit** and a top-level toolbar **Exit** button; placeholders for future menu/toolbar items.
+
 ### Changed
 
 - Switched from `FlatLightLaf` to `FlatDarkLaf` — app now launches with the dark theme.

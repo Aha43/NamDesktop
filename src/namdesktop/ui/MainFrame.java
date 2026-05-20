@@ -37,6 +37,21 @@ public final class MainFrame extends JFrame {
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.0);
 
+        var toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        var exitButton = new JButton("Exit");
+        exitButton.addActionListener(e -> System.exit(0));
+        toolbar.add(exitButton);
+
+        var fileMenu = new JMenu("File");
+        var exitItem = new JMenuItem("Exit");
+        exitItem.addActionListener(e -> System.exit(0));
+        fileMenu.add(exitItem);
+        var menuBar = new JMenuBar();
+        menuBar.add(fileMenu);
+
+        setJMenuBar(menuBar);
+        add(toolbar,   BorderLayout.NORTH);
         add(splitPane, BorderLayout.CENTER);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
