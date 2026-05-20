@@ -3,7 +3,7 @@
 > This document describes the current implementation state, not the final architecture.
 > Update it at the end of each sprint so design discussions stay grounded.
 
-Last updated: 2026-05-20 (after sprints: #58 convert project→action, #60 tags, #61 context lens)
+Last updated: 2026-05-20 (after sprints: #63 tag autocomplete, #64 tag management, #66–#70 tag columns/polish/registry)
 
 ---
 
@@ -38,16 +38,17 @@ JsonWorkspaceRepository         JSON persistence (~/.namdesktop/workspace.json)
 - `@JsonAlias("ACTIVE")` on `NEXT` for backward compatibility with old saves
 - New nodes default to `BACKLOG`; promotion to `NEXT` is explicit
 
-**Tags** — plain strings, normalised to lowercase. Convention: `@context` for GTD contexts (`@computer`, `@home`, `@errands`), plain words for topics (`astronomy`, `family`). Not enforced by model.
+**Tags** — plain strings, normalised to lowercase. Convention: `@context` for GTD contexts (`@computer`, `@home`, `@errands`), plain words for topics. Not enforced by model.
 
 **NamWorkspace** — `LinkedHashMap<UUID, NamNode> nodes` (insertion-order preserved)
 Well-known UUIDs: `rootNodeId`, `inboxNodeId`, `projectsNodeId`, `nextActionsNodeId`
+Tag registry: `List<String> registeredTags` — tags created upfront before any node uses them; persisted in `workspace.json`
 
 Key methods:
 - `getNode(UUID)`, `getChildren(UUID)`, `getInboxItems()`
 - `getParent(UUID)` — scans childId lists to find parent
 - `buildPath(UUID) → List<NamNode>` — ordered path from root to node (breadcrumbs)
-- `allTags() → List<String>` — sorted, deduplicated union of all tags across all nodes
+- `allTags() → List<String>` — sorted, deduplicated union of `registeredTags` + all node tags
 
 `createDefault()` creates: root("NAM") → [Inbox, Projects, Actions]
 
@@ -68,10 +69,13 @@ Key methods:
 | `convertInboxItemToNextAction` | Moves to Actions area + sets NEXT |
 | `convertInboxItemToProject` | Moves to Projects area |
 | `convertNextActionToProject` | Moves from Actions to Projects |
-| `convertProjectToAction` | Demotes leaf project back to action; top-level → moves to Actions area + NEXT; sub-project → stays in place + NEXT; throws if has children |
-| `addTag(UUID, String)` | Normalises + deduplicates; saves only if changed |
-| `removeTag(UUID, String)` | No-op if absent; saves only if changed |
-| `updateTags(UUID, List<String>)` | Bulk replace; used by NodeDialog on Save |
+| `convertProjectToAction` | Demotes leaf project to action; top-level → moves to Actions area + NEXT; sub-project → stays in place + NEXT; throws if has children |
+| `registerTag(String)` | Adds tag to registry (normalised, deduped); saves only if new |
+| `addTag(UUID, String)` | Adds tag to node (normalised, deduped); saves only if changed |
+| `removeTag(UUID, String)` | Removes tag from node; no-op if absent |
+| `updateTags(UUID, List<String>)` | Bulk replace node tags; used by NodeDialog on Save |
+| `renameTag(String, String)` | Renames tag across all nodes; deduplicates if target already present; saves once |
+| `deleteTag(String)` | Removes tag from registry and all nodes; saves once if anything changed |
 
 ---
 
@@ -79,13 +83,13 @@ Key methods:
 
 Stateless, return immutable view-model records. Structural nodes always excluded.
 
-| Lens | Record | Filter |
+| Lens | Record fields | Filter |
 |---|---|---|
-| `InboxLens` | `InboxItemRow(id, title, status)` | children of inboxNodeId |
-| `ProjectsLens` | `ProjectItemRow(id, title, status)` | children of projectsNodeId |
-| `NextActionsLens` | `NextActionItemRow(id, title, status, parentTitle)` | `status == NEXT` |
-| `BacklogLens` | `BacklogItemRow(id, title, status, parentTitle)` | `status == BACKLOG` |
-| `ContextLens` | `ContextItemRow(id, title, status, parentTitle, tags)` | `status == NEXT` + all required tags present (AND) |
+| `InboxLens` | `id, title, status` | children of inboxNodeId |
+| `ProjectsLens` | `id, title, status, tags` | children of projectsNodeId |
+| `NextActionsLens` | `id, title, status, parentTitle, tags` | `status == NEXT` |
+| `BacklogLens` | `id, title, status, parentTitle, tags` | `status == BACKLOG` |
+| `ContextLens` | `id, title, status, parentTitle, tags` | `status == NEXT` + all required tags present (AND) |
 
 `parentTitle` — non-null when node is a child of a non-structural parent (i.e. a project).
 
@@ -98,38 +102,42 @@ Stateless, return immutable view-model records. Structural nodes always excluded
 
 ## UI (`namdesktop.ui`)
 
-**MainFrame** — left `NavigationPanel` + swappable `ContentArea` + `JMenuBar` (File → Exit)
+**MainFrame** — left `NavigationPanel` + swappable `ContentArea` + `JMenuBar` (File → Manage Tags… · Exit)
 
-Nav entries: Inbox · Projects · Next Actions · **Context** · Backlog · Raw Tree
+Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Raw Tree
 
-**Panels** (each has `refresh()` passed as `Runnable onChanged` to dialogs):
+**Panels** (each has `refresh()`):
 
-| Panel | Columns / Notes |
+| Panel | Columns |
 |---|---|
 | `InboxPanel` | Title, Status — right-click: add/rename/mark done/delete/process |
-| `ProjectsPanel` | Title, Status |
-| `NextActionsPanel` | Title, Project, Status |
-| `ContextPanel` | Wrapping checkbox tag selector (AND filter) + table: Title, Project, Tags |
-| `BacklogPanel` | Title, Project, Status |
+| `ProjectsPanel` | Title, Tags, Status |
+| `NextActionsPanel` | Title, Project, Tags, Status |
+| `ContextPanel` | Tag checkbox selector (AND, with match count + Clear button) + table: Title, Project, Tags |
+| `BacklogPanel` | Title, Project, Tags, Status |
 | `TreePanel` | Raw node tree |
 
 **Dialogs** (all `APPLICATION_MODAL`):
 
-`NodeDialog` (base) — title, toolbar (status toggle + delete), description textarea, **tags field** (comma-separated, saved with Save), Save/Cancel
+`NodeDialog` (base) — title, toolbar (status toggle + delete), description textarea, `TagsField` (autocomplete, saved with Save button), Save/Cancel
 - `Runnable onChanged` — fired on every mutation before dispose
-- Protected extension hooks: `addToolbarButton(JButton)`, `addBelowDescription(JComponent)`
+- Layout: toolbar → [description + tags] inner panel → subclass content (SOUTH) via `addBelowDescription`
+- Protected hooks: `addToolbarButton(JButton)`, `addBelowDescription(JComponent)`
+
+`TagsField extends JTextField` — non-focus-stealing popup; suggests from `allTags()` filtering by current token (substring, case-insensitive); excludes already-present tags; arrow/Enter/Tab/Escape keyboard nav
 
 `ActionDialog extends NodeDialog`
 - `showMakeProject=true` → "Make project" + "Move to backlog" toolbar buttons
-- If action has a non-structural parent → context row below description:
-  - Label "Project: \<name\>" with breadcrumb tooltip (excl. root, e.g. `Projects > My Project`)
-  - "Open project" button → closes dialog, opens `ProjectDialog` with action pre-selected
+- If action has a non-structural parent → context row: label "Project: \<name\>" (breadcrumb tooltip excl. root) + "Open project" button
 
 `ProjectDialog extends NodeDialog`
-- Child action list: `JTable` (Title, Status), DONE rows grey
-- Toolbar: "Convert to action" button (blocked with error if project has children) + "Add action" button
-- Optional `initialSelection UUID` → scrolls to and selects that row on open
-- Double-click child → `ActionDialog(showMakeProject=false)`
+- Child list: `JTable` (Title, Tags, Status), DONE rows grey
+- Toolbar: "Convert to action" + "Add action"
+- Optional `initialSelection UUID` → scrolls to and selects row on open
+
+`TagManagementDialog` — modal (File → Manage Tags…)
+- Table: Tag, Used by (count)
+- Toolbar: "New tag…" (adds to registry), "Rename…" (across all nodes), "Delete" (from registry + all nodes; gentler wording when count == 0)
 
 ---
 
@@ -137,8 +145,8 @@ Nav entries: Inbox · Projects · Next Actions · **Context** · Backlog · Raw 
 
 | # | Area | Notes |
 |---|---|---|
-| #39 | Sub-project support | "Make project" disabled when opening action from ProjectDialog; needs classification decisions |
-| #57 | Dialog stacking UX | Navigating action↔project stacks modals unboundedly; cycle case is worst offender |
+| #39 | Sub-project support | "Make project" disabled when opening action from ProjectDialog |
+| #57 | Dialog stacking UX | Navigating action↔project stacks modals unboundedly |
 
 ---
 
@@ -150,8 +158,9 @@ Nav entries: Inbox · Projects · Next Actions · **Context** · Backlog · Raw 
 - A node with children = implicitly a project (no explicit flag needed)
 - Structural node exclusion invariant
 - Lens architecture as the UI/domain boundary
-- Tags as plain strings on NamNode; `@context` convention for GTD contexts
+- Tags as plain strings; `@context` convention; registry for upfront tag creation
 - Context lens as the primary "what can I do now?" surface
+- Tag autocomplete, management (rename/delete), and columns throughout
 
 **Still open:**
 - Sub-project classification rules (#39)
