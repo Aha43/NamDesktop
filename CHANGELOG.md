@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Double-clicking a project opens `NodeDialog` for that node; description persists across restarts.
 - Double-clicking a next action opens `NodeDialog` for that node; description is saved on confirm and persists across restarts.
 - `NodeDialog`: modal dialog showing node title and an editable description text area with Save/Cancel; reusable for actions and projects.
 - `description` field on `NamNode` (nullable String, serialised automatically by Jackson).
