@@ -22,7 +22,7 @@ public final class NextActionsLens {
                             .filter(p -> !structural.contains(p.getId()))
                             .orElse(null);
                     return new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus(),
-                            parent != null ? parent.getTitle() : null);
+                            parent != null ? parent.getTitle() : null, List.copyOf(n.getTags()));
                 })
                 .toList();
     }

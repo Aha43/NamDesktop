@@ -8,6 +8,16 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Tags column added to Next Actions, Backlog, and Projects panels, and to the ProjectDialog child action list. Closes #66, #69.
+- Match count label and Clear button added to ContextPanel filter header. Closes #67, #68.
+- `registeredTags` field on `NamWorkspace` — persists tags created up-front before they are applied to any node; `allTags()` merges registered tags with node tags.
+- `NamWorkspaceService.registerTag(String)` — adds a tag to the registry (normalised, deduped); saves only if new.
+- "New tag…" button in TagManagementDialog — creates a tag in the registry so it appears in autocomplete before any node uses it. Closes #70.
+
+### Fixed
+
+- `deleteTag` now also removes from `registeredTags`, so unused (registry-only) tags can actually be deleted. Confirmation wording when count is 0 changed to "Remove from tag list?" rather than the destructive node-removal wording.
+
 - `NamWorkspaceService.renameTag(String, String)` — renames a tag across all nodes, deduplicates if target already present, saves once only if any node was changed.
 - `NamWorkspaceService.deleteTag(String)` — removes a tag from all nodes, saves once only if any node was changed.
 - `TagManagementDialog` — modal dialog (File → Manage Tags…) showing all tags with usage counts; Rename… and Delete buttons with confirmation. Closes #64.

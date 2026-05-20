@@ -28,13 +28,17 @@ public final class TagManagementDialog extends JDialog {
         table.setFillsViewportHeight(true);
         table.getColumnModel().getColumn(1).setMaxWidth(80);
 
+        var newButton    = new JButton("New tag…");
         var renameButton = new JButton("Rename…");
         var deleteButton = new JButton("Delete");
+        newButton.addActionListener(e -> newTag());
         renameButton.addActionListener(e -> renameSelected());
         deleteButton.addActionListener(e -> deleteSelected());
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
+        toolbar.add(newButton);
+        toolbar.addSeparator();
         toolbar.add(renameButton);
         toolbar.addSeparator();
         toolbar.add(deleteButton);
@@ -52,6 +56,17 @@ public final class TagManagementDialog extends JDialog {
         setSize(400, 350);
         setLocationRelativeTo(parent);
         refresh();
+    }
+
+    private void newTag() {
+        var tag = JOptionPane.showInputDialog(this, "New tag name:", "New tag", JOptionPane.PLAIN_MESSAGE);
+        if (tag == null || tag.isBlank()) return;
+        try {
+            service.registerTag(tag.strip());
+            refresh();
+        } catch (IOException e) {
+            error("Failed to save: " + e.getMessage());
+        }
     }
 
     private void renameSelected() {
@@ -75,8 +90,10 @@ public final class TagManagementDialog extends JDialog {
         if (row < 0) { warn("Select a tag to delete."); return; }
         var tag = tableModel.getTag(row);
         var count = tableModel.getCount(row);
-        var confirm = JOptionPane.showConfirmDialog(this,
-                "Delete \"" + tag + "\" from " + count + " node(s)? This cannot be undone.",
+        var message = count == 0
+                ? "Remove \"" + tag + "\" from the tag list?"
+                : "Delete \"" + tag + "\" from " + count + " node(s)? This cannot be undone.";
+        var confirm = JOptionPane.showConfirmDialog(this, message,
                 "Delete tag", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.YES_OPTION) return;
         try {

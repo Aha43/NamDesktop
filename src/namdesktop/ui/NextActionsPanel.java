@@ -58,7 +58,7 @@ public final class NextActionsPanel extends JPanel {
 
     private static final class NextActionsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Project", "Status"};
+        private static final String[] COLUMNS = {"Title", "Project", "Tags", "Status"};
         private List<NextActionItemRow> rows = List.of();
 
         void setRows(List<NextActionItemRow> rows) {
@@ -78,7 +78,8 @@ public final class NextActionsPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
-                case 2 -> r.status();
+                case 2 -> String.join(", ", r.tags());
+                case 3 -> r.status();
                 default -> null;
             };
         }

@@ -80,6 +80,15 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void registerTag(String tag) throws IOException {
+        var normalised = tag.strip().toLowerCase();
+        var registered = workspace.getRegisteredTags();
+        if (!registered.contains(normalised)) {
+            registered.add(normalised);
+            repository.save(path, workspace);
+        }
+    }
+
     public void addTag(UUID nodeId, String tag) throws IOException {
         var normalised = tag.strip().toLowerCase();
         var tags = require(nodeId).getTags();
@@ -110,7 +119,7 @@ public final class NamWorkspaceService {
     }
 
     public void deleteTag(String tag) throws IOException {
-        var changed = false;
+        var changed = workspace.getRegisteredTags().remove(tag);
         for (var node : workspace.getNodes().values()) {
             if (node.getTags().remove(tag)) changed = true;
         }

@@ -468,6 +468,15 @@ class NamWorkspaceServiceTest {
     }
 
     @Test
+    void deleteTag_removesRegisteredTagWithNoNodeUsage() throws IOException {
+        service.registerTag("@unused");
+        repository.saveCount = 0;
+        service.deleteTag("@unused");
+        assertFalse(workspace.getRegisteredTags().contains("@unused"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
     void deleteTag_isNoOpWhenTagNotInUse() throws IOException {
         service.deleteTag("@nonexistent");
         assertEquals(0, repository.saveCount);
