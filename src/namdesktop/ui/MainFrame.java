@@ -15,6 +15,7 @@ public final class MainFrame extends JFrame {
             new NavigationEntry("next-actions", "Next Actions"),
             new NavigationEntry("context",      "Context"),
             new NavigationEntry("backlog",      "Backlog"),
+            new NavigationEntry("search",       "Search"),
             new NavigationEntry("raw-tree",     "Raw Tree")
     );
 
@@ -28,6 +29,7 @@ public final class MainFrame extends JFrame {
     private final NextActionsPanel nextActionsPanel;
     private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
+    private final SearchPanel      searchPanel;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
         this.workspace        = workspace;
@@ -39,6 +41,7 @@ public final class MainFrame extends JFrame {
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
         this.backlogPanel     = new BacklogPanel(workspace, service);
+        this.searchPanel      = new SearchPanel(workspace, service);
 
         this.navPanel = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -96,6 +99,7 @@ public final class MainFrame extends JFrame {
             case "next-actions"  -> { contentArea.setContent(nextActionsPanel);  nextActionsPanel.refresh(); }
             case "context"       -> { contentArea.setContent(contextPanel);      contextPanel.refresh(); }
             case "backlog"       -> { contentArea.setContent(backlogPanel);      backlogPanel.refresh(); }
+            case "search"        -> { contentArea.setContent(searchPanel);       searchPanel.refresh(); }
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
