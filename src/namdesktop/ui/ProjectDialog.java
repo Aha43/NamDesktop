@@ -7,6 +7,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.UUID;
 
 public final class ProjectDialog extends NodeDialog {
@@ -43,15 +44,34 @@ public final class ProjectDialog extends NodeDialog {
             }
         });
 
+        var addActionButton = new JButton("Add action");
+        addActionButton.addActionListener(e -> addAction());
+        var actionsToolbar = new JToolBar();
+        actionsToolbar.setFloatable(false);
+        actionsToolbar.add(addActionButton);
+
         var actionsPanel = new JPanel(new BorderLayout());
         actionsPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
         actionsPanel.setPreferredSize(new Dimension(0, 180));
+        actionsPanel.add(actionsToolbar,             BorderLayout.NORTH);
         actionsPanel.add(new JScrollPane(childList), BorderLayout.CENTER);
 
         addBelowDescription(actionsPanel);
         setSize(500, 550);
 
         refreshChildList();
+    }
+
+    private void addAction() {
+        var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.addChild(nodeId, title.strip());
+            refreshChildList();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void refreshChildList() {
