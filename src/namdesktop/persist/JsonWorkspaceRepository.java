@@ -37,7 +37,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setNextActionsNodeId(file.nextActionsNodeId);
         migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
         migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
-        migrate(workspace, "Next Actions", workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
+        migrate(workspace, "Actions",      workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
         return workspace;
     }
 

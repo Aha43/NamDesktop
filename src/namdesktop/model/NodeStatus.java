@@ -1,5 +1,11 @@
 package namdesktop.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 public enum NodeStatus {
-    ACTIVE, DONE, CANCELLED, ARCHIVED
+    @JsonAlias("ACTIVE") NEXT,
+    BACKLOG,
+    DONE,
+    CANCELLED,
+    ARCHIVED
 }

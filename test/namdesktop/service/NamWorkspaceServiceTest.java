@@ -162,22 +162,43 @@ class NamWorkspaceServiceTest {
     // --- markActive ---
 
     @Test
-    void markActive_setsStatusActive() throws IOException {
+    void markNext_setsStatusNext() throws IOException {
         service.markDone(rootId);
-        service.markActive(rootId);
-        assertEquals(NodeStatus.ACTIVE, workspace.getNode(rootId).orElseThrow().getStatus());
+        service.markNext(rootId);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(rootId).orElseThrow().getStatus());
     }
 
     @Test
-    void markActive_savesWorkspace() throws IOException {
-        service.markActive(rootId);
+    void markNext_savesWorkspace() throws IOException {
+        service.markNext(rootId);
         assertEquals(1, repository.saveCount);
     }
 
     @Test
-    void markActive_throwsForUnknownNode() {
+    void markNext_throwsForUnknownNode() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.markActive(UUID.randomUUID()));
+                () -> service.markNext(UUID.randomUUID()));
+    }
+
+    // --- markBacklog ---
+
+    @Test
+    void markBacklog_setsStatusBacklog() throws IOException {
+        service.markNext(rootId);
+        service.markBacklog(rootId);
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(rootId).orElseThrow().getStatus());
+    }
+
+    @Test
+    void markBacklog_savesWorkspace() throws IOException {
+        service.markBacklog(rootId);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void markBacklog_throwsForUnknownNode() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.markBacklog(UUID.randomUUID()));
     }
 
     // --- updateDescription ---
@@ -314,6 +335,13 @@ class NamWorkspaceServiceTest {
     void convertInboxItemToNextAction_throwsForUnknownId() {
         assertThrows(IllegalArgumentException.class,
                 () -> service.convertInboxItemToNextAction(UUID.randomUUID()));
+    }
+
+    @Test
+    void convertInboxItemToNextAction_setsStatusNext() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToNextAction(id);
+        assertEquals(NodeStatus.NEXT, workspace.getNode(id).orElseThrow().getStatus());
     }
 
     @Test

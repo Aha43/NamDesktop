@@ -64,8 +64,13 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
-    public void markActive(UUID nodeId) throws IOException {
-        require(nodeId).setStatus(NodeStatus.ACTIVE);
+    public void markNext(UUID nodeId) throws IOException {
+        require(nodeId).setStatus(NodeStatus.NEXT);
+        repository.save(path, workspace);
+    }
+
+    public void markBacklog(UUID nodeId) throws IOException {
+        require(nodeId).setStatus(NodeStatus.BACKLOG);
         repository.save(path, workspace);
     }
 
@@ -74,7 +79,17 @@ public final class NamWorkspaceService {
     }
 
     public void convertInboxItemToNextAction(UUID id) throws IOException {
-        convertFromArea(id, workspace.getInboxNodeId(), workspace.getNextActionsNodeId(), "inbox");
+        require(id);
+        var inbox = workspace.getNode(workspace.getInboxNodeId())
+                .orElseThrow(() -> new IllegalStateException("Inbox area node not found"));
+        if (!inbox.getChildIds().remove(id)) {
+            throw new IllegalArgumentException("Node is not an inbox item: " + id);
+        }
+        workspace.getNode(workspace.getNextActionsNodeId())
+                .orElseThrow(() -> new IllegalStateException("Actions area node not found"))
+                .getChildIds().add(id);
+        require(id).setStatus(NodeStatus.NEXT);
+        repository.save(path, workspace);
     }
 
     public void convertNextActionToProject(UUID id) throws IOException {

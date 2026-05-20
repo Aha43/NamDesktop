@@ -22,7 +22,7 @@ public final class NamWorkspace {
         var root         = new NamNode(UUID.randomUUID(), "NAM");
         var inbox        = new NamNode(UUID.randomUUID(), "Inbox");
         var projects     = new NamNode(UUID.randomUUID(), "Projects");
-        var nextActions  = new NamNode(UUID.randomUUID(), "Next Actions");
+        var nextActions  = new NamNode(UUID.randomUUID(), "Actions");
         workspace.nodes.put(root.getId(),        root);
         workspace.nodes.put(inbox.getId(),       inbox);
         workspace.nodes.put(projects.getId(),    projects);

@@ -20,7 +20,7 @@ class NamWorkspaceTest {
         var ws = NamWorkspace.createDefault();
         var root = ws.getNode(ws.getRootNodeId()).orElseThrow();
         assertEquals("NAM", root.getTitle());
-        assertEquals(NodeStatus.ACTIVE, root.getStatus());
+        assertEquals(NodeStatus.BACKLOG, root.getStatus());
     }
 
     @Test
@@ -115,7 +115,7 @@ class NamWorkspaceTest {
         var ws = NamWorkspace.createDefault();
         assertNotNull(ws.getNextActionsNodeId());
         var nextActions = ws.getNode(ws.getNextActionsNodeId()).orElseThrow();
-        assertEquals("Next Actions", nextActions.getTitle());
+        assertEquals("Actions", nextActions.getTitle());
         assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }

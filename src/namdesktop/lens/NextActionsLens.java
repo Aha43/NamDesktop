@@ -1,16 +1,32 @@
 package namdesktop.lens;
 
+import namdesktop.model.NodeStatus;
 import namdesktop.model.NamWorkspace;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class NextActionsLens {
 
     public List<NextActionItemRow> items(NamWorkspace workspace) {
-        var nextActionsId = workspace.getNextActionsNodeId();
-        if (nextActionsId == null) return List.of();
-        return workspace.getChildren(nextActionsId).stream()
+        var structural = structuralIds(workspace);
+        return workspace.getNodes().values().stream()
+                .filter(n -> !structural.contains(n.getId()))
+                .filter(n -> n.getStatus() == NodeStatus.NEXT)
                 .map(n -> new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus()))
                 .toList();
+    }
+
+    private Set<UUID> structuralIds(NamWorkspace workspace) {
+        return Stream.of(
+                workspace.getRootNodeId(),
+                workspace.getInboxNodeId(),
+                workspace.getProjectsNodeId(),
+                workspace.getNextActionsNodeId()
+        ).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 }
