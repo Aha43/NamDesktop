@@ -3,7 +3,7 @@
 > This document describes the current implementation state, not the final architecture.
 > Update it at the end of each sprint so design discussions stay grounded.
 
-Last updated: 2026-05-20 (after sprint: project/action UX — #38, #52, #53, #54, #55)
+Last updated: 2026-05-20 (after sprints: #58 convert project→action, #60 tags, #61 context lens)
 
 ---
 
@@ -32,11 +32,13 @@ JsonWorkspaceRepository         JSON persistence (~/.namdesktop/workspace.json)
 
 ## Domain (`namdesktop.model`)
 
-**NamNode** — `UUID id`, `String title`, `String description`, `NodeStatus status`, `List<UUID> childIds`
+**NamNode** — `UUID id`, `String title`, `String description`, `NodeStatus status`, `List<UUID> childIds`, `List<String> tags`
 
 **NodeStatus** — `NEXT | BACKLOG | DONE | CANCELLED | ARCHIVED`
 - `@JsonAlias("ACTIVE")` on `NEXT` for backward compatibility with old saves
 - New nodes default to `BACKLOG`; promotion to `NEXT` is explicit
+
+**Tags** — plain strings, normalised to lowercase. Convention: `@context` for GTD contexts (`@computer`, `@home`, `@errands`), plain words for topics (`astronomy`, `family`). Not enforced by model.
 
 **NamWorkspace** — `LinkedHashMap<UUID, NamNode> nodes` (insertion-order preserved)
 Well-known UUIDs: `rootNodeId`, `inboxNodeId`, `projectsNodeId`, `nextActionsNodeId`
@@ -44,7 +46,8 @@ Well-known UUIDs: `rootNodeId`, `inboxNodeId`, `projectsNodeId`, `nextActionsNod
 Key methods:
 - `getNode(UUID)`, `getChildren(UUID)`, `getInboxItems()`
 - `getParent(UUID)` — scans childId lists to find parent
-- `buildPath(UUID) → List<NamNode>` — ordered path from root to node (used for breadcrumbs)
+- `buildPath(UUID) → List<NamNode>` — ordered path from root to node (breadcrumbs)
+- `allTags() → List<String>` — sorted, deduplicated union of all tags across all nodes
 
 `createDefault()` creates: root("NAM") → [Inbox, Projects, Actions]
 
@@ -65,6 +68,10 @@ Key methods:
 | `convertInboxItemToNextAction` | Moves to Actions area + sets NEXT |
 | `convertInboxItemToProject` | Moves to Projects area |
 | `convertNextActionToProject` | Moves from Actions to Projects |
+| `convertProjectToAction` | Demotes leaf project back to action; top-level → moves to Actions area + NEXT; sub-project → stays in place + NEXT; throws if has children |
+| `addTag(UUID, String)` | Normalises + deduplicates; saves only if changed |
+| `removeTag(UUID, String)` | No-op if absent; saves only if changed |
+| `updateTags(UUID, List<String>)` | Bulk replace; used by NodeDialog on Save |
 
 ---
 
@@ -78,10 +85,14 @@ Stateless, return immutable view-model records. Structural nodes always excluded
 | `ProjectsLens` | `ProjectItemRow(id, title, status)` | children of projectsNodeId |
 | `NextActionsLens` | `NextActionItemRow(id, title, status, parentTitle)` | `status == NEXT` |
 | `BacklogLens` | `BacklogItemRow(id, title, status, parentTitle)` | `status == BACKLOG` |
+| `ContextLens` | `ContextItemRow(id, title, status, parentTitle, tags)` | `status == NEXT` + all required tags present (AND) |
 
-`parentTitle` — non-null when action is a child of a non-structural node (i.e. a project).
+`parentTitle` — non-null when node is a child of a non-structural parent (i.e. a project).
 
-**Key invariant**: `NEXT` status = "is a next action", not structural location. Project children can be `NEXT` without moving out of their project.
+**Key invariants**:
+- `NEXT` status = "is a next action", not structural location
+- A node with children is implicitly a project (drives `convertProjectToAction` block)
+- Structural nodes (root/inbox/projects/actions area) excluded from all lens projections
 
 ---
 
@@ -89,21 +100,22 @@ Stateless, return immutable view-model records. Structural nodes always excluded
 
 **MainFrame** — left `NavigationPanel` + swappable `ContentArea` + `JMenuBar` (File → Exit)
 
-Nav entries: Inbox · Projects · Next Actions · Backlog · Raw Tree
+Nav entries: Inbox · Projects · Next Actions · **Context** · Backlog · Raw Tree
 
 **Panels** (each has `refresh()` passed as `Runnable onChanged` to dialogs):
 
-| Panel | Columns |
+| Panel | Columns / Notes |
 |---|---|
 | `InboxPanel` | Title, Status — right-click: add/rename/mark done/delete/process |
 | `ProjectsPanel` | Title, Status |
 | `NextActionsPanel` | Title, Project, Status |
+| `ContextPanel` | Wrapping checkbox tag selector (AND filter) + table: Title, Project, Tags |
 | `BacklogPanel` | Title, Project, Status |
 | `TreePanel` | Raw node tree |
 
 **Dialogs** (all `APPLICATION_MODAL`):
 
-`NodeDialog` (base) — title, toolbar (status toggle + delete), description textarea, Save/Cancel
+`NodeDialog` (base) — title, toolbar (status toggle + delete), description textarea, **tags field** (comma-separated, saved with Save), Save/Cancel
 - `Runnable onChanged` — fired on every mutation before dispose
 - Protected extension hooks: `addToolbarButton(JButton)`, `addBelowDescription(JComponent)`
 
@@ -115,7 +127,7 @@ Nav entries: Inbox · Projects · Next Actions · Backlog · Raw Tree
 
 `ProjectDialog extends NodeDialog`
 - Child action list: `JTable` (Title, Status), DONE rows grey
-- "Add action" toolbar button
+- Toolbar: "Convert to action" button (blocked with error if project has children) + "Add action" button
 - Optional `initialSelection UUID` → scrolls to and selects that row on open
 - Double-click child → `ActionDialog(showMakeProject=false)`
 
@@ -135,10 +147,16 @@ Nav entries: Inbox · Projects · Next Actions · Backlog · Raw Tree
 **Settled:**
 - Layer structure (model → service → lens → UI → persist)
 - NEXT/BACKLOG as status, not structure
+- A node with children = implicitly a project (no explicit flag needed)
 - Structural node exclusion invariant
 - Lens architecture as the UI/domain boundary
+- Tags as plain strings on NamNode; `@context` convention for GTD contexts
+- Context lens as the primary "what can I do now?" surface
 
 **Still open:**
-- Sub-project classification rules
-- Dialog navigation model (replace vs stack vs non-modal panel)
+- Sub-project classification rules (#39)
+- Dialog navigation model — replace vs stack vs non-modal panel (#57)
+- Saved/named context views (currently stateless filter)
+- OR tag semantics in context lens (currently AND only)
 - "Mission Control" / area-level views (future)
+- View-specific ordering (vision doc §Ordering)
