@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static javax.swing.JOptionPane.*;
+
 public final class ProjectDialog extends NodeDialog {
 
     private final UUID nodeId;
@@ -62,6 +64,10 @@ public final class ProjectDialog extends NodeDialog {
             }
         });
 
+        var convertButton = new JButton("Convert to action");
+        convertButton.addActionListener(e -> convertToAction());
+        addToolbarButton(convertButton);
+
         var addActionButton = new JButton("Add action");
         addActionButton.addActionListener(e -> addAction());
         var actionsToolbar = new JToolBar();
@@ -92,6 +98,19 @@ public final class ProjectDialog extends NodeDialog {
                 actionsTable.scrollRectToVisible(actionsTable.getCellRect(i, 0, true));
                 break;
             }
+        }
+    }
+
+    private void convertToAction() {
+        try {
+            service.convertProjectToAction(nodeId);
+            notifyChanged();
+            dispose();
+        } catch (IllegalStateException e) {
+            showMessageDialog(this, "This project still has actions. Remove them before converting.",
+                    "Cannot convert", ERROR_MESSAGE);
+        } catch (IOException e) {
+            showMessageDialog(this, "Failed to save: " + e.getMessage(), "Error", ERROR_MESSAGE);
         }
     }
 
