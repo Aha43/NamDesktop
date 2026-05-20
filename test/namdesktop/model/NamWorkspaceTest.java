@@ -120,6 +120,49 @@ class NamWorkspaceTest {
                 .getChildIds().contains(ws.getNextActionsNodeId()));
     }
 
+    // --- buildPath ---
+
+    @Test
+    void buildPath_returnsEmptyForUnknownNode() {
+        var ws = NamWorkspace.createDefault();
+        assertTrue(ws.buildPath(UUID.randomUUID()).isEmpty());
+    }
+
+    @Test
+    void buildPath_returnsSingleNodeForRoot() {
+        var ws = NamWorkspace.createDefault();
+        var path = ws.buildPath(ws.getRootNodeId());
+        assertEquals(1, path.size());
+        assertEquals(ws.getRootNodeId(), path.get(0).getId());
+    }
+
+    @Test
+    void buildPath_returnsPathFromRootToDirectChild() {
+        var ws = NamWorkspace.createDefault();
+        var path = ws.buildPath(ws.getInboxNodeId());
+        assertEquals(2, path.size());
+        assertEquals(ws.getRootNodeId(),  path.get(0).getId());
+        assertEquals(ws.getInboxNodeId(), path.get(1).getId());
+    }
+
+    @Test
+    void buildPath_returnsFullPathForDeepNode() {
+        var ws     = NamWorkspace.createDefault();
+        var parent = new NamNode(UUID.randomUUID(), "Parent");
+        var child  = new NamNode(UUID.randomUUID(), "Child");
+        ws.getNodes().put(parent.getId(), parent);
+        ws.getNodes().put(child.getId(),  child);
+        ws.getNode(ws.getProjectsNodeId()).orElseThrow().getChildIds().add(parent.getId());
+        parent.getChildIds().add(child.getId());
+
+        var path = ws.buildPath(child.getId());
+        assertEquals(4, path.size()); // root > Projects > Parent > Child
+        assertEquals("NAM",      path.get(0).getTitle());
+        assertEquals("Projects", path.get(1).getTitle());
+        assertEquals("Parent",   path.get(2).getTitle());
+        assertEquals("Child",    path.get(3).getTitle());
+    }
+
     // --- getParent ---
 
     @Test
