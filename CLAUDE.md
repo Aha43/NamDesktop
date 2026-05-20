@@ -58,6 +58,26 @@ Run `pwsh scripts/download-libs.ps1` to download all of the above from Maven Cen
   `Closes #<number>` in the commit message.
 - **Always run `make run` after every change** — even trivial ones — so the user can test
   before committing. Never skip this step.
+- **Always run `make test` before committing** to confirm existing tests still pass.
+
+### Definition of Done for feature issues
+
+A feature issue is complete when:
+- the feature works (`make run` verified)
+- relevant unit tests are added or updated
+- all existing tests pass (`make test`)
+- no obvious domain invariant is weakened
+
+Use a dedicated test sprint when:
+- a feature touches core model behaviour
+- the implementation changed more than expected
+- new invariants appeared during development
+- edge cases are discovered after review
+- confidence feels lower than the code size suggests
+
+### Testing preference
+
+Prefer small, focused unit tests around domain model, command layer, persistence, and ordering rules before UI tests. Swing UI tests can wait unless behaviour cannot be verified elsewhere.
 
 ## Conventions
 
