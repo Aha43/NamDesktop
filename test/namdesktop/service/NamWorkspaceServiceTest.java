@@ -412,6 +412,67 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- renameTag ---
+
+    @Test
+    void renameTag_updatesAllCarryingNodes() throws IOException {
+        var id1 = service.addChild(rootId, "A");
+        var id2 = service.addChild(rootId, "B");
+        service.addTag(id1, "@old");
+        service.addTag(id2, "@old");
+        repository.saveCount = 0;
+        service.renameTag("@old", "@new");
+        assertTrue(workspace.getNode(id1).orElseThrow().getTags().contains("@new"));
+        assertTrue(workspace.getNode(id2).orElseThrow().getTags().contains("@new"));
+        assertFalse(workspace.getNode(id1).orElseThrow().getTags().contains("@old"));
+    }
+
+    @Test
+    void renameTag_savesOnce() throws IOException {
+        var id = service.addChild(rootId, "A");
+        service.addTag(id, "@old");
+        repository.saveCount = 0;
+        service.renameTag("@old", "@new");
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void renameTag_doesNotSaveWhenNoNodeCarriesTag() throws IOException {
+        service.renameTag("@nonexistent", "@new");
+        assertEquals(0, repository.saveCount);
+    }
+
+    @Test
+    void renameTag_deduplicatesIfTargetAlreadyPresent() throws IOException {
+        var id = service.addChild(rootId, "A");
+        service.addTag(id, "@old");
+        service.addTag(id, "@new");
+        service.renameTag("@old", "@new");
+        assertEquals(1, workspace.getNode(id).orElseThrow().getTags().stream()
+                .filter(t -> t.equals("@new")).count());
+    }
+
+    // --- deleteTag ---
+
+    @Test
+    void deleteTag_removesFromAllCarryingNodes() throws IOException {
+        var id1 = service.addChild(rootId, "A");
+        var id2 = service.addChild(rootId, "B");
+        service.addTag(id1, "@bye");
+        service.addTag(id2, "@bye");
+        repository.saveCount = 0;
+        service.deleteTag("@bye");
+        assertFalse(workspace.getNode(id1).orElseThrow().getTags().contains("@bye"));
+        assertFalse(workspace.getNode(id2).orElseThrow().getTags().contains("@bye"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteTag_isNoOpWhenTagNotInUse() throws IOException {
+        service.deleteTag("@nonexistent");
+        assertEquals(0, repository.saveCount);
+    }
+
     // --- convertProjectToAction ---
 
     @Test

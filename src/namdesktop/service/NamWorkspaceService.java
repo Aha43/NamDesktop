@@ -97,6 +97,26 @@ public final class NamWorkspaceService {
         }
     }
 
+    public void renameTag(String oldTag, String newTag) throws IOException {
+        var changed = false;
+        for (var node : workspace.getNodes().values()) {
+            var tags = node.getTags();
+            if (!tags.contains(oldTag)) continue;
+            tags.remove(oldTag);
+            if (!tags.contains(newTag)) tags.add(newTag);
+            changed = true;
+        }
+        if (changed) repository.save(path, workspace);
+    }
+
+    public void deleteTag(String tag) throws IOException {
+        var changed = false;
+        for (var node : workspace.getNodes().values()) {
+            if (node.getTags().remove(tag)) changed = true;
+        }
+        if (changed) repository.save(path, workspace);
+    }
+
     public void convertInboxItemToProject(UUID id) throws IOException {
         convertFromArea(id, workspace.getInboxNodeId(), workspace.getProjectsNodeId(), "inbox");
     }

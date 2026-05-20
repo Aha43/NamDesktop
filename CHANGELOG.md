@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NamWorkspaceService.renameTag(String, String)` — renames a tag across all nodes, deduplicates if target already present, saves once only if any node was changed.
+- `NamWorkspaceService.deleteTag(String)` — removes a tag from all nodes, saves once only if any node was changed.
+- `TagManagementDialog` — modal dialog (File → Manage Tags…) showing all tags with usage counts; Rename… and Delete buttons with confirmation. Closes #64.
+
 - `TagsField` — custom `JTextField` subclass with autocomplete popup; filters existing tags from `allTags()` by the current token (substring match, case-insensitive), excludes tags already present in the field; keyboard navigation (↑↓ to move, Enter/Tab to select, Escape to dismiss). Closes #63.
 
 ### Fixed
