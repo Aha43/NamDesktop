@@ -10,6 +10,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - JUnit 5 (`junit-platform-console-standalone-1.10.2`) wired into the project; `make test` compiles and runs the test suite.
 - Navigation shell: left nav list (`NavigationEntry`, `NavigationPanel`) and swappable central content area (`ContentArea`) replace the raw split-pane layout.
+- Raw tree demoted to a selectable "Raw Tree" navigation view; app opens on "Inbox" by default.
 - Unit tests for `NamWorkspace` (8 tests covering `createDefault`, `getNode`, and `getChildren`).
 - Unit tests for `NamWorkspaceService` (16 tests covering all commands, save behaviour, and error cases; in-memory repository stub — no filesystem I/O).
 

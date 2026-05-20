@@ -16,14 +16,12 @@ public final class MainFrame extends JFrame {
             new NavigationEntry("raw-tree",     "Raw Tree")
     );
 
-    private final NamWorkspace workspace;
-    private final NamWorkspaceService service;
     private final ContentArea contentArea;
+    private final TreePanel treePanel;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
-        this.workspace = workspace;
-        this.service   = service;
         this.contentArea = new ContentArea();
+        this.treePanel   = new TreePanel(workspace, service);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -36,7 +34,11 @@ public final class MainFrame extends JFrame {
     }
 
     private void onNavSelected(NavigationEntry entry) {
-        contentArea.setContent(placeholder(entry.title()));
+        if ("raw-tree".equals(entry.id())) {
+            contentArea.setContent(treePanel);
+        } else {
+            contentArea.setContent(placeholder(entry.title()));
+        }
     }
 
     private static JPanel placeholder(String label) {
