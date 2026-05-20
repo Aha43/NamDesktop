@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `ActionDialog` "Move to backlog" button — demotes a next action to `BACKLOG` and closes; only shown when opened as a standalone next action (not from `ProjectDialog` or `BacklogPanel`).
 - `BacklogLens` — filters all workspace nodes by `status == BACKLOG`, excluding structural area nodes.
 - `BacklogPanel` — shows all backlog actions; double-clicking opens `ActionDialog`.
 - "Backlog" navigation entry in `MainFrame` between Next Actions and Raw Tree.
