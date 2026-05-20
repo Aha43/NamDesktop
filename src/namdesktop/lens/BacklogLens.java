@@ -1,0 +1,32 @@
+package namdesktop.lens;
+
+import namdesktop.model.NodeStatus;
+import namdesktop.model.NamWorkspace;
+
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public final class BacklogLens {
+
+    public List<BacklogItemRow> items(NamWorkspace workspace) {
+        var structural = structuralIds(workspace);
+        return workspace.getNodes().values().stream()
+                .filter(n -> !structural.contains(n.getId()))
+                .filter(n -> n.getStatus() == NodeStatus.BACKLOG)
+                .map(n -> new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus()))
+                .toList();
+    }
+
+    private Set<UUID> structuralIds(NamWorkspace workspace) {
+        return Stream.of(
+                workspace.getRootNodeId(),
+                workspace.getInboxNodeId(),
+                workspace.getProjectsNodeId(),
+                workspace.getNextActionsNodeId()
+        ).filter(Objects::nonNull).collect(Collectors.toSet());
+    }
+}

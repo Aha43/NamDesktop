@@ -21,6 +21,10 @@ public final class ActionDialog extends NodeDialog {
             var makeProjectButton = new JButton("Make project");
             makeProjectButton.addActionListener(e -> makeProject(nodeId, service));
             addToolbarButton(makeProjectButton);
+
+            var backlogButton = new JButton("Move to backlog");
+            backlogButton.addActionListener(e -> moveToBacklog(nodeId, service));
+            addToolbarButton(backlogButton);
         }
     }
 
@@ -30,6 +34,16 @@ public final class ActionDialog extends NodeDialog {
             dispose();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to convert: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void moveToBacklog(UUID nodeId, NamWorkspaceService service) {
+        try {
+            service.markBacklog(nodeId);
+            dispose();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
