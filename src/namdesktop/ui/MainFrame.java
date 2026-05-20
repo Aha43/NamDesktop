@@ -32,7 +32,7 @@ public final class MainFrame extends JFrame {
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service);
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
-        this.contextPanel     = new ContextPanel(workspace, service);
+        this.contextPanel     = new ContextPanel(workspace, service, () -> {});
         this.backlogPanel     = new BacklogPanel(workspace, service);
 
         var navPanel  = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);

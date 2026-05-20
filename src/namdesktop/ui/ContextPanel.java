@@ -20,26 +20,39 @@ public final class ContextPanel extends JPanel {
 
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
+    private final Runnable onViewCreated;
     private final ContextTableModel tableModel;
     private final JPanel tagSelectorPanel;
     private final List<JCheckBox> tagBoxes = new ArrayList<>();
     private JLabel matchLabel;
+    private JButton saveViewButton;
 
-    public ContextPanel(NamWorkspace workspace, NamWorkspaceService service) {
+    public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated) {
         super(new BorderLayout());
-        this.workspace  = workspace;
-        this.service    = service;
-        this.tableModel = new ContextTableModel();
+        this.workspace      = workspace;
+        this.service        = service;
+        this.onViewCreated  = onViewCreated;
+        this.tableModel     = new ContextTableModel();
 
         matchLabel = new JLabel("0 matches");
+
         var clearButton = new JButton("Clear");
         clearButton.addActionListener(e -> {
             tagBoxes.forEach(b -> b.setSelected(false));
             refreshResults();
         });
+
+        saveViewButton = new JButton("Save as view…");
+        saveViewButton.setEnabled(false);
+        saveViewButton.addActionListener(e -> saveCurrentView());
+
+        var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        eastButtons.add(saveViewButton);
+        eastButtons.add(clearButton);
+
         var selectorHeader = new JPanel(new BorderLayout());
         selectorHeader.add(matchLabel,  BorderLayout.WEST);
-        selectorHeader.add(clearButton, BorderLayout.EAST);
+        selectorHeader.add(eastButtons, BorderLayout.EAST);
 
         tagSelectorPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 4));
         tagSelectorPanel.setBorder(BorderFactory.createTitledBorder("Filter by tags (AND)"));
@@ -112,6 +125,24 @@ public final class ContextPanel extends JPanel {
         var rows = new ContextLens().items(workspace, selected);
         tableModel.setRows(rows);
         matchLabel.setText(rows.size() + (rows.size() == 1 ? " match" : " matches"));
+        saveViewButton.setEnabled(!selected.isEmpty());
+    }
+
+    private void saveCurrentView() {
+        var selected = tagBoxes.stream()
+                .filter(JCheckBox::isSelected)
+                .map(JCheckBox::getText)
+                .toList();
+        var name = JOptionPane.showInputDialog(this, "View name:", "Save as view", JOptionPane.PLAIN_MESSAGE);
+        if (name == null) return;
+        try {
+            service.createSavedView(name, selected);
+            onViewCreated.run();
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Cannot save view", JOptionPane.ERROR_MESSAGE);
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, "Failed to save: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static final class ContextTableModel extends AbstractTableModel {

@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Save as view…" button in `ContextPanel` filter header — enabled when ≥1 tag is checked; prompts for a name, calls `createSavedView`, shows an error dialog on blank or duplicate name. Closes #73.
+
 - `SavedView(String name, List<String> tags)` record in `namdesktop.model`.
 - `savedViews` field on `NamWorkspace` (defaults to empty list; null-safe setter).
 - `NamWorkspaceService.createSavedView(String, List<String>)` — trims name, throws on blank or duplicate, saves once.
