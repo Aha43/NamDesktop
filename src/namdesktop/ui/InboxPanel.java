@@ -64,22 +64,45 @@ public final class InboxPanel extends JPanel {
         table.setRowSelectionInterval(row, row);
 
         var selected = tableModel.getRow(row);
+        var processItem  = new JMenuItem("Process…");
         var renameItem   = new JMenuItem("Rename");
         var markDoneItem = new JMenuItem("Mark done");
         var deleteItem   = new JMenuItem("Delete");
 
-        markDoneItem.setEnabled(selected.status() != NodeStatus.DONE);
+        var isDone = selected.status() == NodeStatus.DONE;
+        processItem.setEnabled(!isDone);
+        markDoneItem.setEnabled(!isDone);
 
+        processItem.addActionListener(ev  -> process(selected));
         renameItem.addActionListener(ev   -> rename(selected));
         markDoneItem.addActionListener(ev -> markDone(selected));
         deleteItem.addActionListener(ev   -> delete(selected));
 
         var menu = new JPopupMenu();
+        menu.add(processItem);
         menu.add(renameItem);
         menu.add(markDoneItem);
         menu.addSeparator();
         menu.add(deleteItem);
         menu.show(table, e.getX(), e.getY());
+    }
+
+    private void process(InboxItemRow row) {
+        var options = new String[]{"Single action", "Project"};
+        var choice = JOptionPane.showOptionDialog(
+                parent(),
+                "What is \"" + row.title() + "\"?",
+                "Process inbox item",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, options, options[0]);
+        if (choice < 0) return;
+        try {
+            if (choice == 0) service.convertInboxItemToNextAction(row.id());
+            else             service.convertInboxItemToProject(row.id());
+            refresh();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
     }
 
     private void addItem() {
