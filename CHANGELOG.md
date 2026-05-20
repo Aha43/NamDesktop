@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `SavedView(String name, List<String> tags)` record in `namdesktop.model`.
+- `savedViews` field on `NamWorkspace` (defaults to empty list; null-safe setter).
+- `NamWorkspaceService.createSavedView(String, List<String>)` — trims name, throws on blank or duplicate, saves once.
+- `NamWorkspaceService.deleteSavedView(String)` — removes by name, no-op if not found, saves only if removed.
+- `savedViews` persisted in `WorkspaceFile`; old files without the field deserialise cleanly. Closes #72.
+
+
+
 - Tags column added to Next Actions, Backlog, and Projects panels, and to the ProjectDialog child action list. Closes #66, #69.
 - Match count label and Clear button added to ContextPanel filter header. Closes #67, #68.
 - `registeredTags` field on `NamWorkspace` — persists tags created up-front before they are applied to any node; `allTags()` merges registered tags with node tags.

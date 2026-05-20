@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.SavedView;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -36,6 +37,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setProjectsNodeId(file.projectsNodeId);
         workspace.setNextActionsNodeId(file.nextActionsNodeId);
         workspace.setRegisteredTags(file.registeredTags);
+        workspace.setSavedViews(file.savedViews);
         migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
         migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
         migrate(workspace, "Actions",      workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
@@ -53,6 +55,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         file.nextActionsNodeId  = workspace.getNextActionsNodeId();
         file.nodes              = workspace.getNodes();
         file.registeredTags     = workspace.getRegisteredTags();
+        file.savedViews         = workspace.getSavedViews();
         mapper.writeValue(path.toFile(), file);
     }
 
@@ -73,5 +76,6 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         public UUID nextActionsNodeId;
         public Map<UUID, NamNode> nodes;
         public java.util.List<String> registeredTags;
+        public java.util.List<SavedView> savedViews;
     }
 }
