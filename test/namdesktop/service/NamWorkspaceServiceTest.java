@@ -620,6 +620,21 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- createNextAction (tagged) ---
+
+    @Test
+    void createNextAction_withTags_setsTagsOnNode() throws IOException {
+        var id = service.createNextAction("Write report", List.of("@computer", "@office"));
+        assertEquals(List.of("@computer", "@office"),
+                workspace.getNode(id).orElseThrow().getTags());
+    }
+
+    @Test
+    void createNextAction_withTags_savesWorkspace() throws IOException {
+        service.createNextAction("Write report", List.of("@computer"));
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- createNextAction ---
 
     @Test

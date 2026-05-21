@@ -56,18 +56,23 @@ public final class NamWorkspaceService {
     }
 
     public UUID createNextAction(String title) throws IOException {
-        return createActionWithStatus(title, NodeStatus.NEXT);
+        return createActionWithStatus(title, NodeStatus.NEXT, List.of());
     }
 
     public UUID createBacklogAction(String title) throws IOException {
-        return createActionWithStatus(title, NodeStatus.BACKLOG);
+        return createActionWithStatus(title, NodeStatus.BACKLOG, List.of());
     }
 
-    private UUID createActionWithStatus(String title, NodeStatus status) throws IOException {
+    public UUID createNextAction(String title, List<String> tags) throws IOException {
+        return createActionWithStatus(title, NodeStatus.NEXT, tags);
+    }
+
+    private UUID createActionWithStatus(String title, NodeStatus status, List<String> tags) throws IOException {
         var actionsId = workspace.getNextActionsNodeId();
         if (actionsId == null) throw new IllegalStateException("Workspace has no actions node");
         var node = new NamNode(UUID.randomUUID(), title);
         node.setStatus(status);
+        if (!tags.isEmpty()) node.setTags(new java.util.ArrayList<>(tags));
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(actionsId).orElseThrow().getChildIds().add(node.getId());
         repository.save(path, workspace);
