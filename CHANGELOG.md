@@ -8,6 +8,17 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Add action" button in `SavedViewPanel` header — creates a NEXT action pre-tagged with the view's tags; appears in the results immediately. Closes #82.
+
+- "Add action" button in `ContextPanel` filter header — enabled when ≥1 tag is checked; creates a NEXT action pre-tagged with all checked tags; result appears immediately in the filtered list. Closes #81.
+- `NamWorkspaceService.createNextAction(String, List<String>)` — tagged variant; `createActionWithStatus` extended to set tags before the single save.
+
+- "Add action" toolbar button in `BacklogPanel` — creates a BACKLOG action directly; prompts for title, refreshes immediately. Closes #80.
+- `NamWorkspaceService.createBacklogAction(String)` — shared helper `createActionWithStatus` keeps both methods DRY.
+
+- "Add action" toolbar button in `NextActionsPanel` — creates a NEXT action directly without going through the inbox; prompts for title, refreshes immediately. Closes #79.
+- `NamWorkspaceService.createNextAction(String)` — creates a node with status NEXT under the Actions area in one save.
+
 - `SearchPanel` — text field with live keystroke updates; results table (Title, Type, Project); double-click opens `ActionDialog` or `ProjectDialog`; search field auto-focused on nav selection. Closes #77.
 
 - `SearchResultRow(UUID id, String title, String type, String parentTitle, NodeStatus status)` record in `namdesktop.lens`.

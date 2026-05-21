@@ -25,6 +25,7 @@ public final class ContextPanel extends JPanel {
     private final JPanel tagSelectorPanel;
     private final List<JCheckBox> tagBoxes = new ArrayList<>();
     private JLabel matchLabel;
+    private JButton addActionButton;
     private JButton saveViewButton;
 
     public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated) {
@@ -42,11 +43,16 @@ public final class ContextPanel extends JPanel {
             refreshResults();
         });
 
+        addActionButton = new JButton("Add action");
+        addActionButton.setEnabled(false);
+        addActionButton.addActionListener(e -> addTaggedAction());
+
         saveViewButton = new JButton("Save as view…");
         saveViewButton.setEnabled(false);
         saveViewButton.addActionListener(e -> saveCurrentView());
 
         var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        eastButtons.add(addActionButton);
         eastButtons.add(saveViewButton);
         eastButtons.add(clearButton);
 
@@ -125,7 +131,24 @@ public final class ContextPanel extends JPanel {
         var rows = new ContextLens().items(workspace, selected);
         tableModel.setRows(rows);
         matchLabel.setText(rows.size() + (rows.size() == 1 ? " match" : " matches"));
-        saveViewButton.setEnabled(!selected.isEmpty());
+        var hasFilter = !selected.isEmpty();
+        addActionButton.setEnabled(hasFilter);
+        saveViewButton.setEnabled(hasFilter);
+    }
+
+    private void addTaggedAction() {
+        var selected = tagBoxes.stream()
+                .filter(JCheckBox::isSelected)
+                .map(JCheckBox::getText)
+                .toList();
+        var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.createNextAction(title.strip(), selected);
+            refreshResults();
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void saveCurrentView() {

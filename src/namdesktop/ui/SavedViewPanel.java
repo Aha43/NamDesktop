@@ -35,13 +35,20 @@ public final class SavedViewPanel extends JPanel {
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
 
+        var addActionButton = new JButton("Add action");
+        addActionButton.addActionListener(e -> addTaggedAction());
+
         var deleteButton = new JButton("Delete view");
         deleteButton.addActionListener(e -> deleteView());
 
+        var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        eastButtons.add(addActionButton);
+        eastButtons.add(deleteButton);
+
         var header = new JPanel(new BorderLayout());
         header.setBorder(BorderFactory.createEmptyBorder(4, 6, 2, 6));
-        header.add(nameLabel,    BorderLayout.WEST);
-        header.add(deleteButton, BorderLayout.EAST);
+        header.add(nameLabel,   BorderLayout.WEST);
+        header.add(eastButtons, BorderLayout.EAST);
 
         var tagsLabel = new JLabel("Tags: " + String.join(", ", view.tags()));
         tagsLabel.setBorder(BorderFactory.createEmptyBorder(0, 6, 4, 6));
@@ -81,6 +88,17 @@ public final class SavedViewPanel extends JPanel {
 
     public void refresh() {
         tableModel.setRows(new ContextLens().items(workspace, view.tags()));
+    }
+
+    private void addTaggedAction() {
+        var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.createNextAction(title.strip(), view.tags());
+            refresh();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void deleteView() {

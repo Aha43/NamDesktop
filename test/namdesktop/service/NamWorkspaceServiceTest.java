@@ -599,6 +599,65 @@ class NamWorkspaceServiceTest {
                 () -> service.convertProjectToAction(UUID.randomUUID()));
     }
 
+    // --- createBacklogAction ---
+
+    @Test
+    void createBacklogAction_addsNodeWithBacklogStatus() throws IOException {
+        var id = service.createBacklogAction("Learn piano");
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(id).orElseThrow().getStatus());
+    }
+
+    @Test
+    void createBacklogAction_addsToActionsArea() throws IOException {
+        var id = service.createBacklogAction("Learn piano");
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void createBacklogAction_savesWorkspace() throws IOException {
+        service.createBacklogAction("Learn piano");
+        assertEquals(1, repository.saveCount);
+    }
+
+    // --- createNextAction (tagged) ---
+
+    @Test
+    void createNextAction_withTags_setsTagsOnNode() throws IOException {
+        var id = service.createNextAction("Write report", List.of("@computer", "@office"));
+        assertEquals(List.of("@computer", "@office"),
+                workspace.getNode(id).orElseThrow().getTags());
+    }
+
+    @Test
+    void createNextAction_withTags_savesWorkspace() throws IOException {
+        service.createNextAction("Write report", List.of("@computer"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    // --- createNextAction ---
+
+    @Test
+    void createNextAction_addsNodeWithNextStatus() throws IOException {
+        var id = service.createNextAction("Call bank");
+        var node = workspace.getNode(id).orElseThrow();
+        assertEquals("Call bank", node.getTitle());
+        assertEquals(NodeStatus.NEXT, node.getStatus());
+    }
+
+    @Test
+    void createNextAction_addsToActionsArea() throws IOException {
+        var id = service.createNextAction("Call bank");
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void createNextAction_savesWorkspace() throws IOException {
+        service.createNextAction("Call bank");
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {
