@@ -16,12 +16,18 @@ public final class AppSettings {
     private static final ObjectMapper MAPPER = new ObjectMapper()
             .enable(SerializationFeature.INDENT_OUTPUT);
 
-    private Theme theme;
+    private static AppSettings instance;
 
-    public AppSettings() { this.theme = Theme.DARK; }
+    public static AppSettings getInstance() { return instance; }
+    public static void setInstance(AppSettings s) { instance = s; }
 
-    public Theme getTheme() { return theme; }
-    public void setTheme(Theme theme) { this.theme = theme != null ? theme : Theme.DARK; }
+    private Theme   theme = Theme.DARK;
+    private boolean dense = false;
+
+    public Theme   getTheme()              { return theme; }
+    public void    setTheme(Theme theme)   { this.theme = theme != null ? theme : Theme.DARK; }
+    public boolean isDense()               { return dense; }
+    public void    setDense(boolean dense) { this.dense = dense; }
 
     public static AppSettings load() {
         try {
@@ -29,6 +35,7 @@ public final class AppSettings {
                 var dto = MAPPER.readValue(SETTINGS_PATH.toFile(), SettingsFile.class);
                 var s = new AppSettings();
                 s.setTheme(dto.theme);
+                s.setDense(dto.dense != null && dto.dense);
                 return s;
             }
         } catch (Exception e) {
@@ -41,11 +48,13 @@ public final class AppSettings {
         Files.createDirectories(SETTINGS_PATH.getParent());
         var dto = new SettingsFile();
         dto.theme = this.theme;
+        dto.dense = this.dense;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     private static final class SettingsFile {
-        public Theme theme;
+        public Theme   theme;
+        public Boolean dense;
     }
 }

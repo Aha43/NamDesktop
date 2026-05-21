@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Dense mode setting — `AppSettings.dense` boolean (default `false`); `UiHelper.iconButton(label, icon)` factory creates dense-aware buttons with mandatory tooltips; `UiHelper.applyDense(boolean)` walks all open windows and flips button labels live; "Dense mode" checkbox in `SettingsPanel`. Closes #108.
+
 - `SettingsDialog` and File → Settings… menu item — settings reachable from the main window at any time. Closes #105.
 - `SplashDialog` restructured with `JTabbedPane` — "Launch" tab (existing dev mode checkbox) and "Settings" tab (theme selector); theme change at splash applies before the main window opens. Closes #105.
 
