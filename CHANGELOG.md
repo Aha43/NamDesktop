@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Add action" button in `SavedViewPanel` header — creates a NEXT action pre-tagged with the view's tags; appears in the results immediately. Closes #82.
+
 - "Add action" button in `ContextPanel` filter header — enabled when ≥1 tag is checked; creates a NEXT action pre-tagged with all checked tags; result appears immediately in the filtered list. Closes #81.
 - `NamWorkspaceService.createNextAction(String, List<String>)` — tagged variant; `createActionWithStatus` extended to set tags before the single save.
 
