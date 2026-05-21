@@ -9,14 +9,17 @@ import java.util.List;
 
 public final class MainFrame extends JFrame {
 
-    private static final List<NavigationEntry> NAV_ENTRIES = List.of(
-            new NavigationEntry("inbox",        "Inbox"),
-            new NavigationEntry("projects",     "Projects"),
-            new NavigationEntry("next-actions", "Next Actions"),
-            new NavigationEntry("context",      "Context"),
-            new NavigationEntry("backlog",      "Backlog"),
-            new NavigationEntry("raw-tree",     "Raw Tree")
-    );
+    private static List<NavigationEntry> buildNavEntries(boolean devMode) {
+        var entries = new java.util.ArrayList<>(List.of(
+                new NavigationEntry("inbox",        "Inbox"),
+                new NavigationEntry("projects",     "Projects"),
+                new NavigationEntry("next-actions", "Next Actions"),
+                new NavigationEntry("context",      "Context"),
+                new NavigationEntry("backlog",      "Backlog")
+        ));
+        if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree"));
+        return List.copyOf(entries);
+    }
 
     private final NamWorkspace        workspace;
     private final NamWorkspaceService service;
@@ -30,7 +33,7 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
 
-    public MainFrame(NamWorkspace workspace, NamWorkspaceService service) {
+    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode) {
         this.workspace        = workspace;
         this.service          = service;
         this.contentArea      = new ContentArea();
@@ -42,7 +45,7 @@ public final class MainFrame extends JFrame {
         this.backlogPanel     = new BacklogPanel(workspace, service);
         this.searchPanel      = new SearchPanel(workspace, service);
 
-        this.navPanel = new NavigationPanel(NAV_ENTRIES, this::onNavSelected);
+        this.navPanel = new NavigationPanel(buildNavEntries(devMode), this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.0);

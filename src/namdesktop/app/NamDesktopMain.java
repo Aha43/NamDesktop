@@ -34,7 +34,7 @@ public final class NamDesktopMain {
         var repository = new JsonWorkspaceRepository();
         var workspace = loadWorkspace(repository, workspacePath);
         var service = new NamWorkspaceService(workspace, repository, workspacePath);
-        var frame = new MainFrame(workspace, service);
+        var frame = new MainFrame(workspace, service, devMode);
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version() + (devMode ? " [DEV]" : ""));
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
