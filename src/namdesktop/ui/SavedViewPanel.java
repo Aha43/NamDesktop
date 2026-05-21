@@ -36,7 +36,7 @@ public final class SavedViewPanel extends JPanel {
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
 
-        var addActionButton = new JButton("Add action", new FlatSVGIcon("/icons/plus.svg", 16, 16));
+        var addActionButton = new JButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
         var deleteButton = new JButton("Delete view");

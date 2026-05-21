@@ -44,7 +44,7 @@ public final class ContextPanel extends JPanel {
             refreshResults();
         });
 
-        addActionButton = new JButton("Add action", new FlatSVGIcon("/icons/plus.svg", 16, 16));
+        addActionButton = new JButton("Add action", new FlatSVGIcon(ContextPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.setEnabled(false);
         addActionButton.addActionListener(e -> addTaggedAction());
 
