@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `SettingsPanel` — theme selector combo box (DARK/LIGHT); applies live via `FlatLaf.updateUI()` and `SwingUtilities.updateComponentTreeUI` on all open windows; persists to `~/.namdesktop/settings.json` immediately. Closes #104.
+
 - `AppSettings` model and JSON persistence — settings stored in `~/.namdesktop/settings.json` separate from workspace data; initial field: `theme` (DARK/LIGHT, default DARK); missing or corrupt file falls back to defaults gracefully. Closes #103.
 - `Theme` enum (`DARK`, `LIGHT`) in `namdesktop.app`.
 - Theme applied from settings at startup in `NamDesktopMain` instead of hardcoded `FlatDarkLaf`.
