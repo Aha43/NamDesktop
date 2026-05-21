@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Icons on main toolbar: Search button → `search.svg`, Manage Tags… button → `tag.svg`. Closes #93.
+- `search.svg` and `tag.svg` added to `src/icons/`; `scripts/download-icons.sh` updated with both names.
+
 - `+` icon on "Add action" button in `ProjectDialog` — consistent with all other Add action buttons; reuses existing `plus.svg`. Closes #92.
 
 - `"Ctrl+Enter to save"` tooltip on the description text area in `NodeDialog` — makes the keyboard shortcut discoverable on hover. Closes #95.

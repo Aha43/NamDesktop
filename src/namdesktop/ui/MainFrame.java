@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
 
@@ -52,11 +53,11 @@ public final class MainFrame extends JFrame {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var manageTagsButton = new JButton("Manage Tags…");
+        var manageTagsButton = new JButton("Manage Tags…", new FlatSVGIcon(MainFrame.class.getResource("/icons/tag.svg")).derive(16, 16));
         manageTagsButton.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service).setVisible(true));
         toolbar.add(manageTagsButton);
-        var searchButton = new JButton("Search");
+        var searchButton = new JButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
         toolbar.add(Box.createHorizontalGlue());

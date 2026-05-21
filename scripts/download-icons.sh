@@ -10,6 +10,8 @@ BASE_URL="https://raw.githubusercontent.com/tabler/tabler-icons/main/icons/outli
 
 ICONS=(
   plus
+  search
+  tag
 )
 
 mkdir -p "$ICONS_DIR"
