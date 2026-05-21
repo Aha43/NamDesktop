@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Editable title in `NodeDialog` — the title is now a text field; renaming an action or project is done in the same dialog as editing description and tags; blank title is rejected. Closes #101.
+
 - Dialog toolbar icons: Delete button in `NodeDialog` (inherited by `ActionDialog` and `ProjectDialog`) → `trash.svg`; Rename… button in `TagManagementDialog` → `pencil.svg`; New tag… button → `plus.svg`. Closes #94.
 - `trash.svg` and `pencil.svg` added to `src/icons/`; `scripts/download-icons.sh` updated.
 
