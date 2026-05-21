@@ -25,6 +25,7 @@ public final class MainFrame extends JFrame {
 
     private final NamWorkspace        workspace;
     private final NamWorkspaceService service;
+    private final AppSettings         settings;
     private final ContentArea         contentArea;
     private final NavigationPanel  navPanel;
     private final TreePanel        treePanel;
@@ -38,6 +39,7 @@ public final class MainFrame extends JFrame {
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings) {
         this.workspace        = workspace;
         this.service          = service;
+        this.settings         = settings;
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);
@@ -71,10 +73,14 @@ public final class MainFrame extends JFrame {
                 new TagManagementDialog(this, workspace, service).setVisible(true));
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
+        var settingsItem = new JMenuItem("Settings…");
+        settingsItem.addActionListener(e -> new SettingsDialog(this, settings).setVisible(true));
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
+        fileMenu.addSeparator();
+        fileMenu.add(settingsItem);
         fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
         exitItem.addActionListener(e -> System.exit(0));
