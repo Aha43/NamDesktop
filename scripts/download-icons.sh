@@ -12,6 +12,8 @@ ICONS=(
   plus
   search
   tag
+  trash
+  pencil
 )
 
 mkdir -p "$ICONS_DIR"
