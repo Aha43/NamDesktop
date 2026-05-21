@@ -19,6 +19,8 @@ public class NodeDialog extends JDialog {
 
     private final UUID nodeId;
     private final NamWorkspaceService service;
+    private final String originalTitle;
+    private final JTextField titleField;
     private final JTextArea descriptionArea;
     private final TagsField tagsField;
     private final JButton statusButton;
@@ -38,17 +40,18 @@ public class NodeDialog extends JDialog {
         this.onChanged = onChanged;
 
         var node = workspace.getNode(nodeId).orElseThrow();
-        currentStatus = node.getStatus();
+        currentStatus  = node.getStatus();
+        originalTitle  = node.getTitle();
 
-        var titleLabel = new JLabel(node.getTitle());
-        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 16f));
-        titleLabel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        titleField = new JTextField(originalTitle);
+        titleField.setFont(titleField.getFont().deriveFont(Font.BOLD, 16f));
+        titleField.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         statusButton = new JButton(statusLabel());
         statusButton.addActionListener(e -> toggleStatus());
 
         var deleteButton = new JButton("Delete", new FlatSVGIcon(NodeDialog.class.getResource("/icons/trash.svg")).derive(16, 16));
-        deleteButton.addActionListener(e -> delete(node.getTitle()));
+        deleteButton.addActionListener(e -> delete(originalTitle));
 
         toolbar = new JToolBar();
         toolbar.setFloatable(false);
@@ -97,7 +100,7 @@ public class NodeDialog extends JDialog {
         centre.add(descPanel,  BorderLayout.CENTER);
 
         setLayout(new BorderLayout());
-        add(titleLabel, BorderLayout.NORTH);
+        add(titleField, BorderLayout.NORTH);
         add(centre,     BorderLayout.CENTER);
         add(footer,     BorderLayout.SOUTH);
 
@@ -148,7 +151,13 @@ public class NodeDialog extends JDialog {
     }
 
     private void save() {
+        var newTitle = titleField.getText().strip();
+        if (newTitle.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Title cannot be blank.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         try {
+            if (!newTitle.equals(originalTitle)) service.renameNode(nodeId, newTitle);
             service.updateDescription(nodeId, descriptionArea.getText());
             service.updateTags(nodeId, parseTags(tagsField.getText()));
             notifyChanged();
