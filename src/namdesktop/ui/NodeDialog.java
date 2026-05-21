@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
@@ -46,7 +47,7 @@ public class NodeDialog extends JDialog {
         statusButton = new JButton(statusLabel());
         statusButton.addActionListener(e -> toggleStatus());
 
-        var deleteButton = new JButton("Delete");
+        var deleteButton = new JButton("Delete", new FlatSVGIcon(NodeDialog.class.getResource("/icons/trash.svg")).derive(16, 16));
         deleteButton.addActionListener(e -> delete(node.getTitle()));
 
         toolbar = new JToolBar();

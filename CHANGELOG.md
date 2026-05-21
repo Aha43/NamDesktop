@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Dialog toolbar icons: Delete button in `NodeDialog` (inherited by `ActionDialog` and `ProjectDialog`) → `trash.svg`; Rename… button in `TagManagementDialog` → `pencil.svg`; New tag… button → `plus.svg`. Closes #94.
+- `trash.svg` and `pencil.svg` added to `src/icons/`; `scripts/download-icons.sh` updated.
+
 - Icons on main toolbar: Search button → `search.svg`, Manage Tags… button → `tag.svg`. Closes #93.
 - `search.svg` and `tag.svg` added to `src/icons/`; `scripts/download-icons.sh` updated with both names.
 
