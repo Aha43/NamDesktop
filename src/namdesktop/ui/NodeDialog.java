@@ -58,6 +58,7 @@ public class NodeDialog extends JDialog {
         descriptionArea = new JTextArea(node.getDescription() != null ? node.getDescription() : "");
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
+        descriptionArea.setToolTipText("Ctrl+Enter to save");
         descriptionArea.getInputMap().put(
                 KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), "save");
         descriptionArea.getActionMap().put("save", new AbstractAction() {
