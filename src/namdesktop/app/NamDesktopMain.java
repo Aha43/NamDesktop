@@ -24,6 +24,7 @@ public final class NamDesktopMain {
 
     private static void start() {
         var settings = AppSettings.load();
+        AppSettings.setInstance(settings);
         if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);

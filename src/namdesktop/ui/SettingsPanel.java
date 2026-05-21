@@ -40,6 +40,24 @@ public final class SettingsPanel extends JPanel {
 
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(themeCombo, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Dense mode:"), gbc);
+
+        var denseBox = new JCheckBox("Icons only (hide labels)", settings.isDense());
+        denseBox.addActionListener(e -> {
+            settings.setDense(denseBox.isSelected());
+            UiHelper.applyDense(denseBox.isSelected());
+            try {
+                settings.save();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, "Failed to save settings: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(denseBox, gbc);
     }
 
     static void applyTheme(Theme theme) {
