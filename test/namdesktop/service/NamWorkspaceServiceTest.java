@@ -599,6 +599,29 @@ class NamWorkspaceServiceTest {
                 () -> service.convertProjectToAction(UUID.randomUUID()));
     }
 
+    // --- createNextAction ---
+
+    @Test
+    void createNextAction_addsNodeWithNextStatus() throws IOException {
+        var id = service.createNextAction("Call bank");
+        var node = workspace.getNode(id).orElseThrow();
+        assertEquals("Call bank", node.getTitle());
+        assertEquals(NodeStatus.NEXT, node.getStatus());
+    }
+
+    @Test
+    void createNextAction_addsToActionsArea() throws IOException {
+        var id = service.createNextAction("Call bank");
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void createNextAction_savesWorkspace() throws IOException {
+        service.createNextAction("Call bank");
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {

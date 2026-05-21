@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Add action" toolbar button in `NextActionsPanel` — creates a NEXT action directly without going through the inbox; prompts for title, refreshes immediately. Closes #79.
+- `NamWorkspaceService.createNextAction(String)` — creates a node with status NEXT under the Actions area in one save.
+
 - `SearchPanel` — text field with live keystroke updates; results table (Title, Type, Project); double-click opens `ActionDialog` or `ProjectDialog`; search field auto-focused on nav selection. Closes #77.
 
 - `SearchResultRow(UUID id, String title, String type, String parentTitle, NodeStatus status)` record in `namdesktop.lens`.

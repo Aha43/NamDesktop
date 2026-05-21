@@ -55,6 +55,17 @@ public final class NamWorkspaceService {
         return addChild(inboxId, title);
     }
 
+    public UUID createNextAction(String title) throws IOException {
+        var actionsId = workspace.getNextActionsNodeId();
+        if (actionsId == null) throw new IllegalStateException("Workspace has no actions node");
+        var node = new NamNode(UUID.randomUUID(), title);
+        node.setStatus(NodeStatus.NEXT);
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(actionsId).orElseThrow().getChildIds().add(node.getId());
+        repository.save(path, workspace);
+        return node.getId();
+    }
+
     public void updateDescription(UUID nodeId, String description) throws IOException {
         require(nodeId).setDescription(description);
         repository.save(path, workspace);

@@ -26,6 +26,13 @@ public final class NextActionsPanel extends JPanel {
         this.service    = service;
         this.tableModel = new NextActionsTableModel();
 
+        var toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        var addButton = new JButton("Add action");
+        addButton.addActionListener(e -> addAction());
+        toolbar.add(addButton);
+        add(toolbar, BorderLayout.NORTH);
+
         JTable table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
@@ -54,6 +61,17 @@ public final class NextActionsPanel extends JPanel {
 
     public void refresh() {
         tableModel.setRows(new NextActionsLens().items(workspace));
+    }
+
+    private void addAction() {
+        var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.createNextAction(title.strip());
+            refresh();
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static final class NextActionsTableModel extends AbstractTableModel {
