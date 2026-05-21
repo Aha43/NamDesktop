@@ -18,7 +18,15 @@ To download dependencies before the first build:
 pwsh scripts/download-libs.ps1
 ```
 
-No test framework is wired in yet. Compile success (`make`) is the main verification step.
+To download SVG icons (Tabler Icons, MIT):
+
+```bash
+bash scripts/download-icons.sh
+```
+
+Icons live in `src/icons/` and are copied to `build/classes/icons/` automatically by `make`.
+Load them with `new FlatSVGIcon("/icons/name.svg")` — `currentColor` strokes adapt to the dark theme automatically.
+To add a new icon, add its name to the `ICONS` array in `scripts/download-icons.sh` and re-run it.
 
 ## Architecture
 

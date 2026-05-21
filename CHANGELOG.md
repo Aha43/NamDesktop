@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `src/icons/plus.svg` — Tabler-style SVG icon with `currentColor` stroke for automatic dark-theme adaptation.
+- `scripts/download-icons.sh` — fetches named Tabler Icons (MIT) into `src/icons/`; add icon names to the `ICONS` array to extend.
+- `Makefile` copies `src/icons/` → `build/classes/icons/` after compile so icons are on the classpath. Closes #88.
+
 - Raw Tree nav entry only shown when dev mode is active; `MainFrame` takes `boolean devMode` and builds nav entries dynamically. Closes #86.
 
 - Dev mode uses `~/.namdesktop/dev/workspace.json`; normal mode unchanged at `~/.namdesktop/workspace.json`. Path selected in `NamDesktopMain` from the splash result — no other code changes needed. Closes #85.
