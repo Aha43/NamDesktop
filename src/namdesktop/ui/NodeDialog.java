@@ -6,6 +6,9 @@ import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,6 +58,11 @@ public class NodeDialog extends JDialog {
         descriptionArea = new JTextArea(node.getDescription() != null ? node.getDescription() : "");
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
+        descriptionArea.getInputMap().put(
+                KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), "save");
+        descriptionArea.getActionMap().put("save", new AbstractAction() {
+            @Override public void actionPerformed(ActionEvent e) { getRootPane().getDefaultButton().doClick(); }
+        });
         var scrollPane = new JScrollPane(descriptionArea);
 
         tagsField = new TagsField(this, workspace::allTags);
@@ -75,6 +83,7 @@ public class NodeDialog extends JDialog {
         var footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footer.add(cancelButton);
         footer.add(saveButton);
+        getRootPane().setDefaultButton(saveButton);
 
         // Inner panel keeps description + tags together; leaves centre's SOUTH free for subclasses
         var descPanel = new JPanel(new BorderLayout());

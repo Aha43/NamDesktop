@@ -45,6 +45,7 @@ public final class TagManagementDialog extends JDialog {
 
         var closeButton = new JButton("Close");
         closeButton.addActionListener(e -> dispose());
+        getRootPane().setDefaultButton(closeButton);
         var footer = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         footer.add(closeButton);
 

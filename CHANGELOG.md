@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Default button in `NodeDialog` — Enter triggers Save from any field; Ctrl+Enter triggers Save from within the description text area. Closes #91.
+- Default button in `TagManagementDialog` — Enter closes the dialog. Closes #91.
+
 - `+` icon on Add action buttons in `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, and `SavedViewPanel` via `FlatSVGIcon` — icon adapts to dark theme automatically. Closes #89.
 
 ### Fixed
