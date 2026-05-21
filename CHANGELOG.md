@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `SettingsDialog` and File → Settings… menu item — settings reachable from the main window at any time. Closes #105.
+- `SplashDialog` restructured with `JTabbedPane` — "Launch" tab (existing dev mode checkbox) and "Settings" tab (theme selector); theme change at splash applies before the main window opens. Closes #105.
+
+- `SettingsPanel` — theme selector combo box (DARK/LIGHT); applies live via `FlatLaf.updateUI()` and `SwingUtilities.updateComponentTreeUI` on all open windows; persists to `~/.namdesktop/settings.json` immediately. Closes #104.
+
 - `AppSettings` model and JSON persistence — settings stored in `~/.namdesktop/settings.json` separate from workspace data; initial field: `theme` (DARK/LIGHT, default DARK); missing or corrupt file falls back to defaults gracefully. Closes #103.
 - `Theme` enum (`DARK`, `LIGHT`) in `namdesktop.app`.
 - Theme applied from settings at startup in `NamDesktopMain` instead of hardcoded `FlatDarkLaf`.
