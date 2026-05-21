@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Dev mode uses `~/.namdesktop/dev/workspace.json`; normal mode unchanged at `~/.namdesktop/workspace.json`. Path selected in `NamDesktopMain` from the splash result — no other code changes needed. Closes #85.
+
 - `SplashDialog` — shown on startup before the main window; displays app name and version; "Run in dev mode" checkbox pre-checked from `~/.namdesktop/.devmode` flag file; choice persisted on Launch; closing the splash exits the app. Closes #84.
 - `[DEV]` appended to window title when dev mode is active.
 
