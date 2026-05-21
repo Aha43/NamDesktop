@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.ui.UiHelper;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
 
@@ -29,9 +30,9 @@ public final class TagManagementDialog extends JDialog {
         table.setFillsViewportHeight(true);
         table.getColumnModel().getColumn(1).setMaxWidth(80);
 
-        var newButton    = new JButton("New tag…",  new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
-        var renameButton = new JButton("Rename…",   new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/pencil.svg")).derive(16, 16));
-        var deleteButton = new JButton("Delete",    new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/trash.svg")).derive(16, 16));
+        var newButton    = UiHelper.iconButton("New tag…", new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
+        var renameButton = UiHelper.iconButton("Rename…",  new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/pencil.svg")).derive(16, 16));
+        var deleteButton = UiHelper.iconButton("Delete",   new FlatSVGIcon(TagManagementDialog.class.getResource("/icons/trash.svg")).derive(16, 16));
         newButton.addActionListener(e -> newTag());
         renameButton.addActionListener(e -> renameSelected());
         deleteButton.addActionListener(e -> deleteSelected());

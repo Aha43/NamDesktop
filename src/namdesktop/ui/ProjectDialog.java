@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.ui.UiHelper;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
@@ -69,7 +70,7 @@ public final class ProjectDialog extends NodeDialog {
         convertButton.addActionListener(e -> convertToAction());
         addToolbarButton(convertButton);
 
-        var addActionButton = new JButton("Add action", new FlatSVGIcon(ProjectDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
+        var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(ProjectDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addAction());
         var actionsToolbar = new JToolBar();
         actionsToolbar.setFloatable(false);

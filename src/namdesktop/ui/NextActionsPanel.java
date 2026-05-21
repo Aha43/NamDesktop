@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.ui.UiHelper;
 import namdesktop.lens.NextActionItemRow;
 import namdesktop.lens.NextActionsLens;
 import namdesktop.model.NamWorkspace;
@@ -29,7 +30,7 @@ public final class NextActionsPanel extends JPanel {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var addButton = new JButton("Add action", new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        var addButton = UiHelper.iconButton("Add action", new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
         toolbar.add(addButton);
         add(toolbar, BorderLayout.NORTH);

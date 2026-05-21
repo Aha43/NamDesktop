@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.ui.UiHelper;
 import namdesktop.lens.ContextItemRow;
 import namdesktop.lens.ContextLens;
 import namdesktop.model.NamWorkspace;
@@ -36,7 +37,7 @@ public final class SavedViewPanel extends JPanel {
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
 
-        var addActionButton = new JButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
         var deleteButton = new JButton("Delete view");

@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- All icon buttons refactored to `UiHelper.iconButton()` — `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, `SavedViewPanel`, `ProjectDialog`, `NodeDialog`, `TagManagementDialog`, `MainFrame` toolbar; all participate in dense mode and always show a tooltip. Closes #109.
+
 - Dense mode setting — `AppSettings.dense` boolean (default `false`); `UiHelper.iconButton(label, icon)` factory creates dense-aware buttons with mandatory tooltips; `UiHelper.applyDense(boolean)` walks all open windows and flips button labels live; "Dense mode" checkbox in `SettingsPanel`. Closes #108.
 
 - `SettingsDialog` and File → Settings… menu item — settings reachable from the main window at any time. Closes #105.
