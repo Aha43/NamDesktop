@@ -599,6 +599,27 @@ class NamWorkspaceServiceTest {
                 () -> service.convertProjectToAction(UUID.randomUUID()));
     }
 
+    // --- createBacklogAction ---
+
+    @Test
+    void createBacklogAction_addsNodeWithBacklogStatus() throws IOException {
+        var id = service.createBacklogAction("Learn piano");
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(id).orElseThrow().getStatus());
+    }
+
+    @Test
+    void createBacklogAction_addsToActionsArea() throws IOException {
+        var id = service.createBacklogAction("Learn piano");
+        assertTrue(workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow()
+                .getChildIds().contains(id));
+    }
+
+    @Test
+    void createBacklogAction_savesWorkspace() throws IOException {
+        service.createBacklogAction("Learn piano");
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- createNextAction ---
 
     @Test

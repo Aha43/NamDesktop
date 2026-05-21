@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Add action" toolbar button in `BacklogPanel` — creates a BACKLOG action directly; prompts for title, refreshes immediately. Closes #80.
+- `NamWorkspaceService.createBacklogAction(String)` — shared helper `createActionWithStatus` keeps both methods DRY.
+
 - "Add action" toolbar button in `NextActionsPanel` — creates a NEXT action directly without going through the inbox; prompts for title, refreshes immediately. Closes #79.
 - `NamWorkspaceService.createNextAction(String)` — creates a node with status NEXT under the Actions area in one save.
 
