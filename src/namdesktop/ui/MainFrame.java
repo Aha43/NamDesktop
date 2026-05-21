@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.app.AppSettings;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
 
@@ -34,7 +35,7 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
 
-    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode) {
+    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings) {
         this.workspace        = workspace;
         this.service          = service;
         this.contentArea      = new ContentArea();

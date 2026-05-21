@@ -8,6 +8,7 @@ import namdesktop.ui.SplashDialog;
 
 import javax.swing.*;
 import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 import java.nio.file.Path;
 
 public final class NamDesktopMain {
@@ -22,11 +23,12 @@ public final class NamDesktopMain {
     }
 
     private static void start() {
-        FlatDarkLaf.setup();
+        var settings = AppSettings.load();
+        if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
-        var splash = new SplashDialog();
+        var splash = new SplashDialog(settings);
         splash.setVisible(true);
         var devMode = splash.isDevMode();
         var workspacePath = devMode ? DEV_WORKSPACE_PATH : WORKSPACE_PATH;
@@ -34,7 +36,7 @@ public final class NamDesktopMain {
         var repository = new JsonWorkspaceRepository();
         var workspace = loadWorkspace(repository, workspacePath);
         var service = new NamWorkspaceService(workspace, repository, workspacePath);
-        var frame = new MainFrame(workspace, service, devMode);
+        var frame = new MainFrame(workspace, service, devMode, settings);
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version() + (devMode ? " [DEV]" : ""));
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
