@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `"Ctrl+Enter to save"` tooltip on the description text area in `NodeDialog` — makes the keyboard shortcut discoverable on hover. Closes #95.
+
 - Default button in `NodeDialog` — Enter triggers Save from any field; Ctrl+Enter triggers Save from within the description text area. Closes #91.
 - Default button in `TagManagementDialog` — Enter closes the dialog. Closes #91.
 
