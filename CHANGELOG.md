@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `AppSettings` model and JSON persistence — settings stored in `~/.namdesktop/settings.json` separate from workspace data; initial field: `theme` (DARK/LIGHT, default DARK); missing or corrupt file falls back to defaults gracefully. Closes #103.
+- `Theme` enum (`DARK`, `LIGHT`) in `namdesktop.app`.
+- Theme applied from settings at startup in `NamDesktopMain` instead of hardcoded `FlatDarkLaf`.
+
 - Editable title in `NodeDialog` — the title is now a text field; renaming an action or project is done in the same dialog as editing description and tags; blank title is rejected. Closes #101.
 
 - Dialog toolbar icons: Delete button in `NodeDialog` (inherited by `ActionDialog` and `ProjectDialog`) → `trash.svg`; Rename… button in `TagManagementDialog` → `pencil.svg`; New tag… button → `plus.svg`. Closes #94.

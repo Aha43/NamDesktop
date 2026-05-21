@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import namdesktop.app.AppInfo;
+import namdesktop.app.AppSettings;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,7 +18,7 @@ public final class SplashDialog extends JDialog {
 
     private final JCheckBox devModeBox;
 
-    public SplashDialog() {
+    public SplashDialog(AppSettings settings) {
         super((Frame) null, AppInfo.NAME, true);
 
         devModeBox = new JCheckBox("Run in dev mode", Files.exists(DEV_MODE_FLAG));
