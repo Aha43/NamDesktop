@@ -29,6 +29,7 @@ classes:
 		-cp "$(LIB_DIR)/*" \
 		-d $(CLASSES_DIR) \
 		$(SOURCES)
+	@if [ -d $(SRC_DIR)/icons ]; then cp -r $(SRC_DIR)/icons $(CLASSES_DIR)/; fi
 
 jar: classes
 	mkdir -p $(APP_DIR)

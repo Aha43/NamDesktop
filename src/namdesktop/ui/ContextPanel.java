@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.ContextItemRow;
 import namdesktop.lens.ContextLens;
 import namdesktop.model.NamWorkspace;
@@ -43,7 +44,7 @@ public final class ContextPanel extends JPanel {
             refreshResults();
         });
 
-        addActionButton = new JButton("Add action");
+        addActionButton = new JButton("Add action", new FlatSVGIcon(ContextPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.setEnabled(false);
         addActionButton.addActionListener(e -> addTaggedAction());
 

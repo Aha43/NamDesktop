@@ -8,6 +8,16 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `+` icon on Add action buttons in `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, and `SavedViewPanel` via `FlatSVGIcon` — icon adapts to dark theme automatically. Closes #89.
+
+### Fixed
+
+- `FlatSVGIcon` red-square error on all Add action buttons — `FlatSVGIcon(String, int, int)` uses FlatLaf's own classloader and cannot find resources from the app JAR; fixed by using `SomePanel.class.getResource("/icons/plus.svg")` (URL form) with `.derive(16, 16)` to keep the target size.
+
+- `src/icons/plus.svg` — Tabler-style SVG icon with `currentColor` stroke for automatic dark-theme adaptation.
+- `scripts/download-icons.sh` — fetches named Tabler Icons (MIT) into `src/icons/`; add icon names to the `ICONS` array to extend.
+- `Makefile` copies `src/icons/` → `build/classes/icons/` after compile so icons are on the classpath. Closes #88.
+
 - Raw Tree nav entry only shown when dev mode is active; `MainFrame` takes `boolean devMode` and builds nav entries dynamically. Closes #86.
 
 - Dev mode uses `~/.namdesktop/dev/workspace.json`; normal mode unchanged at `~/.namdesktop/workspace.json`. Path selected in `NamDesktopMain` from the splash result — no other code changes needed. Closes #85.

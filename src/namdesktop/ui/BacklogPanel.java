@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.BacklogItemRow;
 import namdesktop.lens.BacklogLens;
 import namdesktop.model.NamWorkspace;
@@ -28,7 +29,7 @@ public final class BacklogPanel extends JPanel {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var addButton = new JButton("Add action");
+        var addButton = new JButton("Add action", new FlatSVGIcon(BacklogPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
         toolbar.add(addButton);
         add(toolbar, BorderLayout.NORTH);
