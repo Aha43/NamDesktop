@@ -5,9 +5,11 @@ import namdesktop.ui.UiHelper;
 import namdesktop.app.AppSettings;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
+import namdesktop.sync.WorkspaceSyncService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.file.Path;
 import java.util.List;
 
 public final class MainFrame extends JFrame {
@@ -27,6 +29,8 @@ public final class MainFrame extends JFrame {
     private final NamWorkspace        workspace;
     private final NamWorkspaceService service;
     private final AppSettings         settings;
+    private final WorkspaceSyncService syncService;
+    private final Path                workspacePath;
     private final ContentArea         contentArea;
     private final NavigationPanel  navPanel;
     private final TreePanel        treePanel;
@@ -37,10 +41,12 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
 
-    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings) {
+    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
         this.service          = service;
         this.settings         = settings;
+        this.syncService      = syncService;
+        this.workspacePath    = workspacePath;
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);

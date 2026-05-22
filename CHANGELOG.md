@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Sync repo URL in `AppSettings` (`syncRepoUrl` field, persisted to `settings.json`); sync section in `SettingsPanel` with URL text field (saves on Enter or focus-lost); `GitSyncService` constructed in `NamDesktopMain` from the configured URL and passed to `MainFrame`. Closes #112.
+
 - `WorkspaceSyncService` interface and `GitSyncService` implementation — generic sync interface in `namdesktop.sync`; git-backed implementation uses `ProcessBuilder` to clone, commit, push and pull; fails fast with a clear message when not configured. Closes #111.
 
 - All icon buttons refactored to `UiHelper.iconButton()` — `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, `SavedViewPanel`, `ProjectDialog`, `NodeDialog`, `TagManagementDialog`, `MainFrame` toolbar; all participate in dense mode and always show a tooltip. Closes #109.
