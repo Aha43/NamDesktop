@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Push / Pull toolbar buttons — `cloud-upload.svg` and `cloud-download.svg` icons; only shown when sync is configured; use `UiHelper.iconButton()` so they participate in dense mode. Closes #115.
+
+- Push / Pull workspace in File menu — only shown when a sync repo URL is configured; operations run on a background thread (UI stays responsive); success shows a confirmation dialog; pull reminds the user to restart to apply the updated workspace; errors surface a readable message. Closes #113.
+
+- Sync repo URL in `AppSettings` (`syncRepoUrl` field, persisted to `settings.json`); sync section in `SettingsPanel` with URL text field (saves on Enter or focus-lost); `GitSyncService` constructed in `NamDesktopMain` from the configured URL and passed to `MainFrame`. Closes #112.
+
+- `WorkspaceSyncService` interface and `GitSyncService` implementation — generic sync interface in `namdesktop.sync`; git-backed implementation uses `ProcessBuilder` to clone, commit, push and pull; fails fast with a clear message when not configured. Closes #111.
+
 - All icon buttons refactored to `UiHelper.iconButton()` — `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, `SavedViewPanel`, `ProjectDialog`, `NodeDialog`, `TagManagementDialog`, `MainFrame` toolbar; all participate in dense mode and always show a tooltip. Closes #109.
 
 - Dense mode setting — `AppSettings.dense` boolean (default `false`); `UiHelper.iconButton(label, icon)` factory creates dense-aware buttons with mandatory tooltips; `UiHelper.applyDense(boolean)` walks all open windows and flips button labels live; "Dense mode" checkbox in `SettingsPanel`. Closes #108.

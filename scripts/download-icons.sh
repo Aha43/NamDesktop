@@ -14,6 +14,8 @@ ICONS=(
   tag
   trash
   pencil
+  cloud-upload
+  cloud-download
 )
 
 mkdir -p "$ICONS_DIR"

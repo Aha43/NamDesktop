@@ -58,6 +58,29 @@ public final class SettingsPanel extends JPanel {
 
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(denseBox, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Sync repo URL:"), gbc);
+
+        var syncUrlField = new JTextField(settings.getSyncRepoUrl(), 30);
+        syncUrlField.setToolTipText("GitHub repo URL for workspace sync, e.g. https://github.com/user/my-workspace");
+        syncUrlField.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusLost(java.awt.event.FocusEvent e) { saveSyncUrl(settings, syncUrlField); }
+        });
+        syncUrlField.addActionListener(e -> saveSyncUrl(settings, syncUrlField));
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(syncUrlField, gbc);
+    }
+
+    private void saveSyncUrl(AppSettings settings, JTextField field) {
+        settings.setSyncRepoUrl(field.getText());
+        try {
+            settings.save();
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, "Failed to save settings: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     static void applyTheme(Theme theme) {

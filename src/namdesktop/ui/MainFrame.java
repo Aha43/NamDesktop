@@ -5,9 +5,11 @@ import namdesktop.ui.UiHelper;
 import namdesktop.app.AppSettings;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
+import namdesktop.sync.WorkspaceSyncService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.nio.file.Path;
 import java.util.List;
 
 public final class MainFrame extends JFrame {
@@ -27,6 +29,8 @@ public final class MainFrame extends JFrame {
     private final NamWorkspace        workspace;
     private final NamWorkspaceService service;
     private final AppSettings         settings;
+    private final WorkspaceSyncService syncService;
+    private final Path                workspacePath;
     private final ContentArea         contentArea;
     private final NavigationPanel  navPanel;
     private final TreePanel        treePanel;
@@ -37,10 +41,12 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
 
-    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings) {
+    public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
         this.service          = service;
         this.settings         = settings;
+        this.syncService      = syncService;
+        this.workspacePath    = workspacePath;
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);
@@ -64,6 +70,14 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
+        if (syncService.isConfigured()) {
+            var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
+            pushButton.addActionListener(e -> runSync(true));
+            var pullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
+            pullButton.addActionListener(e -> runSync(false));
+            toolbar.add(pushButton);
+            toolbar.add(pullButton);
+        }
         toolbar.add(Box.createHorizontalGlue());
         var exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> System.exit(0));
@@ -81,6 +95,17 @@ public final class MainFrame extends JFrame {
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.addSeparator();
+
+        if (syncService.isConfigured()) {
+            var pushItem = new JMenuItem("Push workspace");
+            pushItem.addActionListener(e -> runSync(true));
+            var pullItem = new JMenuItem("Pull workspace");
+            pullItem.addActionListener(e -> runSync(false));
+            fileMenu.add(pushItem);
+            fileMenu.add(pullItem);
+            fileMenu.addSeparator();
+        }
+
         fileMenu.add(settingsItem);
         fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
@@ -119,6 +144,31 @@ public final class MainFrame extends JFrame {
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
+    }
+
+    private void runSync(boolean push) {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        new Thread(() -> {
+            String message;
+            boolean success;
+            try {
+                if (push) syncService.push(workspacePath);
+                else      syncService.pull(workspacePath);
+                message = push ? "Workspace pushed successfully."
+                               : "Workspace pulled successfully.\nRestart the app to apply the updated workspace.";
+                success = true;
+            } catch (Exception ex) {
+                message = ex.getMessage();
+                success = false;
+            }
+            final var msg     = message;
+            final var isOk    = success;
+            SwingUtilities.invokeLater(() -> {
+                setCursor(Cursor.getDefaultCursor());
+                if (isOk) JOptionPane.showMessageDialog(this, msg, push ? "Push" : "Pull", JOptionPane.INFORMATION_MESSAGE);
+                else      JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+            });
+        }, "sync-thread").start();
     }
 
     private void openSearch() {
