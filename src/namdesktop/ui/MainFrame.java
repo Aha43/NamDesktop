@@ -70,6 +70,14 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
+        if (syncService.isConfigured()) {
+            var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
+            pushButton.addActionListener(e -> runSync(true));
+            var pullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
+            pullButton.addActionListener(e -> runSync(false));
+            toolbar.add(pushButton);
+            toolbar.add(pullButton);
+        }
         toolbar.add(Box.createHorizontalGlue());
         var exitButton = new JButton("Exit");
         exitButton.addActionListener(e -> System.exit(0));
