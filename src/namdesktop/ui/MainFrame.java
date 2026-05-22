@@ -87,6 +87,17 @@ public final class MainFrame extends JFrame {
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.addSeparator();
+
+        if (syncService.isConfigured()) {
+            var pushItem = new JMenuItem("Push workspace");
+            pushItem.addActionListener(e -> runSync(true));
+            var pullItem = new JMenuItem("Pull workspace");
+            pullItem.addActionListener(e -> runSync(false));
+            fileMenu.add(pushItem);
+            fileMenu.add(pullItem);
+            fileMenu.addSeparator();
+        }
+
         fileMenu.add(settingsItem);
         fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
@@ -125,6 +136,31 @@ public final class MainFrame extends JFrame {
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
+    }
+
+    private void runSync(boolean push) {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        new Thread(() -> {
+            String message;
+            boolean success;
+            try {
+                if (push) syncService.push(workspacePath);
+                else      syncService.pull(workspacePath);
+                message = push ? "Workspace pushed successfully."
+                               : "Workspace pulled successfully.\nRestart the app to apply the updated workspace.";
+                success = true;
+            } catch (Exception ex) {
+                message = ex.getMessage();
+                success = false;
+            }
+            final var msg     = message;
+            final var isOk    = success;
+            SwingUtilities.invokeLater(() -> {
+                setCursor(Cursor.getDefaultCursor());
+                if (isOk) JOptionPane.showMessageDialog(this, msg, push ? "Push" : "Pull", JOptionPane.INFORMATION_MESSAGE);
+                else      JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+            });
+        }, "sync-thread").start();
     }
 
     private void openSearch() {
