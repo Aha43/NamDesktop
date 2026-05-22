@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `ProjectWorkbenchLens` — data projection for the Project Workbench: breadcrumb path, direct actions, one `ChildSection` per direct child project with its own direct actions; grandchild projects not expanded; done actions included. Closes #125.
+
 - Sub-projects in `ProjectDialog` — "Add sub-project" button alongside "Add action"; sub-project nodes carry a `project = true` flag; double-clicking a child routes to `ProjectDialog` or `ActionDialog` based on the flag; section heading renamed to "Actions & sub-projects". Closes #123.
 
 - Add project directly from Projects panel — "Add project" toolbar button creates a project without going through the inbox. Closes #122.
