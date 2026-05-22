@@ -12,6 +12,7 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.List;
 
 public final class ProjectsPanel extends JPanel {
@@ -49,11 +50,31 @@ public final class ProjectsPanel extends JPanel {
             }
         });
 
+        var toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        var addButton = new JButton("Add project");
+        addButton.addActionListener(e -> addProject());
+        toolbar.add(addButton);
+
+        add(toolbar,               BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     public void refresh() {
         tableModel.setRows(new ProjectsLens().items(workspace));
+    }
+
+    private void addProject() {
+        var title = JOptionPane.showInputDialog(
+                SwingUtilities.getWindowAncestor(this), "Project title:", "Add project", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.addChild(workspace.getProjectsNodeId(), title.strip());
+            refresh();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(this),
+                    "Failed to save: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static final class ProjectsTableModel extends AbstractTableModel {

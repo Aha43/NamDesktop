@@ -27,6 +27,17 @@ public final class NamWorkspaceService {
     public UUID addChild(UUID parentId, String title) throws IOException {
         var parent = require(parentId);
         var child = new NamNode(UUID.randomUUID(), title);
+        if (parentId.equals(workspace.getProjectsNodeId())) child.setProject(true);
+        workspace.getNodes().put(child.getId(), child);
+        parent.getChildIds().add(child.getId());
+        repository.save(path, workspace);
+        return child.getId();
+    }
+
+    public UUID addSubProject(UUID parentId, String title) throws IOException {
+        var parent = require(parentId);
+        var child = new NamNode(UUID.randomUUID(), title);
+        child.setProject(true);
         workspace.getNodes().put(child.getId(), child);
         parent.getChildIds().add(child.getId());
         repository.save(path, workspace);
@@ -209,7 +220,7 @@ public final class NamWorkspaceService {
     }
 
     private void convertFromArea(UUID id, UUID sourceId, UUID targetId, String sourceName) throws IOException {
-        require(id);
+        var node = require(id);
         var source = workspace.getNode(sourceId)
                 .orElseThrow(() -> new IllegalStateException("Source area node not found"));
         if (!source.getChildIds().remove(id)) {
@@ -218,6 +229,7 @@ public final class NamWorkspaceService {
         workspace.getNode(targetId)
                 .orElseThrow(() -> new IllegalStateException("Target area node not found"))
                 .getChildIds().add(id);
+        if (targetId.equals(workspace.getProjectsNodeId())) node.setProject(true);
         repository.save(path, workspace);
     }
 

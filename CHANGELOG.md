@@ -8,6 +8,12 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Sub-projects in `ProjectDialog` — "Add sub-project" button alongside "Add action"; sub-project nodes carry a `project = true` flag; double-clicking a child routes to `ProjectDialog` or `ActionDialog` based on the flag; section heading renamed to "Actions & sub-projects". Closes #123.
+
+- Add project directly from Projects panel — "Add project" toolbar button creates a project without going through the inbox. Closes #122.
+
+- Projects have no actionable status — status toggle button removed from `ProjectDialog`; projects are organizing containers, not actionable items. Closes #121.
+
 - Project templates — create a named template from any existing project (captures the full subtree); apply a template when converting an inbox item to a project (template children are cloned under the new project, then the ProjectDialog opens immediately); manage templates (list and delete) via File → Templates…. Closes #116, #117, #118, #119.
 
 - Push / Pull toolbar buttons — `cloud-upload.svg` and `cloud-download.svg` icons; only shown when sync is configured; use `UiHelper.iconButton()` so they participate in dense mode. Closes #115.

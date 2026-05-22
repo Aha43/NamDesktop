@@ -10,6 +10,7 @@ public final class NamNode {
     private String title;
     private String description;
     private NodeStatus status = NodeStatus.BACKLOG;
+    private boolean project = false;
     private List<UUID> childIds = new ArrayList<>();
     private List<String> tags = new ArrayList<>();
 
@@ -31,6 +32,9 @@ public final class NamNode {
 
     public NodeStatus getStatus() { return status; }
     public void setStatus(NodeStatus status) { this.status = status; }
+
+    public boolean isProject() { return project; }
+    public void setProject(boolean project) { this.project = project; }
 
     public List<UUID> getChildIds() { return childIds; }
     public void setChildIds(List<UUID> childIds) { this.childIds = childIds; }

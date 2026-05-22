@@ -658,6 +658,43 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- addSubProject ---
+
+    @Test
+    void addSubProject_setsProjectFlag() throws IOException {
+        var projectId = service.addInboxItem("Parent");
+        service.convertInboxItemToProject(projectId);
+        var subId = service.addSubProject(projectId, "Sub");
+        assertTrue(workspace.getNode(subId).orElseThrow().isProject());
+    }
+
+    @Test
+    void addSubProject_addsChildToParent() throws IOException {
+        var projectId = service.addInboxItem("Parent");
+        service.convertInboxItemToProject(projectId);
+        var subId = service.addSubProject(projectId, "Sub");
+        assertTrue(workspace.getNode(projectId).orElseThrow().getChildIds().contains(subId));
+    }
+
+    @Test
+    void addChild_setsProjectFlagWhenParentIsProjectsNode() throws IOException {
+        var id = service.addChild(workspace.getProjectsNodeId(), "Direct project");
+        assertTrue(workspace.getNode(id).orElseThrow().isProject());
+    }
+
+    @Test
+    void addChild_doesNotSetProjectFlagForOtherParents() throws IOException {
+        var id = service.addChild(rootId, "Regular child");
+        assertFalse(workspace.getNode(id).orElseThrow().isProject());
+    }
+
+    @Test
+    void convertInboxItemToProject_setsProjectFlag() throws IOException {
+        var id = service.addInboxItem("Task");
+        service.convertInboxItemToProject(id);
+        assertTrue(workspace.getNode(id).orElseThrow().isProject());
+    }
+
     // --- saveAsTemplate / deleteTemplate / applyTemplate ---
 
     @Test
