@@ -70,6 +70,10 @@ public final class ProjectDialog extends NodeDialog {
         convertButton.addActionListener(e -> convertToAction());
         addToolbarButton(convertButton);
 
+        var saveTemplateButton = new JButton("Save as Template…");
+        saveTemplateButton.addActionListener(e -> saveAsTemplate());
+        addToolbarButton(saveTemplateButton);
+
         var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(ProjectDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addAction());
         var actionsToolbar = new JToolBar();
@@ -100,6 +104,20 @@ public final class ProjectDialog extends NodeDialog {
                 actionsTable.scrollRectToVisible(actionsTable.getCellRect(i, 0, true));
                 break;
             }
+        }
+    }
+
+    private void saveAsTemplate() {
+        var name = JOptionPane.showInputDialog(this, "Template name:", "Save as Template", JOptionPane.PLAIN_MESSAGE);
+        if (name == null || name.isBlank()) return;
+        try {
+            service.saveAsTemplate(name.strip(), nodeId);
+            JOptionPane.showMessageDialog(this, "Template \"" + name.strip() + "\" saved.",
+                    "Template saved", JOptionPane.INFORMATION_MESSAGE);
+        } catch (IllegalArgumentException e) {
+            JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
