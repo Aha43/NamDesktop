@@ -180,6 +180,12 @@ public class NodeDialog extends JDialog {
 
     protected void notifyChanged() { onChanged.run(); }
 
+    protected void hideStatusButton() {
+        toolbar.remove(statusButton);
+        toolbar.revalidate();
+        toolbar.repaint();
+    }
+
     protected void addToolbarButton(JButton button) {
         toolbar.addSeparator();
         toolbar.add(button);

@@ -41,6 +41,7 @@ public final class ProjectDialog extends NodeDialog {
         this.nodeId    = nodeId;
         this.workspace = workspace;
         this.service   = service;
+        hideStatusButton();
 
         tableModel = new ActionsTableModel();
         actionsTable = new JTable(tableModel) {
@@ -60,8 +61,14 @@ public final class ProjectDialog extends NodeDialog {
                 if (e.getClickCount() != 2) return;
                 var row = actionsTable.rowAtPoint(e.getPoint());
                 if (row < 0) return;
-                var childId = tableModel.getRow(row).getId();
-                new ActionDialog(ProjectDialog.this, childId, workspace, service, false).setVisible(true);
+                var child = tableModel.getRow(row);
+                if (child.isProject()) {
+                    new ProjectDialog(ProjectDialog.this, child.getId(), workspace, service, () -> {
+                        notifyChanged(); refreshChildList();
+                    }).setVisible(true);
+                } else {
+                    new ActionDialog(ProjectDialog.this, child.getId(), workspace, service, false).setVisible(true);
+                }
                 refreshChildList();
             }
         });
@@ -76,12 +83,15 @@ public final class ProjectDialog extends NodeDialog {
 
         var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(ProjectDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addAction());
+        var addSubProjectButton = new JButton("Add sub-project");
+        addSubProjectButton.addActionListener(e -> addSubProject());
         var actionsToolbar = new JToolBar();
         actionsToolbar.setFloatable(false);
         actionsToolbar.add(addActionButton);
+        actionsToolbar.add(addSubProjectButton);
 
         var actionsPanel = new JPanel(new BorderLayout());
-        actionsPanel.setBorder(BorderFactory.createTitledBorder("Actions"));
+        actionsPanel.setBorder(BorderFactory.createTitledBorder("Actions & sub-projects"));
         actionsPanel.setPreferredSize(new Dimension(0, 200));
         actionsPanel.add(actionsToolbar,                  BorderLayout.NORTH);
         actionsPanel.add(new JScrollPane(actionsTable),   BorderLayout.CENTER);
@@ -139,6 +149,18 @@ public final class ProjectDialog extends NodeDialog {
         if (title == null || title.isBlank()) return;
         try {
             service.addChild(nodeId, title.strip());
+            refreshChildList();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void addSubProject() {
+        var title = JOptionPane.showInputDialog(this, "Sub-project title:", "Add sub-project", JOptionPane.PLAIN_MESSAGE);
+        if (title == null || title.isBlank()) return;
+        try {
+            service.addSubProject(nodeId, title.strip());
             refreshChildList();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
