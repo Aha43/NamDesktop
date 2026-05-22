@@ -92,9 +92,9 @@ class JsonWorkspaceRepositoryTest {
     void saveAndLoad_roundTripsTemplates(@TempDir Path dir) throws IOException {
         var path = dir.resolve("workspace.json");
         var original = NamWorkspace.createDefault();
-        var child = new TemplateNode("Book flights", List.of(
-                new TemplateNode("Outbound", List.of()),
-                new TemplateNode("Return",   List.of())));
+        var child = new TemplateNode("Book flights", true, List.of(
+                new TemplateNode("Outbound", false, List.of()),
+                new TemplateNode("Return",   false, List.of())));
         original.getTemplates().add(new ProjectTemplate("Travel template", List.of(child)));
         repo.save(path, original);
 

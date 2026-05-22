@@ -50,7 +50,7 @@ public final class MainFrame extends JFrame {
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);
-        this.projectsPanel    = new ProjectsPanel(workspace, service);
+        this.projectsPanel    = new ProjectsPanel(workspace, service, this::openProjectWorkbench);
         this.nextActionsPanel = new NextActionsPanel(workspace, service);
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
         this.backlogPanel     = new BacklogPanel(workspace, service);
@@ -177,6 +177,13 @@ public final class MainFrame extends JFrame {
     private void openSearch() {
         contentArea.setContent(searchPanel);
         searchPanel.refresh();
+    }
+
+    private void openProjectWorkbench(java.util.UUID projectId) {
+        contentArea.setContent(new ProjectWorkbenchPanel(this, workspace, service, projectId, () -> {
+            contentArea.setContent(projectsPanel);
+            projectsPanel.refresh();
+        }));
     }
 
     private void rebuildSavedViewsNav() {

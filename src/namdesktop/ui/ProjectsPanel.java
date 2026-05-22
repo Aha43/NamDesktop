@@ -14,18 +14,22 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class ProjectsPanel extends JPanel {
 
-    private final NamWorkspace workspace;
+    private final NamWorkspace      workspace;
     private final NamWorkspaceService service;
+    private final Consumer<UUID>    onOpenProject;
     private final ProjectsTableModel tableModel;
 
-    public ProjectsPanel(NamWorkspace workspace, NamWorkspaceService service) {
+    public ProjectsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
-        this.workspace  = workspace;
-        this.service    = service;
-        this.tableModel = new ProjectsTableModel();
+        this.workspace     = workspace;
+        this.service       = service;
+        this.onOpenProject = onOpenProject;
+        this.tableModel    = new ProjectsTableModel();
 
         JTable table = new JTable(tableModel) {
             @Override
@@ -44,9 +48,7 @@ public final class ProjectsPanel extends JPanel {
                 if (e.getClickCount() != 2) return;
                 var row = table.rowAtPoint(e.getPoint());
                 if (row < 0) return;
-                var selected = tableModel.getRow(row);
-                new ProjectDialog(SwingUtilities.getWindowAncestor(ProjectsPanel.this),
-                        selected.id(), workspace, service, ProjectsPanel.this::refresh).setVisible(true);
+                onOpenProject.accept(tableModel.getRow(row).id());
             }
         });
 
