@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `WorkspaceSyncService` interface and `GitSyncService` implementation — generic sync interface in `namdesktop.sync`; git-backed implementation uses `ProcessBuilder` to clone, commit, push and pull; fails fast with a clear message when not configured. Closes #111.
+
 - All icon buttons refactored to `UiHelper.iconButton()` — `NextActionsPanel`, `BacklogPanel`, `ContextPanel`, `SavedViewPanel`, `ProjectDialog`, `NodeDialog`, `TagManagementDialog`, `MainFrame` toolbar; all participate in dense mode and always show a tooltip. Closes #109.
 
 - Dense mode setting — `AppSettings.dense` boolean (default `false`); `UiHelper.iconButton(label, icon)` factory creates dense-aware buttons with mandatory tooltips; `UiHelper.applyDense(boolean)` walks all open windows and flips button labels live; "Dense mode" checkbox in `SettingsPanel`. Closes #108.
