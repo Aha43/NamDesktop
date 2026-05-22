@@ -90,10 +90,13 @@ public final class MainFrame extends JFrame {
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
         settingsItem.addActionListener(e -> new SettingsDialog(this, settings).setVisible(true));
+        var templatesItem = new JMenuItem("Templates…");
+        templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
+        fileMenu.add(templatesItem);
         fileMenu.addSeparator();
 
         if (syncService.isConfigured()) {

@@ -658,6 +658,140 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- saveAsTemplate / deleteTemplate / applyTemplate ---
+
+    @Test
+    void saveAsTemplate_addsTemplateWithName() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        service.addChild(projectId, "Book flights");
+        service.addChild(projectId, "Book hotel");
+        service.saveAsTemplate("Travel template", projectId);
+        assertEquals(1, workspace.getTemplates().size());
+        assertEquals("Travel template", workspace.getTemplates().get(0).name());
+    }
+
+    @Test
+    void saveAsTemplate_capturesFullSubtree() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        var flightsId = service.addChild(projectId, "Book flights");
+        service.addChild(flightsId, "Outbound");
+        service.addChild(flightsId, "Return");
+        service.saveAsTemplate("Travel template", projectId);
+        var children = workspace.getTemplates().get(0).children();
+        assertEquals(1, children.size());
+        assertEquals("Book flights", children.get(0).title());
+        assertEquals(2, children.get(0).children().size());
+    }
+
+    @Test
+    void saveAsTemplate_throwsOnBlankName() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.saveAsTemplate("  ", projectId));
+    }
+
+    @Test
+    void saveAsTemplate_throwsOnDuplicateName() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        service.saveAsTemplate("Travel template", projectId);
+        assertThrows(IllegalArgumentException.class,
+                () -> service.saveAsTemplate("Travel template", projectId));
+    }
+
+    @Test
+    void saveAsTemplate_savesWorkspace() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        repository.saveCount = 0;
+        service.saveAsTemplate("Travel template", projectId);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteTemplate_removesTemplate() throws IOException {
+        var projectId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(projectId);
+        service.saveAsTemplate("Travel template", projectId);
+        repository.saveCount = 0;
+        service.deleteTemplate("Travel template");
+        assertTrue(workspace.getTemplates().isEmpty());
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteTemplate_isNoOpWhenNotFound() throws IOException {
+        service.deleteTemplate("Nonexistent");
+        assertEquals(0, repository.saveCount);
+    }
+
+    @Test
+    void applyTemplate_clonesChildrenUnderProject() throws IOException {
+        var sourceId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(sourceId);
+        service.addChild(sourceId, "Book flights");
+        service.addChild(sourceId, "Book hotel");
+        service.saveAsTemplate("Travel template", sourceId);
+
+        var targetId = service.addInboxItem("Japan trip");
+        service.convertInboxItemToProject(targetId);
+        service.applyTemplate(targetId, workspace.getTemplates().get(0));
+
+        var children = workspace.getChildren(targetId);
+        assertEquals(2, children.size());
+        assertTrue(children.stream().anyMatch(n -> n.getTitle().equals("Book flights")));
+        assertTrue(children.stream().anyMatch(n -> n.getTitle().equals("Book hotel")));
+    }
+
+    @Test
+    void applyTemplate_assignsNewNodeIds() throws IOException {
+        var sourceId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(sourceId);
+        var originalChild = service.addChild(sourceId, "Book flights");
+        service.saveAsTemplate("Travel template", sourceId);
+
+        var targetId = service.addInboxItem("Japan trip");
+        service.convertInboxItemToProject(targetId);
+        service.applyTemplate(targetId, workspace.getTemplates().get(0));
+
+        var clonedId = workspace.getChildren(targetId).get(0).getId();
+        assertNotEquals(originalChild, clonedId);
+    }
+
+    @Test
+    void applyTemplate_clonesDeepSubtree() throws IOException {
+        var sourceId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(sourceId);
+        var flightsId = service.addChild(sourceId, "Book flights");
+        service.addChild(flightsId, "Outbound");
+        service.addChild(flightsId, "Return");
+        service.saveAsTemplate("Travel template", sourceId);
+
+        var targetId = service.addInboxItem("Japan trip");
+        service.convertInboxItemToProject(targetId);
+        service.applyTemplate(targetId, workspace.getTemplates().get(0));
+
+        var flightsClone = workspace.getChildren(targetId).get(0);
+        assertEquals(2, workspace.getChildren(flightsClone.getId()).size());
+    }
+
+    @Test
+    void applyTemplate_savesWorkspace() throws IOException {
+        var sourceId = service.addInboxItem("Travel");
+        service.convertInboxItemToProject(sourceId);
+        service.addChild(sourceId, "Book flights");
+        service.saveAsTemplate("Travel template", sourceId);
+
+        var targetId = service.addInboxItem("Japan trip");
+        service.convertInboxItemToProject(targetId);
+        repository.saveCount = 0;
+        service.applyTemplate(targetId, workspace.getTemplates().get(0));
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {

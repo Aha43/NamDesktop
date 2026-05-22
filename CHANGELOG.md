@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Project templates — create a named template from any existing project (captures the full subtree); apply a template when converting an inbox item to a project (template children are cloned under the new project, then the ProjectDialog opens immediately); manage templates (list and delete) via File → Templates…. Closes #116, #117, #118, #119.
+
 - Push / Pull toolbar buttons — `cloud-upload.svg` and `cloud-download.svg` icons; only shown when sync is configured; use `UiHelper.iconButton()` so they participate in dense mode. Closes #115.
 
 - Push / Pull workspace in File menu — only shown when a sync repo URL is configured; operations run on a background thread (UI stays responsive); success shows a confirmation dialog; pull reminds the user to restart to apply the updated workspace; errors surface a readable message. Closes #113.

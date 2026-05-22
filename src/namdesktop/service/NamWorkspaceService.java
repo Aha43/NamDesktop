@@ -3,6 +3,8 @@ package namdesktop.service;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.model.ProjectTemplate;
+import namdesktop.model.TemplateNode;
 import namdesktop.persist.WorkspaceRepository;
 
 import java.io.IOException;
@@ -222,6 +224,46 @@ public final class NamWorkspaceService {
     private NamNode require(UUID nodeId) {
         return workspace.getNode(nodeId)
                 .orElseThrow(() -> new IllegalArgumentException("Node not found: " + nodeId));
+    }
+
+    public List<ProjectTemplate> getTemplates() {
+        return workspace.getTemplates();
+    }
+
+    public void saveAsTemplate(String name, UUID nodeId) throws IOException {
+        var trimmed = name.strip();
+        if (trimmed.isEmpty()) throw new IllegalArgumentException("Template name must not be blank");
+        var templates = workspace.getTemplates();
+        if (templates.stream().anyMatch(t -> t.name().equals(trimmed))) {
+            throw new IllegalArgumentException("A template named \"" + trimmed + "\" already exists");
+        }
+        templates.add(new ProjectTemplate(trimmed, captureChildren(nodeId)));
+        repository.save(path, workspace);
+    }
+
+    public void deleteTemplate(String name) throws IOException {
+        if (workspace.getTemplates().removeIf(t -> t.name().equals(name))) {
+            repository.save(path, workspace);
+        }
+    }
+
+    public void applyTemplate(UUID projectId, ProjectTemplate template) throws IOException {
+        require(projectId);
+        for (var child : template.children()) cloneTemplateNode(projectId, child);
+        repository.save(path, workspace);
+    }
+
+    private List<TemplateNode> captureChildren(UUID nodeId) {
+        return workspace.getChildren(nodeId).stream()
+                .map(child -> new TemplateNode(child.getTitle(), captureChildren(child.getId())))
+                .toList();
+    }
+
+    private void cloneTemplateNode(UUID parentId, TemplateNode templateNode) {
+        var node = new NamNode(UUID.randomUUID(), templateNode.title());
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(parentId).orElseThrow().getChildIds().add(node.getId());
+        for (var child : templateNode.children()) cloneTemplateNode(node.getId(), child);
     }
 
     private NamNode findParent(UUID nodeId) {

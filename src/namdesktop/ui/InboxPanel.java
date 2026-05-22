@@ -4,6 +4,7 @@ import namdesktop.lens.InboxItemRow;
 import namdesktop.lens.InboxLens;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.model.ProjectTemplate;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -97,12 +98,33 @@ public final class InboxPanel extends JPanel {
                 null, options, options[0]);
         if (choice < 0) return;
         try {
-            if (choice == 0) service.convertInboxItemToNextAction(row.id());
-            else             service.convertInboxItemToProject(row.id());
-            refresh();
+            if (choice == 0) {
+                service.convertInboxItemToNextAction(row.id());
+                refresh();
+            } else {
+                service.convertInboxItemToProject(row.id());
+                var template = pickTemplate();
+                if (template != null) service.applyTemplate(row.id(), template);
+                refresh();
+                new ProjectDialog(parent(), row.id(), workspace, service, this::refresh).setVisible(true);
+            }
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());
         }
+    }
+
+    private ProjectTemplate pickTemplate() {
+        var templates = workspace.getTemplates();
+        if (templates.isEmpty()) return null;
+        var names = new String[templates.size() + 1];
+        names[0] = "No template";
+        for (int i = 0; i < templates.size(); i++) names[i + 1] = templates.get(i).name();
+        var choice = JOptionPane.showOptionDialog(parent(),
+                "Apply a project template?", "Choose template",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
+                null, names, names[0]);
+        if (choice <= 0) return null;
+        return templates.get(choice - 1);
     }
 
     private void addItem() {

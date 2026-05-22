@@ -1,6 +1,8 @@
 package namdesktop.persist;
 
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.ProjectTemplate;
+import namdesktop.model.TemplateNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -84,6 +86,34 @@ class JsonWorkspaceRepositoryTest {
         var loaded = repo.load(path);
         var loadedNode = loaded.getNode(original.getInboxNodeId()).orElseThrow();
         assertEquals(List.of("@computer", "@home"), loadedNode.getTags());
+    }
+
+    @Test
+    void saveAndLoad_roundTripsTemplates(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        var child = new TemplateNode("Book flights", List.of(
+                new TemplateNode("Outbound", List.of()),
+                new TemplateNode("Return",   List.of())));
+        original.getTemplates().add(new ProjectTemplate("Travel template", List.of(child)));
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertEquals(1, loaded.getTemplates().size());
+        assertEquals("Travel template", loaded.getTemplates().get(0).name());
+        assertEquals(1, loaded.getTemplates().get(0).children().size());
+        assertEquals("Book flights", loaded.getTemplates().get(0).children().get(0).title());
+        assertEquals(2, loaded.getTemplates().get(0).children().get(0).children().size());
+    }
+
+    @Test
+    void load_oldFileWithoutTemplates_loadsEmptyList(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        repo.save(path, original);
+        var loaded = repo.load(path);
+        assertNotNull(loaded.getTemplates());
+        assertTrue(loaded.getTemplates().isEmpty());
     }
 
     @Test
