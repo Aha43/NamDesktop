@@ -267,12 +267,13 @@ public final class NamWorkspaceService {
 
     private List<TemplateNode> captureChildren(UUID nodeId) {
         return workspace.getChildren(nodeId).stream()
-                .map(child -> new TemplateNode(child.getTitle(), captureChildren(child.getId())))
+                .map(child -> new TemplateNode(child.getTitle(), child.isProject(), captureChildren(child.getId())))
                 .toList();
     }
 
     private void cloneTemplateNode(UUID parentId, TemplateNode templateNode) {
         var node = new NamNode(UUID.randomUUID(), templateNode.title());
+        node.setProject(templateNode.project());
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(parentId).orElseThrow().getChildIds().add(node.getId());
         for (var child : templateNode.children()) cloneTemplateNode(node.getId(), child);
