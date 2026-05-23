@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.app.AppSettings;
 import namdesktop.lens.NextActionItemRow;
 import namdesktop.lens.NextActionsLens;
 import namdesktop.model.NamNode;
@@ -11,6 +12,7 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -28,6 +30,8 @@ public final class NextActionsPanel extends JPanel {
     private final JButton downButton;
     private List<UUID> currentOrder = List.of();
     private UUID pendingSelection;
+    private TableColumn statusColumn;
+    private boolean statusColumnVisible = true;
 
     public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -102,7 +106,22 @@ public final class NextActionsPanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         });
 
+        statusColumn = table.getColumnModel().getColumn(3);
+        applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
+
         add(new JScrollPane(table), BorderLayout.CENTER);
+    }
+
+    public void applyColumnVisibility(boolean show) {
+        var cm = table.getColumnModel();
+        if (show == statusColumnVisible) return;
+        if (show) {
+            cm.addColumn(statusColumn);
+            cm.moveColumn(cm.getColumnCount() - 1, 3);
+        } else {
+            cm.removeColumn(statusColumn);
+        }
+        statusColumnVisible = show;
     }
 
     public void refresh() {

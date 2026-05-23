@@ -16,6 +16,7 @@ public final class BacklogLens {
         var structural = structuralIds(workspace);
         return workspace.getNodes().values().stream()
                 .filter(n -> !structural.contains(n.getId()))
+                .filter(n -> !n.isProject())
                 .filter(n -> n.getStatus() == NodeStatus.BACKLOG)
                 .map(n -> {
                     var parent = workspace.getParent(n.getId())

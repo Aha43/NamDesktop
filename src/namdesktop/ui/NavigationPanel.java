@@ -20,7 +20,15 @@ public final class NavigationPanel extends JPanel {
         this.model = new DefaultListModel<>();
         staticEntries.forEach(model::addElement);
 
-        list = new JList<>(model);
+        list = new JList<>(model) {
+            @Override
+            public String getToolTipText(java.awt.event.MouseEvent e) {
+                int idx = locationToIndex(e.getPoint());
+                if (idx < 0) return null;
+                return model.get(idx).tooltip();
+            }
+        };
+        list.setToolTipText("");
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setCellRenderer(new EntryRenderer());
         list.setBorder(new EmptyBorder(4, 4, 4, 4));
@@ -42,7 +50,12 @@ public final class NavigationPanel extends JPanel {
         while (model.size() > staticEntries.size()) model.removeElementAt(model.size() - 1);
         if (!savedViews.isEmpty()) {
             model.addElement(NavigationEntry.divider());
-            savedViews.forEach(sv -> model.addElement(new NavigationEntry("saved-view:" + sv.name(), sv.name())));
+            savedViews.forEach(sv -> {
+                var tooltip = sv.tags().isEmpty()
+                        ? "No tags configured"
+                        : "Tags: " + String.join(", ", sv.tags());
+                model.addElement(new NavigationEntry("saved-view:" + sv.name(), sv.name(), tooltip));
+            });
         }
     }
 
