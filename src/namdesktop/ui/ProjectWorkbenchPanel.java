@@ -69,8 +69,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         }
 
+        var projectName = workspace.getNode(currentProjectId).map(n -> n.getTitle()).orElse("this project");
         var newProjectButton = UiHelper.iconButton("New project",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/folder-plus.svg")).derive(16, 16));
+        newProjectButton.setToolTipText("Makes new sub project of this project (" + projectName + ")");
         newProjectButton.addActionListener(e -> {
             var title = JOptionPane.showInputDialog(parent, "Project title:", "New project", JOptionPane.PLAIN_MESSAGE);
             if (title == null || title.isBlank()) return;
