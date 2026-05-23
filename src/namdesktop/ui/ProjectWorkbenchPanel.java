@@ -146,7 +146,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (actions.isEmpty()) {
             var lbl = new JLabel("  No actions");
             lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lbl.setBorder(BorderFactory.createEmptyBorder(2, 16, 4, 0));
+            lbl.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
             return lbl;
         }
 
@@ -156,7 +156,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var list = new JList<>(model);
         list.setCellRenderer(new ActionCellRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setBorder(BorderFactory.createEmptyBorder(2, 16, 4, 0));
+        list.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
         list.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
