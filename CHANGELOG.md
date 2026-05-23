@@ -15,6 +15,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Git sync push/pull buttons and menu items are now hidden in dev mode, preventing accidental overwrite of production data. Closes #150.
 - GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
 
 ### Changed
