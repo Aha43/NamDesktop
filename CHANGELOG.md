@@ -9,17 +9,17 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Inbox items appearing in the Backlog panel are rendered in italic to signal they are unprocessed captures; double-clicking still opens ActionDialog for processing. Closes #149.
+- Educational tooltips on hardcoded navigation entries (Inbox, Projects, Next Actions, Context, Backlog, Raw Tree) explaining their GTD role. Closes #146.
+- Generated tooltips on saved view navigation entries showing the configured tag filter. Closes #147.
+- Ordering Phase 2 — view-specific ordering in Next Actions and Backlog panels: up/down icon buttons in each toolbar reorder actions independently of the structural tree; order persists across sessions via `viewOrders` map; selection follows the moved item for frictionless repeated moves; `ViewOrderReconciler` drops removed items, preserves saved order, appends new items in live order. Closes #140, Closes #141, Closes #142.
+
+### Fixed
+
+- GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
 
 ### Changed
 
 - Setting "Always show status column" (default off) — hides the redundant Status column in Next Actions and Backlog panels; toggle takes effect immediately without restart. Closes #144.
-- GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
-- Educational tooltips on hardcoded navigation entries (Inbox, Projects, Next Actions, Context, Backlog, Raw Tree) explaining their GTD role. Closes #146.
-- Generated tooltips on saved view navigation entries showing the configured tag filter. Closes #147.
-
-### Changed
-
-- Ordering Phase 2 — view-specific ordering in Next Actions and Backlog panels: up/down icon buttons in each toolbar reorder actions independently of the structural tree; order persists across sessions via `viewOrders` map; selection follows the moved item for frictionless repeated moves; `ViewOrderReconciler` drops removed items, preserves saved order, appends new items in live order. Closes #140, Closes #141, Closes #142.
 
 - Ordering Phase 1 — up/down reordering throughout the app:
   - Workbench action lists: up/down icon buttons in each action bar; selection preserved across rebuild so repeated moves need no reselection; actions skip over sub-project siblings when moving. Closes #136.
