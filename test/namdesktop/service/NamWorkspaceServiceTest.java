@@ -60,6 +60,102 @@ class NamWorkspaceServiceTest {
                 () -> service.addChild(UUID.randomUUID(), "Child"));
     }
 
+    // --- moveChildUp / moveChildDown ---
+
+    @Test
+    void moveChildUp_swapsWithPreviousSibling() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        service.moveChildUp(rootId, b);
+        var ids = workspace.getNode(rootId).orElseThrow().getChildIds();
+        assertTrue(ids.indexOf(b) < ids.indexOf(a));
+    }
+
+    @Test
+    void moveChildDown_swapsWithNextSibling() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        service.moveChildDown(rootId, a);
+        var ids = workspace.getNode(rootId).orElseThrow().getChildIds();
+        assertTrue(ids.indexOf(b) < ids.indexOf(a));
+    }
+
+    @Test
+    void moveChildUp_isNoOpForFirstChild() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var a = service.addChild(parentId, "A");
+        service.addChild(parentId, "B");
+        var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
+        service.moveChildUp(parentId, a);
+        assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());
+    }
+
+    @Test
+    void moveChildDown_isNoOpForLastChild() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        service.addChild(parentId, "A");
+        var b = service.addChild(parentId, "B");
+        var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
+        service.moveChildDown(parentId, b);
+        assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());
+    }
+
+    @Test
+    void moveChildUp_savesWorkspace() throws IOException {
+        service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        repository.saveCount = 0;
+        service.moveChildUp(rootId, b);
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void moveChildDown_savesWorkspace() throws IOException {
+        var a = service.addChild(rootId, "A");
+        service.addChild(rootId, "B");
+        repository.saveCount = 0;
+        service.moveChildDown(rootId, a);
+        assertEquals(1, repository.saveCount);
+    }
+
+    // --- moveActionUp / moveActionDown ---
+
+    @Test
+    void moveActionUp_skipsOverProjectSiblings() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var sub      = service.addSubProject(parentId, "Sub");
+        var a        = service.addChild(parentId, "A");
+        var b        = service.addChild(parentId, "B");
+        // childIds: [sub, a, b] — moving a up should skip sub and stay put (already first action)
+        service.moveActionUp(parentId, a);
+        var ids = workspace.getNode(parentId).orElseThrow().getChildIds();
+        assertTrue(ids.indexOf(sub) < ids.indexOf(a));
+        assertTrue(ids.indexOf(a) < ids.indexOf(b));
+    }
+
+    @Test
+    void moveActionDown_swapsWithNextActionSkippingProjects() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var a        = service.addChild(parentId, "A");
+        var sub      = service.addSubProject(parentId, "Sub");
+        var b        = service.addChild(parentId, "B");
+        // childIds: [a, sub, b] — moving a down should skip sub and swap with b
+        service.moveActionDown(parentId, a);
+        var ids = workspace.getNode(parentId).orElseThrow().getChildIds();
+        assertTrue(ids.indexOf(b) < ids.indexOf(a));
+    }
+
+    @Test
+    void moveActionUp_isNoOpWhenFirstAmongActions() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var sub      = service.addSubProject(parentId, "Sub");
+        var a        = service.addChild(parentId, "A");
+        service.addChild(parentId, "B");
+        var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
+        service.moveActionUp(parentId, a);
+        assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());
+    }
+
     // --- renameNode ---
 
     @Test

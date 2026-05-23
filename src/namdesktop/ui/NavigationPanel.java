@@ -63,6 +63,11 @@ public final class NavigationPanel extends JPanel {
             }
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value instanceof NavigationEntry e) setText(e.title());
+            // always use the focused selection colour so it doesn't shift when focus moves to the workbench
+            if (isSelected) {
+                setBackground(UIManager.getColor("List.selectionBackground"));
+                setForeground(UIManager.getColor("List.selectionForeground"));
+            }
             return this;
         }
     }

@@ -26,6 +26,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private final NamWorkspaceService service;
     private final Runnable          onNavigateToProjects;
     private       UUID              currentProjectId;
+    private       UUID              pendingSelection;
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
@@ -119,17 +120,21 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0));
 
-        for (var section : projection.childSections()) {
+        var sections = projection.childSections();
+        for (int i = 0; i < sections.size(); i++) {
+            var section = sections.get(i);
             content.add(Box.createVerticalStrut(16));
-            content.add(buildSection(section.project().getTitle(), section.directActions(), section.project().getId()));
+            content.add(buildSection(section.project().getTitle(), section.directActions(),
+                    section.project().getId(), i, sections.size()));
         }
 
         return content;
     }
 
-    private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId) {
+    private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId,
+                                int sectionIndex, int sectionCount) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -138,19 +143,32 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setLayout(new BorderLayout());
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        if (title != null) section.add(buildSectionHeader(title, targetProjectId), BorderLayout.NORTH);
+        if (title != null) section.add(
+                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount), BorderLayout.NORTH);
+
+        JList<NamNode> actionList = null;
+        JComponent listContent;
+        if (actions.isEmpty()) {
+            var lbl = new JLabel("  No actions");
+            lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+            lbl.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+            listContent = lbl;
+        } else {
+            actionList = buildActionList(actions, targetProjectId);
+            listContent = actionList;
+        }
 
         var listWrapper = new JPanel(new BorderLayout());
         listWrapper.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")));
-        listWrapper.add(buildActionList(actions), BorderLayout.CENTER);
+        listWrapper.add(listContent, BorderLayout.CENTER);
         section.add(listWrapper, BorderLayout.CENTER);
 
-        section.add(buildAddActionBar(targetProjectId), BorderLayout.SOUTH);
+        section.add(buildAddActionBar(targetProjectId, actionList), BorderLayout.SOUTH);
 
         return section;
     }
 
-    private JPanel buildAddActionBar(UUID targetProjectId) {
+    private JPanel buildAddActionBar(UUID targetProjectId, JList<NamNode> actionList) {
         var targetName = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("this project");
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
@@ -169,29 +187,89 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
+
+        if (actionList != null) {
+            var upButton   = UiHelper.iconButton("Move up",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+            var downButton = UiHelper.iconButton("Move down",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+            upButton.setToolTipText("Move selected action up");
+            downButton.setToolTipText("Move selected action down");
+            upButton.setEnabled(false);
+            downButton.setEnabled(false);
+
+            actionList.addListSelectionListener(e -> {
+                if (e.getValueIsAdjusting()) return;
+                var idx  = actionList.getSelectedIndex();
+                var size = actionList.getModel().getSize();
+                upButton.setEnabled(idx > 0);
+                downButton.setEnabled(idx >= 0 && idx < size - 1);
+            });
+
+            // initialise button state for any selection already set (e.g. restored after rebuild)
+            var restoredIdx = actionList.getSelectedIndex();
+            upButton.setEnabled(restoredIdx > 0);
+            downButton.setEnabled(restoredIdx >= 0 && restoredIdx < actionList.getModel().getSize() - 1);
+
+            upButton.addActionListener(e -> {
+                var node = actionList.getSelectedValue();
+                if (node == null) return;
+                try { pendingSelection = node.getId(); service.moveActionUp(targetProjectId, node.getId()); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            downButton.addActionListener(e -> {
+                var node = actionList.getSelectedValue();
+                if (node == null) return;
+                try { pendingSelection = node.getId(); service.moveActionDown(targetProjectId, node.getId()); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+
+            bar.add(upButton);
+            bar.add(downButton);
+        }
+
         return bar;
     }
 
-    private JComponent buildSectionHeader(String title, UUID navigateToId) {
-        var header = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+    private JComponent buildSectionHeader(String title, UUID navigateToId,
+                                          int sectionIndex, int sectionCount) {
+        var header = new JPanel(new BorderLayout());
+
         var btn = new JButton(title + " ›");
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
         btn.setFont(btn.getFont().deriveFont(Font.BOLD));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> navigateTo(navigateToId));
-        header.add(btn);
+
+        var upButton = UiHelper.iconButton("Move section up",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+        var downButton = UiHelper.iconButton("Move section down",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+        upButton.setToolTipText("Move this sub-project up");
+        downButton.setToolTipText("Move this sub-project down");
+        upButton.setEnabled(sectionIndex > 0);
+        downButton.setEnabled(sectionIndex < sectionCount - 1);
+
+        upButton.addActionListener(e -> {
+            try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
+            catch (IOException ex) { showError(ex.getMessage()); }
+        });
+        downButton.addActionListener(e -> {
+            try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
+            catch (IOException ex) { showError(ex.getMessage()); }
+        });
+
+        var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        orderButtons.add(upButton);
+        orderButtons.add(downButton);
+
+        header.add(btn,          BorderLayout.CENTER);
+        header.add(orderButtons, BorderLayout.EAST);
         return header;
     }
 
-    private JComponent buildActionList(List<NamNode> actions) {
-        if (actions.isEmpty()) {
-            var lbl = new JLabel("  No actions");
-            lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lbl.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
-            return lbl;
-        }
-
+    private JList<NamNode> buildActionList(List<NamNode> actions, UUID targetProjectId) {
         var model = new DefaultListModel<NamNode>();
         for (var a : actions) model.addElement(a);
 
@@ -210,7 +288,22 @@ public final class ProjectWorkbenchPanel extends JPanel {
                         .setVisible(true);
             }
         });
+
+        if (pendingSelection != null) {
+            for (int i = 0; i < model.getSize(); i++) {
+                if (model.getElementAt(i).getId().equals(pendingSelection)) {
+                    list.setSelectedIndex(i);
+                    pendingSelection = null;
+                    break;
+                }
+            }
+        }
+
         return list;
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(parent, "Failed to save: " + message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private void navigateTo(UUID projectId) {

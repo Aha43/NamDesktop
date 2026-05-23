@@ -15,6 +15,8 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     private final NamWorkspaceService service;
     private final JMenuItem markDoneItem;
     private final JMenuItem deleteItem;
+    private final JMenuItem moveUpItem;
+    private final JMenuItem moveDownItem;
 
     private NamNode targetNode;
 
@@ -23,19 +25,26 @@ public final class NodeTreeContextMenu extends JPopupMenu {
         this.model = model;
         this.service = service;
 
-        var addItem = new JMenuItem("Add child");
+        var addItem    = new JMenuItem("Add child");
         var renameItem = new JMenuItem("Rename");
-        markDoneItem = new JMenuItem("Mark done");
-        deleteItem = new JMenuItem("Delete");
+        markDoneItem   = new JMenuItem("Mark done");
+        moveUpItem     = new JMenuItem("Move up");
+        moveDownItem   = new JMenuItem("Move down");
+        deleteItem     = new JMenuItem("Delete");
 
-        addItem.addActionListener(e -> addChild());
+        addItem.addActionListener(e    -> addChild());
         renameItem.addActionListener(e -> rename());
         markDoneItem.addActionListener(e -> markDone());
+        moveUpItem.addActionListener(e   -> move(-1));
+        moveDownItem.addActionListener(e -> move(1));
         deleteItem.addActionListener(e -> delete());
 
         add(addItem);
         add(renameItem);
         add(markDoneItem);
+        addSeparator();
+        add(moveUpItem);
+        add(moveDownItem);
         addSeparator();
         add(deleteItem);
     }
@@ -44,6 +53,20 @@ public final class NodeTreeContextMenu extends JPopupMenu {
         this.targetNode = node;
         markDoneItem.setEnabled(node.getStatus() != NodeStatus.DONE);
         deleteItem.setEnabled(model.getRoot() != node);
+
+        var path = tree.getSelectionPath();
+        var isRoot = model.getRoot() == node;
+        if (!isRoot && path != null && path.getParentPath() != null) {
+            var parentNode   = (NamNode) path.getParentPath().getLastPathComponent();
+            var siblingIndex = model.getIndexOfChild(parentNode, node);
+            var siblingCount = model.getChildCount(parentNode);
+            moveUpItem.setEnabled(siblingIndex > 0);
+            moveDownItem.setEnabled(siblingIndex < siblingCount - 1);
+        } else {
+            moveUpItem.setEnabled(false);
+            moveDownItem.setEnabled(false);
+        }
+
         super.show(invoker, x, y);
     }
 
@@ -77,6 +100,19 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     private void markDone() {
         try {
             service.markDone(targetNode.getId());
+            reload();
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
+    }
+
+    private void move(int direction) {
+        var path = tree.getSelectionPath();
+        if (path == null || path.getParentPath() == null) return;
+        var parentNode = (NamNode) path.getParentPath().getLastPathComponent();
+        try {
+            if (direction < 0) service.moveChildUp(parentNode.getId(), targetNode.getId());
+            else               service.moveChildDown(parentNode.getId(), targetNode.getId());
             reload();
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());
