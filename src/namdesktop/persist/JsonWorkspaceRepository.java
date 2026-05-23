@@ -40,6 +40,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setRegisteredTags(file.registeredTags);
         workspace.setSavedViews(file.savedViews);
         workspace.setTemplates(file.templates);
+        workspace.setViewOrders(file.viewOrders);
         migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
         migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
         migrate(workspace, "Actions",      workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
@@ -59,6 +60,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         file.registeredTags     = workspace.getRegisteredTags();
         file.savedViews         = workspace.getSavedViews();
         file.templates          = workspace.getTemplates();
+        file.viewOrders         = workspace.getViewOrders();
         mapper.writeValue(path.toFile(), file);
     }
 
@@ -81,5 +83,6 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         public java.util.List<String> registeredTags;
         public java.util.List<SavedView> savedViews;
         public java.util.List<ProjectTemplate> templates;
+        public java.util.Map<String, java.util.List<UUID>> viewOrders;
     }
 }

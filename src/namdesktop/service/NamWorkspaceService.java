@@ -1,5 +1,6 @@
 package namdesktop.service;
 
+import namdesktop.lens.ViewOrderReconciler;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
@@ -9,10 +10,15 @@ import namdesktop.persist.WorkspaceRepository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class NamWorkspaceService {
+
+    public static final String VIEW_NEXT_ACTIONS = "next-actions";
+    public static final String VIEW_BACKLOG       = "backlog";
 
     private final NamWorkspace workspace;
     private final WorkspaceRepository repository;
@@ -279,6 +285,29 @@ public final class NamWorkspaceService {
                 .orElseThrow(() -> new IllegalStateException("Target area node not found"))
                 .getChildIds().add(id);
         if (targetId.equals(workspace.getProjectsNodeId())) node.setProject(true);
+        repository.save(path, workspace);
+    }
+
+    public List<NamNode> getViewOrder(String viewKey, List<NamNode> liveItems) {
+        var savedOrder = workspace.getViewOrders().getOrDefault(viewKey, List.of());
+        return new ViewOrderReconciler().reconcile(savedOrder, liveItems);
+    }
+
+    public void moveViewItemUp(String viewKey, UUID nodeId, List<UUID> currentOrder) throws IOException {
+        var ids = workspace.getViewOrders().computeIfAbsent(viewKey, k -> new ArrayList<>(currentOrder));
+        var idx = ids.indexOf(nodeId);
+        if (idx <= 0) return;
+        ids.set(idx, ids.get(idx - 1));
+        ids.set(idx - 1, nodeId);
+        repository.save(path, workspace);
+    }
+
+    public void moveViewItemDown(String viewKey, UUID nodeId, List<UUID> currentOrder) throws IOException {
+        var ids = workspace.getViewOrders().computeIfAbsent(viewKey, k -> new ArrayList<>(currentOrder));
+        var idx = ids.indexOf(nodeId);
+        if (idx < 0 || idx >= ids.size() - 1) return;
+        ids.set(idx, ids.get(idx + 1));
+        ids.set(idx + 1, nodeId);
         repository.save(path, workspace);
     }
 

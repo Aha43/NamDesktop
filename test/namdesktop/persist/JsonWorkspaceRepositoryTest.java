@@ -8,6 +8,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.UUID;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -104,6 +105,30 @@ class JsonWorkspaceRepositoryTest {
         assertEquals(1, loaded.getTemplates().get(0).children().size());
         assertEquals("Book flights", loaded.getTemplates().get(0).children().get(0).title());
         assertEquals(2, loaded.getTemplates().get(0).children().get(0).children().size());
+    }
+
+    @Test
+    void saveAndLoad_roundTripsViewOrders(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        var id1 = UUID.randomUUID(); var id2 = UUID.randomUUID();
+        original.getViewOrders().put("next-actions", new java.util.ArrayList<>(List.of(id2, id1)));
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertEquals(List.of(id2, id1), loaded.getViewOrders().get("next-actions"));
+    }
+
+    @Test
+    void load_oldFileWithoutViewOrders_loadsEmptyMap(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        original.setViewOrders(null);
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertNotNull(loaded.getViewOrders());
+        assertTrue(loaded.getViewOrders().isEmpty());
     }
 
     @Test
