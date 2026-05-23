@@ -8,11 +8,14 @@ import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -95,7 +98,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), null));
+        content.add(buildSection(null, projection.directActions(), currentProjectId));
 
         for (var section : projection.childSections()) {
             content.add(Box.createVerticalStrut(16));
@@ -105,7 +108,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return content;
     }
 
-    private JPanel buildSection(String title, List<NamNode> actions, UUID childProjectId) {
+    private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -114,31 +117,46 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setLayout(new BorderLayout());
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        if (title != null) section.add(buildSectionHeader(title, childProjectId), BorderLayout.NORTH);
+        if (title != null) section.add(buildSectionHeader(title, targetProjectId), BorderLayout.NORTH);
 
         var listWrapper = new JPanel(new BorderLayout());
         listWrapper.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")));
         listWrapper.add(buildActionList(actions), BorderLayout.CENTER);
         section.add(listWrapper, BorderLayout.CENTER);
 
+        section.add(buildAddActionBar(targetProjectId), BorderLayout.SOUTH);
+
         return section;
     }
 
-    private JComponent buildSectionHeader(String title, UUID childProjectId) {
+    private JPanel buildAddActionBar(UUID targetProjectId) {
+        var addButton = UiHelper.iconButton("Add action",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addButton.addActionListener(e -> {
+            var title = JOptionPane.showInputDialog(parent, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
+            if (title == null || title.isBlank()) return;
+            try {
+                service.addChild(targetProjectId, title.strip());
+                rebuild();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+        bar.add(addButton);
+        return bar;
+    }
+
+    private JComponent buildSectionHeader(String title, UUID navigateToId) {
         var header = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-        if (childProjectId != null) {
-            var btn = new JButton(title + " ›");
-            btn.setBorderPainted(false);
-            btn.setContentAreaFilled(false);
-            btn.setFont(btn.getFont().deriveFont(Font.BOLD));
-            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-            btn.addActionListener(e -> navigateTo(childProjectId));
-            header.add(btn);
-        } else {
-            var lbl = new JLabel(title);
-            lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
-            header.add(lbl);
-        }
+        var btn = new JButton(title + " ›");
+        btn.setBorderPainted(false);
+        btn.setContentAreaFilled(false);
+        btn.setFont(btn.getFont().deriveFont(Font.BOLD));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.addActionListener(e -> navigateTo(navigateToId));
+        header.add(btn);
         return header;
     }
 
