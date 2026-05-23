@@ -120,21 +120,23 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
             var section = sections.get(i);
+            var hasSubProjects = workspace.getChildren(section.project().getId())
+                    .stream().anyMatch(NamNode::isProject);
             content.add(Box.createVerticalStrut(16));
             content.add(buildSection(section.project().getTitle(), section.directActions(),
-                    section.project().getId(), i, sections.size()));
+                    section.project().getId(), i, sections.size(), hasSubProjects));
         }
 
         return content;
     }
 
     private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId,
-                                int sectionIndex, int sectionCount) {
+                                int sectionIndex, int sectionCount, boolean hasSubProjects) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -144,7 +146,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         if (title != null) section.add(
-                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount), BorderLayout.NORTH);
+                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount, hasSubProjects), BorderLayout.NORTH);
 
         JList<NamNode> actionList = null;
         JComponent listContent;
@@ -232,13 +234,14 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private JComponent buildSectionHeader(String title, UUID navigateToId,
-                                          int sectionIndex, int sectionCount) {
+                                          int sectionIndex, int sectionCount, boolean hasSubProjects) {
         var header = new JPanel(new BorderLayout());
 
         var btn = new JButton(title + " ›");
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
-        btn.setFont(btn.getFont().deriveFont(Font.BOLD));
+        var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
+        btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> navigateTo(navigateToId));
 
