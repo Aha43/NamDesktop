@@ -23,6 +23,7 @@ ICONS=(
   archive
   bookmark
   eraser
+  logout
 )
 
 mkdir -p "$ICONS_DIR"

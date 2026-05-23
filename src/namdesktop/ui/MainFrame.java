@@ -79,7 +79,9 @@ public final class MainFrame extends JFrame {
             toolbar.add(pullButton);
         }
         toolbar.add(Box.createHorizontalGlue());
-        var exitButton = new JButton("Exit");
+        var exitButton = UiHelper.iconButton("Exit",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
+        exitButton.setToolTipText("Exit NamDesktop");
         exitButton.addActionListener(e -> System.exit(0));
         toolbar.add(exitButton);
 
