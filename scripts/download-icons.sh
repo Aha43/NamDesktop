@@ -16,6 +16,7 @@ ICONS=(
   pencil
   cloud-upload
   cloud-download
+  folder-plus
 )
 
 mkdir -p "$ICONS_DIR"
