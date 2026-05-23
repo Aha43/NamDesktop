@@ -120,17 +120,21 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0));
 
-        for (var section : projection.childSections()) {
+        var sections = projection.childSections();
+        for (int i = 0; i < sections.size(); i++) {
+            var section = sections.get(i);
             content.add(Box.createVerticalStrut(16));
-            content.add(buildSection(section.project().getTitle(), section.directActions(), section.project().getId()));
+            content.add(buildSection(section.project().getTitle(), section.directActions(),
+                    section.project().getId(), i, sections.size()));
         }
 
         return content;
     }
 
-    private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId) {
+    private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId,
+                                int sectionIndex, int sectionCount) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -139,7 +143,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setLayout(new BorderLayout());
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        if (title != null) section.add(buildSectionHeader(title, targetProjectId), BorderLayout.NORTH);
+        if (title != null) section.add(
+                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount), BorderLayout.NORTH);
 
         JList<NamNode> actionList = null;
         JComponent listContent;
@@ -226,15 +231,41 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return bar;
     }
 
-    private JComponent buildSectionHeader(String title, UUID navigateToId) {
-        var header = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+    private JComponent buildSectionHeader(String title, UUID navigateToId,
+                                          int sectionIndex, int sectionCount) {
+        var header = new JPanel(new BorderLayout());
+
         var btn = new JButton(title + " ›");
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
         btn.setFont(btn.getFont().deriveFont(Font.BOLD));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> navigateTo(navigateToId));
-        header.add(btn);
+
+        var upButton = UiHelper.iconButton("Move section up",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+        var downButton = UiHelper.iconButton("Move section down",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+        upButton.setToolTipText("Move this sub-project up");
+        downButton.setToolTipText("Move this sub-project down");
+        upButton.setEnabled(sectionIndex > 0);
+        downButton.setEnabled(sectionIndex < sectionCount - 1);
+
+        upButton.addActionListener(e -> {
+            try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
+            catch (IOException ex) { showError(ex.getMessage()); }
+        });
+        downButton.addActionListener(e -> {
+            try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
+            catch (IOException ex) { showError(ex.getMessage()); }
+        });
+
+        var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
+        orderButtons.add(upButton);
+        orderButtons.add(downButton);
+
+        header.add(btn,          BorderLayout.CENTER);
+        header.add(orderButtons, BorderLayout.EAST);
         return header;
     }
 

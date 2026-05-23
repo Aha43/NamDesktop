@@ -70,6 +70,14 @@ public final class NamWorkspaceService {
         swapWithAdjacentSameKind(parentId, childId, 1);
     }
 
+    public void moveProjectUp(UUID parentId, UUID childId) throws IOException {
+        swapWithAdjacentSameKind(parentId, childId, -1);
+    }
+
+    public void moveProjectDown(UUID parentId, UUID childId) throws IOException {
+        swapWithAdjacentSameKind(parentId, childId, 1);
+    }
+
     private void swapWithAdjacentSameKind(UUID parentId, UUID childId, int direction) throws IOException {
         var ids  = require(parentId).getChildIds();
         var node = require(childId);
