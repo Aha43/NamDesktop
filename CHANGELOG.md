@@ -9,6 +9,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Setting "Always show status column" (default off) — hides the redundant Status column in Next Actions and Backlog panels; toggle takes effect immediately without restart. Closes #144.
+- GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
 
 ### Changed
 

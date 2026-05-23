@@ -94,6 +94,16 @@ class BacklogLensTest {
     }
 
     @Test
+    void items_doesNotShowProjects() {
+        var project = new NamNode(UUID.randomUUID(), "Big project");
+        project.setProject(true);
+        project.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(project.getId(), project);
+
+        assertTrue(lens.items(workspace).isEmpty());
+    }
+
+    @Test
     void items_preservesInsertionOrder() {
         var first  = new NamNode(UUID.randomUUID(), "First");
         var second = new NamNode(UUID.randomUUID(), "Second");
