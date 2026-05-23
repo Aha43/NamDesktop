@@ -95,7 +95,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection("This project", projection.directActions(), null));
+        content.add(buildSection(null, projection.directActions(), null));
 
         for (var section : projection.childSections()) {
             content.add(Box.createVerticalStrut(16));
@@ -114,8 +114,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setLayout(new BorderLayout());
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        section.add(buildSectionHeader(title, childProjectId), BorderLayout.NORTH);
-        section.add(buildActionList(actions),                   BorderLayout.CENTER);
+        if (title != null) section.add(buildSectionHeader(title, childProjectId), BorderLayout.NORTH);
+
+        var listWrapper = new JPanel(new BorderLayout());
+        listWrapper.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")));
+        listWrapper.add(buildActionList(actions), BorderLayout.CENTER);
+        section.add(listWrapper, BorderLayout.CENTER);
 
         return section;
     }
