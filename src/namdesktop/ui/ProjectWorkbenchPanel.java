@@ -85,7 +85,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         });
 
-        var editButton = new JButton("Edit project…");
+        var editButton = UiHelper.iconButton("Edit project…",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
         editButton.setToolTipText("Edit project " + projectName);
         editButton.addActionListener(e ->
                 new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true));
