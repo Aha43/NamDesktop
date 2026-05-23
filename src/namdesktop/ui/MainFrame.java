@@ -91,7 +91,10 @@ public final class MainFrame extends JFrame {
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
-        settingsItem.addActionListener(e -> new SettingsDialog(this, settings).setVisible(true));
+        settingsItem.addActionListener(e -> new SettingsDialog(this, settings, () -> {
+            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+        }).setVisible(true));
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
 

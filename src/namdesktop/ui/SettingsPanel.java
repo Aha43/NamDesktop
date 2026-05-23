@@ -12,7 +12,7 @@ import java.io.IOException;
 
 public final class SettingsPanel extends JPanel {
 
-    public SettingsPanel(AppSettings settings) {
+    public SettingsPanel(AppSettings settings, Runnable onChanged) {
         super(new GridBagLayout());
         setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
@@ -20,6 +20,7 @@ public final class SettingsPanel extends JPanel {
         gbc.insets = new Insets(4, 4, 4, 4);
         gbc.anchor = GridBagConstraints.WEST;
 
+        // Theme
         gbc.gridx = 0; gbc.gridy = 0;
         add(new JLabel("Theme:"), gbc);
 
@@ -30,17 +31,14 @@ public final class SettingsPanel extends JPanel {
             if (selected == null) return;
             settings.setTheme(selected);
             applyTheme(selected);
-            try {
-                settings.save();
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Failed to save settings: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            save(settings);
+            onChanged.run();
         });
 
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(themeCombo, gbc);
 
+        // Dense mode
         gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         add(new JLabel("Dense mode:"), gbc);
 
@@ -48,18 +46,29 @@ public final class SettingsPanel extends JPanel {
         denseBox.addActionListener(e -> {
             settings.setDense(denseBox.isSelected());
             UiHelper.applyDense(denseBox.isSelected());
-            try {
-                settings.save();
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(this, "Failed to save settings: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
+            save(settings);
+            onChanged.run();
         });
 
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(denseBox, gbc);
 
+        // Always show status column
         gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Status column:"), gbc);
+
+        var statusBox = new JCheckBox("Always show status column in Next Actions and Backlog", settings.isShowStatusColumn());
+        statusBox.addActionListener(e -> {
+            settings.setShowStatusColumn(statusBox.isSelected());
+            save(settings);
+            onChanged.run();
+        });
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(statusBox, gbc);
+
+        // Sync repo URL
+        gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         add(new JLabel("Sync repo URL:"), gbc);
 
         var syncUrlField = new JTextField(settings.getSyncRepoUrl(), 30);
@@ -73,8 +82,16 @@ public final class SettingsPanel extends JPanel {
         add(syncUrlField, gbc);
     }
 
+    public SettingsPanel(AppSettings settings) {
+        this(settings, () -> {});
+    }
+
     private void saveSyncUrl(AppSettings settings, JTextField field) {
         settings.setSyncRepoUrl(field.getText());
+        save(settings);
+    }
+
+    private void save(AppSettings settings) {
         try {
             settings.save();
         } catch (IOException ex) {

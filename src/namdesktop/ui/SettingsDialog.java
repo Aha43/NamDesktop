@@ -7,7 +7,7 @@ import java.awt.*;
 
 public final class SettingsDialog extends JDialog {
 
-    public SettingsDialog(Window parent, AppSettings settings) {
+    public SettingsDialog(Window parent, AppSettings settings, Runnable onChanged) {
         super(parent, "Settings", ModalityType.APPLICATION_MODAL);
 
         var closeButton = new JButton("Close");
@@ -18,8 +18,8 @@ public final class SettingsDialog extends JDialog {
         footer.add(closeButton);
 
         setLayout(new BorderLayout());
-        add(new SettingsPanel(settings), BorderLayout.CENTER);
-        add(footer,                      BorderLayout.SOUTH);
+        add(new SettingsPanel(settings, onChanged), BorderLayout.CENTER);
+        add(footer,                                 BorderLayout.SOUTH);
 
         pack();
         setResizable(false);

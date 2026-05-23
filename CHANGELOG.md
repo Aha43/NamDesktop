@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Setting "Always show status column" (default off) — hides the redundant Status column in Next Actions and Backlog panels; toggle takes effect immediately without restart. Closes #144.
+
+### Changed
+
 - Ordering Phase 2 — view-specific ordering in Next Actions and Backlog panels: up/down icon buttons in each toolbar reorder actions independently of the structural tree; order persists across sessions via `viewOrders` map; selection follows the moved item for frictionless repeated moves; `ViewOrderReconciler` drops removed items, preserves saved order, appends new items in live order. Closes #140, Closes #141, Closes #142.
 
 - Ordering Phase 1 — up/down reordering throughout the app:
