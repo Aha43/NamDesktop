@@ -4,7 +4,7 @@
 
 ## What is NamDesktop?
 
-NamDesktop is a desktop application for managing your work through a GTD-inspired system. All data lives in a single persistent node tree stored locally as JSON — no cloud account required, no subscription. The same underlying nodes are interpreted differently depending on where they sit in the tree, their status, their tags, and which lens (view) is active. The goal is a small, fast, focused tool that stays out of your way.
+NamDesktop is a desktop application for managing your work through a GTD-inspired system. All data lives in a single persistent node tree stored locally as JSON. An optional Git-backed sync lets you push and pull the workspace to a remote repository, but there is no mandatory cloud account or subscription. The same underlying nodes are interpreted differently depending on where they sit in the tree, their status, their tags, and which lens (view) is active. The goal is a small, fast, focused tool that stays out of your way.
 
 ## Core concepts
 
