@@ -125,7 +125,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, false));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, true));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
@@ -195,14 +195,35 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
 
+        JButton editButton = null;
         if (showEditButton) {
-            var editButton = UiHelper.iconButton("Edit project…",
+            editButton = UiHelper.iconButton("Edit project…",
                     new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
             editButton.setToolTipText("Edit project: " + targetName);
+            final var eid = targetProjectId;
             editButton.addActionListener(e ->
-                    new ProjectDialog(SwingUtilities.getWindowAncestor(this), targetProjectId, workspace, service, this::rebuild)
+                    new ProjectDialog(SwingUtilities.getWindowAncestor(this), eid, workspace, service, this::rebuild)
                             .setVisible(true));
-            bar.add(editButton);
+
+            var renameButton = UiHelper.iconButton("Rename",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
+            renameButton.setToolTipText("Rename: " + targetName);
+            renameButton.addActionListener(e -> {
+                var current = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("");
+                var input = (String) JOptionPane.showInputDialog(parent, "Project name:", "Rename",
+                        JOptionPane.PLAIN_MESSAGE, null, null, current);
+                if (input == null || input.isBlank()) return;
+                try { service.renameNode(targetProjectId, input.strip()); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+
+            var descButton = UiHelper.iconButton("Edit description",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/notes.svg")).derive(16, 16));
+            descButton.setToolTipText("Edit description: " + targetName);
+            descButton.addActionListener(e -> showDescriptionDialog(targetProjectId, targetName));
+
+            bar.add(renameButton);
+            bar.add(descButton);
         }
 
         if (actionList != null) {
@@ -244,6 +265,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
             bar.add(upButton);
             bar.add(downButton);
         }
+
+        if (editButton != null) bar.add(editButton);
 
         return bar;
     }
@@ -318,6 +341,19 @@ public final class ProjectWorkbenchPanel extends JPanel {
         }
 
         return list;
+    }
+
+    private void showDescriptionDialog(UUID projectId, String projectName) {
+        var current = workspace.getNode(projectId).map(n -> n.getDescription()).orElse("");
+        var area = new JTextArea(current != null ? current : "", 6, 40);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        var scroll = new JScrollPane(area);
+        var result = JOptionPane.showConfirmDialog(parent, scroll,
+                "Description: " + projectName, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result != JOptionPane.OK_OPTION) return;
+        try { service.updateDescription(projectId, area.getText().strip()); rebuild(); }
+        catch (IOException ex) { showError(ex.getMessage()); }
     }
 
     private void showError(String message) {
