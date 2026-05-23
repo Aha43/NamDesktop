@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.InboxItemRow;
 import namdesktop.lens.InboxLens;
 import namdesktop.model.NamWorkspace;
@@ -47,7 +48,9 @@ public final class InboxPanel extends JPanel {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var addButton = new JButton("Add item");
+        var addButton = UiHelper.iconButton("Add item",
+                new FlatSVGIcon(InboxPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addButton.setToolTipText("Add new inbox item");
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
 

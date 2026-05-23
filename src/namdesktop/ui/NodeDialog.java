@@ -48,7 +48,9 @@ public class NodeDialog extends JDialog {
         titleField.setFont(titleField.getFont().deriveFont(Font.BOLD, 16f));
         titleField.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        statusButton = new JButton(statusLabel());
+        statusButton = new JButton(statusLabel(),
+                new FlatSVGIcon(NodeDialog.class.getResource("/icons/check.svg")).derive(16, 16));
+        statusButton.setToolTipText("Toggle action status");
         statusButton.addActionListener(e -> toggleStatus());
 
         var deleteButton = UiHelper.iconButton("Delete", new FlatSVGIcon(NodeDialog.class.getResource("/icons/trash.svg")).derive(16, 16));

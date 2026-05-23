@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
 
@@ -24,11 +25,15 @@ public final class ActionDialog extends NodeDialog {
         super(parent, nodeId, workspace, service, onChanged);
 
         if (showMakeProject) {
-            var makeProjectButton = new JButton("Make project");
+            var makeProjectButton = UiHelper.iconButton("Make project",
+                    new FlatSVGIcon(ActionDialog.class.getResource("/icons/folder-plus.svg")).derive(16, 16));
+            makeProjectButton.setToolTipText("Convert this action into a project");
             makeProjectButton.addActionListener(e -> makeProject(nodeId, service));
             addToolbarButton(makeProjectButton);
 
-            var backlogButton = new JButton("Move to backlog");
+            var backlogButton = UiHelper.iconButton("Move to backlog",
+                    new FlatSVGIcon(ActionDialog.class.getResource("/icons/archive.svg")).derive(16, 16));
+            backlogButton.setToolTipText("Move this action to the backlog");
             backlogButton.addActionListener(e -> moveToBacklog(nodeId, service));
             addToolbarButton(backlogButton);
         }
@@ -47,10 +52,12 @@ public final class ActionDialog extends NodeDialog {
         var label = new JLabel("Project: " + projectTitle);
         label.setToolTipText(breadcrumb);
 
-        var openButton = new JButton("Open project");
+        var openButton = UiHelper.iconButton("Open project",
+                new FlatSVGIcon(ActionDialog.class.getResource("/icons/arrow-right.svg")).derive(16, 16));
+        openButton.setToolTipText("Open project: " + projectTitle);
         openButton.addActionListener(e -> {
             dispose();
-            new ProjectDialog(parent, projectId, workspace, service, onChanged, actionId).setVisible(true);
+            new ProjectDialog(parent, projectId, workspace, service, onChanged).setVisible(true);
         });
 
         var row = new JPanel(new BorderLayout(8, 0));

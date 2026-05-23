@@ -29,6 +29,7 @@ public final class ContextPanel extends JPanel {
     private JLabel matchLabel;
     private JButton addActionButton;
     private JButton saveViewButton;
+    private JButton clearButton;
 
     public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated) {
         super(new BorderLayout());
@@ -39,7 +40,10 @@ public final class ContextPanel extends JPanel {
 
         matchLabel = new JLabel("0 matches");
 
-        var clearButton = new JButton("Clear");
+        clearButton = UiHelper.iconButton("Clear",
+                new FlatSVGIcon(ContextPanel.class.getResource("/icons/eraser.svg")).derive(16, 16));
+        clearButton.setToolTipText("Clear all selected tags");
+        clearButton.setEnabled(false);
         clearButton.addActionListener(e -> {
             tagBoxes.forEach(b -> b.setSelected(false));
             refreshResults();
@@ -49,7 +53,9 @@ public final class ContextPanel extends JPanel {
         addActionButton.setEnabled(false);
         addActionButton.addActionListener(e -> addTaggedAction());
 
-        saveViewButton = new JButton("Save as view…");
+        saveViewButton = UiHelper.iconButton("Save as view…",
+                new FlatSVGIcon(ContextPanel.class.getResource("/icons/bookmark.svg")).derive(16, 16));
+        saveViewButton.setToolTipText("Save current tag filter as a named view");
         saveViewButton.setEnabled(false);
         saveViewButton.addActionListener(e -> saveCurrentView());
 
@@ -136,6 +142,7 @@ public final class ContextPanel extends JPanel {
         var hasFilter = !selected.isEmpty();
         addActionButton.setEnabled(hasFilter);
         saveViewButton.setEnabled(hasFilter);
+        clearButton.setEnabled(hasFilter);
     }
 
     private void addTaggedAction() {

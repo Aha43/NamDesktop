@@ -69,13 +69,34 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         }
 
-        var editButton = new JButton("Edit project…");
-        editButton.addActionListener(e -> {
-            new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true);
+        var projectName = workspace.getNode(currentProjectId).map(n -> n.getTitle()).orElse("this project");
+        var newProjectButton = UiHelper.iconButton("New project",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/folder-plus.svg")).derive(16, 16));
+        newProjectButton.setToolTipText("Makes new sub project of this project (" + projectName + ")");
+        newProjectButton.addActionListener(e -> {
+            var title = JOptionPane.showInputDialog(parent, "Project title:", "New project", JOptionPane.PLAIN_MESSAGE);
+            if (title == null || title.isBlank()) return;
+            try {
+                service.addSubProject(currentProjectId, title.strip());
+                rebuild();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
         });
 
-        bar.add(crumbs,      BorderLayout.CENTER);
-        bar.add(editButton,  BorderLayout.EAST);
+        var editButton = UiHelper.iconButton("Edit project…",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
+        editButton.setToolTipText("Edit project " + projectName);
+        editButton.addActionListener(e ->
+                new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true));
+
+        var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        buttons.add(newProjectButton);
+        buttons.add(editButton);
+
+        bar.add(crumbs,   BorderLayout.CENTER);
+        bar.add(buttons,  BorderLayout.EAST);
         return bar;
     }
 
@@ -130,9 +151,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private JPanel buildAddActionBar(UUID targetProjectId) {
-        var addButton = UiHelper.iconButton("Add action",
+        var targetName = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("this project");
+        var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
-        addButton.addActionListener(e -> {
+        addActionButton.setToolTipText("Add action to project " + targetName);
+        addActionButton.addActionListener(e -> {
             var title = JOptionPane.showInputDialog(parent, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
             if (title == null || title.isBlank()) return;
             try {
@@ -143,8 +166,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
                         "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
+
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
-        bar.add(addButton);
+        bar.add(addActionButton);
         return bar;
     }
 
