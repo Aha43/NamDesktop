@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Quick rename button (cursor-text icon) in sub-project section action bar — opens a pre-filled input dialog, no full edit dialog needed. Closes #155.
+- Quick description button (notes icon) in sub-project section action bar — opens a textarea dialog pre-filled with current description. Closes #156.
+- Full Edit button moved to far right of sub-project action bar, signalling it is the "do all" option.
+
 - Inbox items appearing in the Backlog panel are rendered in italic to signal they are unprocessed captures; double-clicking still opens ActionDialog for processing. Closes #149.
 - Sub-project section headers in the workbench are rendered bold+italic when the sub-project has its own sub-projects, signalling there is more depth to explore. Closes #151.
 - Inline edit button (pencil) in each sub-project section's action bar — opens ProjectDialog directly without navigating in first. Closes #152.

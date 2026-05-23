@@ -26,6 +26,8 @@ ICONS=(
   logout
   arrow-up
   arrow-down
+  cursor-text
+  notes
 )
 
 mkdir -p "$ICONS_DIR"
