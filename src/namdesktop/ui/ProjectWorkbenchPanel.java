@@ -65,6 +65,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
             if (i < breadcrumb.size() - 1) {
                 final var id = node.getId();
                 crumbs.add(breadcrumbLink(node.getTitle(), () -> navigateTo(id)));
+                var ancestorEdit = UiHelper.iconOnlyButton("Edit project: " + node.getTitle(),
+                        new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(14, 14));
+                ancestorEdit.addActionListener(e ->
+                        new ProjectDialog(parent, id, workspace, service, this::rebuild).setVisible(true));
+                crumbs.add(ancestorEdit);
             } else {
                 crumbs.add(new JLabel(node.getTitle()));
             }

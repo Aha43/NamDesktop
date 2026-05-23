@@ -11,6 +11,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 - Inbox items appearing in the Backlog panel are rendered in italic to signal they are unprocessed captures; double-clicking still opens ActionDialog for processing. Closes #149.
 - Sub-project section headers in the workbench are rendered bold+italic when the sub-project has its own sub-projects, signalling there is more depth to explore. Closes #151.
 - Inline edit button (pencil) in each sub-project section's action bar — opens ProjectDialog directly without navigating in first. Closes #152.
+- Inline edit button alongside each breadcrumb ancestor link — edit any ancestor project without losing your current position. Closes #153.
+- `UiHelper.iconOnlyButton` factory method for buttons that must stay icon-only regardless of dense mode setting (used for compact inline contexts like breadcrumbs).
 - Educational tooltips on hardcoded navigation entries (Inbox, Projects, Next Actions, Context, Backlog, Raw Tree) explaining their GTD role. Closes #146.
 - Generated tooltips on saved view navigation entries showing the configured tag filter. Closes #147.
 - Ordering Phase 2 — view-specific ordering in Next Actions and Backlog panels: up/down icon buttons in each toolbar reorder actions independently of the structural tree; order persists across sessions via `viewOrders` map; selection follows the moved item for frictionless repeated moves; `ViewOrderReconciler` drops removed items, preserves saved order, appends new items in live order. Closes #140, Closes #141, Closes #142.
