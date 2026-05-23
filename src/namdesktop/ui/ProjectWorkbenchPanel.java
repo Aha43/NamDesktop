@@ -125,7 +125,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, false));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, true));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
