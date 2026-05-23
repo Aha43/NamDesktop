@@ -44,6 +44,47 @@ public final class NamWorkspaceService {
         return child.getId();
     }
 
+    public void moveChildUp(UUID parentId, UUID childId) throws IOException {
+        var ids = require(parentId).getChildIds();
+        var idx = ids.indexOf(childId);
+        if (idx <= 0) return;
+        ids.set(idx, ids.get(idx - 1));
+        ids.set(idx - 1, childId);
+        repository.save(path, workspace);
+    }
+
+    public void moveChildDown(UUID parentId, UUID childId) throws IOException {
+        var ids = require(parentId).getChildIds();
+        var idx = ids.indexOf(childId);
+        if (idx < 0 || idx >= ids.size() - 1) return;
+        ids.set(idx, ids.get(idx + 1));
+        ids.set(idx + 1, childId);
+        repository.save(path, workspace);
+    }
+
+    public void moveActionUp(UUID parentId, UUID childId) throws IOException {
+        swapWithAdjacentSameKind(parentId, childId, -1);
+    }
+
+    public void moveActionDown(UUID parentId, UUID childId) throws IOException {
+        swapWithAdjacentSameKind(parentId, childId, 1);
+    }
+
+    private void swapWithAdjacentSameKind(UUID parentId, UUID childId, int direction) throws IOException {
+        var ids  = require(parentId).getChildIds();
+        var node = require(childId);
+        var idx  = ids.indexOf(childId);
+        for (int i = idx + direction; i >= 0 && i < ids.size(); i += direction) {
+            var sibling = workspace.getNode(ids.get(i));
+            if (sibling.isPresent() && sibling.get().isProject() == node.isProject()) {
+                ids.set(idx, ids.get(i));
+                ids.set(i, childId);
+                repository.save(path, workspace);
+                return;
+            }
+        }
+    }
+
     public void renameNode(UUID nodeId, String title) throws IOException {
         require(nodeId).setTitle(title);
         repository.save(path, workspace);

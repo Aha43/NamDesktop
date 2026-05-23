@@ -24,6 +24,8 @@ ICONS=(
   bookmark
   eraser
   logout
+  arrow-up
+  arrow-down
 )
 
 mkdir -p "$ICONS_DIR"
