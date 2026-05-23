@@ -120,7 +120,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, false));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
@@ -129,14 +129,14 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     .stream().anyMatch(NamNode::isProject);
             content.add(Box.createVerticalStrut(16));
             content.add(buildSection(section.project().getTitle(), section.directActions(),
-                    section.project().getId(), i, sections.size(), hasSubProjects));
+                    section.project().getId(), i, sections.size(), hasSubProjects, true));
         }
 
         return content;
     }
 
     private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId,
-                                int sectionIndex, int sectionCount, boolean hasSubProjects) {
+                                int sectionIndex, int sectionCount, boolean hasSubProjects, boolean showEditButton) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -165,12 +165,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         listWrapper.add(listContent, BorderLayout.CENTER);
         section.add(listWrapper, BorderLayout.CENTER);
 
-        section.add(buildAddActionBar(targetProjectId, actionList), BorderLayout.SOUTH);
+        section.add(buildAddActionBar(targetProjectId, actionList, showEditButton), BorderLayout.SOUTH);
 
         return section;
     }
 
-    private JPanel buildAddActionBar(UUID targetProjectId, JList<NamNode> actionList) {
+    private JPanel buildAddActionBar(UUID targetProjectId, JList<NamNode> actionList, boolean showEditButton) {
         var targetName = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("this project");
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
@@ -189,6 +189,16 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
+
+        if (showEditButton) {
+            var editButton = UiHelper.iconButton("Edit project…",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
+            editButton.setToolTipText("Edit project: " + targetName);
+            editButton.addActionListener(e ->
+                    new ProjectDialog(SwingUtilities.getWindowAncestor(this), targetProjectId, workspace, service, this::rebuild)
+                            .setVisible(true));
+            bar.add(editButton);
+        }
 
         if (actionList != null) {
             var upButton   = UiHelper.iconButton("Move up",
