@@ -8,6 +8,24 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Rich developer tooltips on raw tree nodes — hovering any node shows Type, Status, Tags, UUID, child count, and up to 50 characters of description. Closes #134.
+
+- Icons and tooltips on all remaining toolbar/action buttons app-wide — `ActionDialog` (Make project → folder-plus, Move to backlog → archive, Open project → arrow-right), `ProjectDialog` (Convert to action → arrow-right, Save as Template → copy, Add sub-project → folder-plus), `InboxPanel` (Add item → plus), `ProjectsPanel` (Add project → folder-plus), `NodeDialog` status toggle (check icon), `ContextPanel` (Save as view → bookmark, Clear → eraser), `MainFrame` Exit button (logout icon). All buttons have descriptive tooltip text.
+
+- "New project" button in `ProjectWorkbenchPanel` breadcrumb bar — creates a direct sub-project of the currently viewed project; tooltip names the target project.
+
+### Changed
+
+- `ProjectDialog` simplified to a pure metadata editor — actions table and child-management buttons (Add action, Add sub-project) removed since the workbench already provides that surface. Dialog height reduced from ~580 to ~350. Closes #131.
+
+- Context panel Clear button now disabled when no tags are selected, consistent with Save as view and Add action buttons.
+
+### Fixed
+
+- Raw tree collapses to root after every mutation (add child, rename, mark done, delete) — expanded `TreePath`s are now snapshotted before model reload and restored after; for Add child the parent node is also expanded so the new child is immediately visible. Closes #133.
+
+### Added
+
 - `ProjectWorkbenchPanel` — action-forward project working surface in the ContentArea; breadcrumb navigation (Projects › Parent › Current), "This project" action list, one section per direct child project with its own action list, child project headers navigate in, breadcrumb navigates back up, "Edit project…" opens ProjectDialog for metadata; done actions shown gray; double-clicking an action opens ActionDialog. Closes #126.
 
 - `TemplateNode` carries `project` flag so cloned template nodes correctly restore as projects or actions. Fixes template sub-project regression.
