@@ -149,8 +149,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private JPanel buildAddActionBar(UUID targetProjectId) {
+        var targetName = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("this project");
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addActionButton.setToolTipText("Add action to project " + targetName);
         addActionButton.addActionListener(e -> {
             var title = JOptionPane.showInputDialog(parent, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
             if (title == null || title.isBlank()) return;
