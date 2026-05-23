@@ -20,7 +20,7 @@ NamDesktop is a desktop application for managing your work through a GTD-inspire
 
 NamDesktop is developed in small, issue-driven increments with AI assistance: ChatGPT handles high-level design and conceptual discussion; Claude Code handles concrete implementation. Every change starts from a GitHub issue. The aim is disciplined AI-assisted development — not uncontrolled vibe coding.
 
-The project is also a quiet experiment: can a GTD app eventually manage its own backlog? See [IDEAS.md](IDEAS.md) for the running list of future directions.
+The project is also a quiet experiment: can a GTD app eventually manage its own backlog? See [IDEAS.md](docs/IDEAS.md) for the running list of future directions.
 
 ---
 
