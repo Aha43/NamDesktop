@@ -86,6 +86,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         });
 
         var editButton = new JButton("Edit project…");
+        editButton.setToolTipText("Edit project " + projectName);
         editButton.addActionListener(e ->
                 new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true));
 
