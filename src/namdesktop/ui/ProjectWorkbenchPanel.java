@@ -65,6 +65,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
             if (i < breadcrumb.size() - 1) {
                 final var id = node.getId();
                 crumbs.add(breadcrumbLink(node.getTitle(), () -> navigateTo(id)));
+                var ancestorEdit = UiHelper.iconOnlyButton("Edit project: " + node.getTitle(),
+                        new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(14, 14));
+                ancestorEdit.addActionListener(e ->
+                        new ProjectDialog(parent, id, workspace, service, this::rebuild).setVisible(true));
+                crumbs.add(ancestorEdit);
             } else {
                 crumbs.add(new JLabel(node.getTitle()));
             }
@@ -120,21 +125,23 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0));
+        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, false));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
             var section = sections.get(i);
+            var hasSubProjects = workspace.getChildren(section.project().getId())
+                    .stream().anyMatch(NamNode::isProject);
             content.add(Box.createVerticalStrut(16));
             content.add(buildSection(section.project().getTitle(), section.directActions(),
-                    section.project().getId(), i, sections.size()));
+                    section.project().getId(), i, sections.size(), hasSubProjects, true));
         }
 
         return content;
     }
 
     private JPanel buildSection(String title, List<NamNode> actions, UUID targetProjectId,
-                                int sectionIndex, int sectionCount) {
+                                int sectionIndex, int sectionCount, boolean hasSubProjects, boolean showEditButton) {
         var section = new JPanel() {
             @Override public Dimension getMaximumSize() {
                 return new Dimension(Integer.MAX_VALUE, getPreferredSize().height);
@@ -144,7 +151,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
         if (title != null) section.add(
-                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount), BorderLayout.NORTH);
+                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount, hasSubProjects), BorderLayout.NORTH);
 
         JList<NamNode> actionList = null;
         JComponent listContent;
@@ -163,12 +170,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         listWrapper.add(listContent, BorderLayout.CENTER);
         section.add(listWrapper, BorderLayout.CENTER);
 
-        section.add(buildAddActionBar(targetProjectId, actionList), BorderLayout.SOUTH);
+        section.add(buildAddActionBar(targetProjectId, actionList, showEditButton), BorderLayout.SOUTH);
 
         return section;
     }
 
-    private JPanel buildAddActionBar(UUID targetProjectId, JList<NamNode> actionList) {
+    private JPanel buildAddActionBar(UUID targetProjectId, JList<NamNode> actionList, boolean showEditButton) {
         var targetName = workspace.getNode(targetProjectId).map(n -> n.getTitle()).orElse("this project");
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
@@ -187,6 +194,16 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
+
+        if (showEditButton) {
+            var editButton = UiHelper.iconButton("Edit project…",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
+            editButton.setToolTipText("Edit project: " + targetName);
+            editButton.addActionListener(e ->
+                    new ProjectDialog(SwingUtilities.getWindowAncestor(this), targetProjectId, workspace, service, this::rebuild)
+                            .setVisible(true));
+            bar.add(editButton);
+        }
 
         if (actionList != null) {
             var upButton   = UiHelper.iconButton("Move up",
@@ -232,13 +249,14 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private JComponent buildSectionHeader(String title, UUID navigateToId,
-                                          int sectionIndex, int sectionCount) {
+                                          int sectionIndex, int sectionCount, boolean hasSubProjects) {
         var header = new JPanel(new BorderLayout());
 
         var btn = new JButton(title + " ›");
         btn.setBorderPainted(false);
         btn.setContentAreaFilled(false);
-        btn.setFont(btn.getFont().deriveFont(Font.BOLD));
+        var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
+        btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         btn.addActionListener(e -> navigateTo(navigateToId));
 

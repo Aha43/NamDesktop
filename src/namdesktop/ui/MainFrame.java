@@ -70,7 +70,7 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
-        if (syncService.isConfigured()) {
+        if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
             pushButton.addActionListener(e -> runSync(true));
             var pullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
@@ -104,7 +104,7 @@ public final class MainFrame extends JFrame {
         fileMenu.add(templatesItem);
         fileMenu.addSeparator();
 
-        if (syncService.isConfigured()) {
+        if (!devMode && syncService.isConfigured()) {
             var pushItem = new JMenuItem("Push workspace");
             pushItem.addActionListener(e -> runSync(true));
             var pullItem = new JMenuItem("Pull workspace");

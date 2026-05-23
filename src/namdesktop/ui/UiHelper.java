@@ -22,6 +22,13 @@ public final class UiHelper {
         return btn;
     }
 
+    /** Always icon-only regardless of dense mode — use for compact inline contexts like breadcrumbs. */
+    public static JButton iconOnlyButton(String label, Icon icon) {
+        var btn = new JButton("", icon);
+        btn.setToolTipText(label);
+        return btn;
+    }
+
     public static void applyDense(boolean dense) {
         for (var w : Window.getWindows()) applyDenseToContainer(w, dense);
     }

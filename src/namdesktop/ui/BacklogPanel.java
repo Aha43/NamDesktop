@@ -63,8 +63,10 @@ public final class BacklogPanel extends JPanel {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
-                var status = tableModel.getRow(row).status();
-                c.setForeground(status == NodeStatus.DONE ? Color.GRAY : getForeground());
+                var item = tableModel.getRow(row);
+                c.setForeground(item.status() == NodeStatus.DONE ? Color.GRAY : getForeground());
+                var style = item.isInboxItem() ? Font.ITALIC : Font.PLAIN;
+                c.setFont(c.getFont().deriveFont(style));
                 return c;
             }
         };
