@@ -8,6 +8,16 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Ordering Phase 1 — up/down reordering throughout the app:
+  - Workbench action lists: up/down icon buttons in each action bar; selection preserved across rebuild so repeated moves need no reselection; actions skip over sub-project siblings when moving. Closes #136.
+  - Workbench sub-project sections: up/down icon buttons in each section header; sub-projects skip over action siblings when moving. Closes #137.
+  - Raw tree: "Move up" / "Move down" in right-click context menu; greyed out for root and boundary positions. Closes #138.
+  - `NamWorkspaceService.moveChildUp/Down` (general), `moveActionUp/Down` and `moveProjectUp/Down` (type-aware, skip same-kind siblings).
+
+### Fixed
+
+- Navigation panel selection colour flickered between focused and unfocused states whenever the workbench rebuilt. Fixed by pinning the cell renderer to `UIManager.getColor("List.selectionBackground")` regardless of focus state.
+
 - Rich developer tooltips on raw tree nodes — hovering any node shows Type, Status, Tags, UUID, child count, and up to 50 characters of description. Closes #134.
 
 - Icons and tooltips on all remaining toolbar/action buttons app-wide — `ActionDialog` (Make project → folder-plus, Move to backlog → archive, Open project → arrow-right), `ProjectDialog` (Convert to action → arrow-right, Save as Template → copy, Add sub-project → folder-plus), `InboxPanel` (Add item → plus), `ProjectsPanel` (Add project → folder-plus), `NodeDialog` status toggle (check icon), `ContextPanel` (Save as view → bookmark, Clear → eraser), `MainFrame` Exit button (logout icon). All buttons have descriptive tooltip text.
