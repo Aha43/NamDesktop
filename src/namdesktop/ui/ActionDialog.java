@@ -57,7 +57,7 @@ public final class ActionDialog extends NodeDialog {
         openButton.setToolTipText("Open project: " + projectTitle);
         openButton.addActionListener(e -> {
             dispose();
-            new ProjectDialog(parent, projectId, workspace, service, onChanged, actionId).setVisible(true);
+            new ProjectDialog(parent, projectId, workspace, service, onChanged).setVisible(true);
         });
 
         var row = new JPanel(new BorderLayout(8, 0));
