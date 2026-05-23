@@ -52,8 +52,10 @@ public final class NodeTreeContextMenu extends JPopupMenu {
                 parent(), "Enter node title:", "Add Child", JOptionPane.PLAIN_MESSAGE);
         if (title == null || title.isBlank()) return;
         try {
+            var parentPath = tree.getSelectionPath();
             service.addChild(targetNode.getId(), title.strip());
             reload();
+            if (parentPath != null) tree.expandPath(parentPath);
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());
         }
@@ -93,8 +95,12 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     }
 
     private void reload() {
+        var expanded = new java.util.ArrayList<javax.swing.tree.TreePath>();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            if (tree.isExpanded(i)) expanded.add(tree.getPathForRow(i));
+        }
         model.reload();
-        tree.expandRow(0);
+        expanded.forEach(tree::expandPath);
     }
 
     private Window parent() {
