@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Inbox items appearing in the Backlog panel are rendered in italic to signal they are unprocessed captures; double-clicking still opens ActionDialog for processing. Closes #149.
+
+### Changed
+
 - Setting "Always show status column" (default off) — hides the redundant Status column in Next Actions and Backlog panels; toggle takes effect immediately without restart. Closes #144.
 - GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
 - Educational tooltips on hardcoded navigation entries (Inbox, Projects, Next Actions, Context, Backlog, Raw Tree) explaining their GTD role. Closes #146.

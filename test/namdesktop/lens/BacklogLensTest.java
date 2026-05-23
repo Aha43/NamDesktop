@@ -104,6 +104,29 @@ class BacklogLensTest {
     }
 
     @Test
+    void items_inboxItem_isMarkedAsInboxItem() {
+        var node = new NamNode(UUID.randomUUID(), "Unprocessed capture");
+        node.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(workspace.getInboxNodeId()).orElseThrow().getChildIds().add(node.getId());
+
+        var rows = lens.items(workspace);
+        assertEquals(1, rows.size());
+        assertTrue(rows.get(0).isInboxItem());
+    }
+
+    @Test
+    void items_regularAction_isNotMarkedAsInboxItem() {
+        var node = new NamNode(UUID.randomUUID(), "Regular action");
+        node.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(node.getId(), node);
+
+        var rows = lens.items(workspace);
+        assertEquals(1, rows.size());
+        assertFalse(rows.get(0).isInboxItem());
+    }
+
+    @Test
     void items_preservesInsertionOrder() {
         var first  = new NamNode(UUID.randomUUID(), "First");
         var second = new NamNode(UUID.randomUUID(), "Second");
