@@ -16,13 +16,13 @@ public final class MainFrame extends JFrame {
 
     private static List<NavigationEntry> buildNavEntries(boolean devMode) {
         var entries = new java.util.ArrayList<>(List.of(
-                new NavigationEntry("inbox",        "Inbox"),
-                new NavigationEntry("projects",     "Projects"),
-                new NavigationEntry("next-actions", "Next Actions"),
-                new NavigationEntry("context",      "Context"),
-                new NavigationEntry("backlog",      "Backlog")
+                new NavigationEntry("inbox",        "Inbox",        "Capture everything — process and clarify later"),
+                new NavigationEntry("projects",     "Projects",     "Multi-step outcomes that require more than one action"),
+                new NavigationEntry("next-actions", "Next Actions", "Concrete physical actions you can do right now"),
+                new NavigationEntry("context",      "Context",      "Filter your next actions by tag"),
+                new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time")
         ));
-        if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree"));
+        if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree", "Developer view: raw node tree"));
         return List.copyOf(entries);
     }
 
