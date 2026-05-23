@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.ProjectItemRow;
 import namdesktop.lens.ProjectsLens;
 import namdesktop.model.NamWorkspace;
@@ -54,7 +55,9 @@ public final class ProjectsPanel extends JPanel {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var addButton = new JButton("Add project");
+        var addButton = UiHelper.iconButton("Add project",
+                new FlatSVGIcon(ProjectsPanel.class.getResource("/icons/folder-plus.svg")).derive(16, 16));
+        addButton.setToolTipText("Add new top-level project");
         addButton.addActionListener(e -> addProject());
         toolbar.add(addButton);
 

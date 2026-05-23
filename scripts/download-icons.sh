@@ -17,6 +17,12 @@ ICONS=(
   cloud-upload
   cloud-download
   folder-plus
+  check
+  arrow-right
+  copy
+  archive
+  bookmark
+  eraser
 )
 
 mkdir -p "$ICONS_DIR"

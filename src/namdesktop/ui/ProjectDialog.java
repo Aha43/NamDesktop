@@ -73,17 +73,23 @@ public final class ProjectDialog extends NodeDialog {
             }
         });
 
-        var convertButton = new JButton("Convert to action");
+        var convertButton = UiHelper.iconButton("Convert to action",
+                new FlatSVGIcon(ProjectDialog.class.getResource("/icons/arrow-right.svg")).derive(16, 16));
+        convertButton.setToolTipText("Convert this project to an action");
         convertButton.addActionListener(e -> convertToAction());
         addToolbarButton(convertButton);
 
-        var saveTemplateButton = new JButton("Save as Template…");
+        var saveTemplateButton = UiHelper.iconButton("Save as Template…",
+                new FlatSVGIcon(ProjectDialog.class.getResource("/icons/copy.svg")).derive(16, 16));
+        saveTemplateButton.setToolTipText("Save this project's structure as a reusable template");
         saveTemplateButton.addActionListener(e -> saveAsTemplate());
         addToolbarButton(saveTemplateButton);
 
         var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(ProjectDialog.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addAction());
-        var addSubProjectButton = new JButton("Add sub-project");
+        var addSubProjectButton = UiHelper.iconButton("Add sub-project",
+                new FlatSVGIcon(ProjectDialog.class.getResource("/icons/folder-plus.svg")).derive(16, 16));
+        addSubProjectButton.setToolTipText("Add sub-project to this project");
         addSubProjectButton.addActionListener(e -> addSubProject());
         var actionsToolbar = new JToolBar();
         actionsToolbar.setFloatable(false);
