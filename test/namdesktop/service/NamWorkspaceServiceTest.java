@@ -731,6 +731,74 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- getViewOrder / moveViewItemUp / moveViewItemDown ---
+
+    @Test
+    void getViewOrder_emptyOrder_returnsLiveOrder() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var live = List.of(workspace.getNode(a).orElseThrow(), workspace.getNode(b).orElseThrow());
+        var result = service.getViewOrder("test-view", live);
+        assertEquals(live, result);
+    }
+
+    @Test
+    void moveViewItemUp_swapsInSavedOrder() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var nodeA = workspace.getNode(a).orElseThrow();
+        var nodeB = workspace.getNode(b).orElseThrow();
+        var live = List.of(nodeA, nodeB);
+        var currentOrder = List.of(a, b);
+        service.moveViewItemUp("test-view", b, currentOrder);
+        var result = service.getViewOrder("test-view", live);
+        assertEquals(List.of(nodeB, nodeA), result);
+    }
+
+    @Test
+    void moveViewItemDown_swapsInSavedOrder() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var nodeA = workspace.getNode(a).orElseThrow();
+        var nodeB = workspace.getNode(b).orElseThrow();
+        var live = List.of(nodeA, nodeB);
+        var currentOrder = List.of(a, b);
+        service.moveViewItemDown("test-view", a, currentOrder);
+        var result = service.getViewOrder("test-view", live);
+        assertEquals(List.of(nodeB, nodeA), result);
+    }
+
+    @Test
+    void moveViewItemUp_isNoOpForFirstItem() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var nodeA = workspace.getNode(a).orElseThrow();
+        var nodeB = workspace.getNode(b).orElseThrow();
+        var currentOrder = List.of(a, b);
+        service.moveViewItemUp("test-view", a, currentOrder);
+        assertEquals(List.of(nodeA, nodeB), service.getViewOrder("test-view", List.of(nodeA, nodeB)));
+    }
+
+    @Test
+    void moveViewItemDown_isNoOpForLastItem() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var nodeA = workspace.getNode(a).orElseThrow();
+        var nodeB = workspace.getNode(b).orElseThrow();
+        var currentOrder = List.of(a, b);
+        service.moveViewItemDown("test-view", b, currentOrder);
+        assertEquals(List.of(nodeA, nodeB), service.getViewOrder("test-view", List.of(nodeA, nodeB)));
+    }
+
+    @Test
+    void moveViewItemUp_savesWorkspace() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        repository.saveCount = 0;
+        service.moveViewItemUp("test-view", b, List.of(a, b));
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- createNextAction ---
 
     @Test

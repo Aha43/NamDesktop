@@ -1,9 +1,9 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import namdesktop.ui.UiHelper;
 import namdesktop.lens.NextActionItemRow;
 import namdesktop.lens.NextActionsLens;
+import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
@@ -15,12 +15,19 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public final class NextActionsPanel extends JPanel {
 
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
     private final NextActionsTableModel tableModel;
+    private final JTable table;
+    private final JButton upButton;
+    private final JButton downButton;
+    private List<UUID> currentOrder = List.of();
+    private UUID pendingSelection;
 
     public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -28,14 +35,27 @@ public final class NextActionsPanel extends JPanel {
         this.service    = service;
         this.tableModel = new NextActionsTableModel();
 
+        upButton   = UiHelper.iconButton("Move up",
+                new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+        downButton = UiHelper.iconButton("Move down",
+                new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+        upButton.setToolTipText("Move selected action up");
+        downButton.setToolTipText("Move selected action down");
+        upButton.setEnabled(false);
+        downButton.setEnabled(false);
+
+        var addButton = UiHelper.iconButton("Add action",
+                new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addButton.addActionListener(e -> addAction());
+
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        var addButton = UiHelper.iconButton("Add action", new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
-        addButton.addActionListener(e -> addAction());
         toolbar.add(addButton);
+        toolbar.add(upButton);
+        toolbar.add(downButton);
         add(toolbar, BorderLayout.NORTH);
 
-        JTable table = new JTable(tableModel) {
+        table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
@@ -46,6 +66,15 @@ public final class NextActionsPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+
+        table.getSelectionModel().addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting()) return;
+            var row  = table.getSelectedRow();
+            var size = tableModel.getRowCount();
+            upButton.setEnabled(row > 0);
+            downButton.setEnabled(row >= 0 && row < size - 1);
+        });
+
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -58,11 +87,43 @@ public final class NextActionsPanel extends JPanel {
             }
         });
 
+        upButton.addActionListener(e -> {
+            var row = table.getSelectedRow();
+            if (row < 0) return;
+            var id = tableModel.getRow(row).id();
+            try { pendingSelection = id; service.moveViewItemUp(NamWorkspaceService.VIEW_NEXT_ACTIONS, id, currentOrder); refresh(); }
+            catch (java.io.IOException ex) { showError(ex.getMessage()); }
+        });
+        downButton.addActionListener(e -> {
+            var row = table.getSelectedRow();
+            if (row < 0) return;
+            var id = tableModel.getRow(row).id();
+            try { pendingSelection = id; service.moveViewItemDown(NamWorkspaceService.VIEW_NEXT_ACTIONS, id, currentOrder); refresh(); }
+            catch (java.io.IOException ex) { showError(ex.getMessage()); }
+        });
+
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
     public void refresh() {
-        tableModel.setRows(new NextActionsLens().items(workspace));
+        var liveRows   = new NextActionsLens().items(workspace);
+        var liveNodes  = liveRows.stream()
+                .map(r -> workspace.getNode(r.id()).orElseThrow())
+                .toList();
+        var ordered    = service.getViewOrder(NamWorkspaceService.VIEW_NEXT_ACTIONS, liveNodes);
+        currentOrder   = ordered.stream().map(NamNode::getId).toList();
+        var rowById    = liveRows.stream().collect(Collectors.toMap(NextActionItemRow::id, r -> r));
+        tableModel.setRows(currentOrder.stream().map(rowById::get).toList());
+
+        if (pendingSelection != null) {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                if (tableModel.getRow(i).id().equals(pendingSelection)) {
+                    table.setRowSelectionInterval(i, i);
+                    pendingSelection = null;
+                    break;
+                }
+            }
+        }
     }
 
     private void addAction() {
@@ -72,8 +133,12 @@ public final class NextActionsPanel extends JPanel {
             service.createNextAction(title.strip());
             refresh();
         } catch (java.io.IOException ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            showError(ex.getMessage());
         }
+    }
+
+    private void showError(String message) {
+        JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
     private static final class NextActionsTableModel extends AbstractTableModel {
