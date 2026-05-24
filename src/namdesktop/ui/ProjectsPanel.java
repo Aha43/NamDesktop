@@ -74,7 +74,7 @@ public final class ProjectsPanel extends JPanel {
 
     private static final class ProjectsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Tags"};
+        private static final String[] COLUMNS = {"Project", "Tags"};
         private List<ProjectItemRow> rows = List.of();
 
         void setRows(List<ProjectItemRow> rows) {
