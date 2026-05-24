@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Inherited project tags visible in all action list views (Next Actions, Backlog, Context, Saved Views): tags inherited at query time from ancestor projects appear in italic after the action's own tags, making it clear why an action matched a filter. Closes #178.
+
+- Rename saved view: cursor-text icon button in the saved view header renames the view in place; the navigation panel updates immediately with the new name selected. Closes #177.
+
 - "Run Demo…" restricted to dev mode only and resets the workspace to a clean default state before running — gives a reproducible known-good dataset for manual testing with one click. Closes #175.
 
 - Recursive delete for non-empty projects: deleting a project that contains actions or sub-projects now works from both the workbench delete button and the raw tree context menu. A confirmation dialog shows the exact blast radius ("This will also permanently remove N sub-project(s) and M action(s).") before any data is removed. Next Actions and Backlog views update immediately. Closes #174.

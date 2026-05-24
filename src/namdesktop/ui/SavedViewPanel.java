@@ -17,6 +17,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Consumer;
 
 public final class SavedViewPanel extends JPanel {
 
@@ -24,14 +25,17 @@ public final class SavedViewPanel extends JPanel {
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
     private final Runnable onDeleted;
+    private final Consumer<String> onRenamed;
     private final ViewTableModel tableModel;
 
-    public SavedViewPanel(SavedView view, NamWorkspace workspace, NamWorkspaceService service, Runnable onDeleted) {
+    public SavedViewPanel(SavedView view, NamWorkspace workspace, NamWorkspaceService service,
+                          Runnable onDeleted, Consumer<String> onRenamed) {
         super(new BorderLayout());
         this.view       = view;
         this.workspace  = workspace;
         this.service    = service;
         this.onDeleted  = onDeleted;
+        this.onRenamed  = onRenamed;
         this.tableModel = new ViewTableModel();
 
         var nameLabel = new JLabel(view.name());
@@ -40,11 +44,17 @@ public final class SavedViewPanel extends JPanel {
         var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
-        var deleteButton = new JButton("Delete view");
+        var renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
+        renameButton.setToolTipText("Rename this view");
+        renameButton.addActionListener(e -> renameView());
+
+        var deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+        deleteButton.setToolTipText("Delete this view");
         deleteButton.addActionListener(e -> deleteView());
 
         var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         eastButtons.add(addActionButton);
+        eastButtons.add(renameButton);
         eastButtons.add(deleteButton);
 
         var header = new JPanel(new BorderLayout());
@@ -72,6 +82,7 @@ public final class SavedViewPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -101,6 +112,18 @@ public final class SavedViewPanel extends JPanel {
             service.createNextAction(title.strip(), view.tags());
             refresh();
         } catch (IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void renameView() {
+        var newName = (String) JOptionPane.showInputDialog(this,
+                "New name:", "Rename view", JOptionPane.PLAIN_MESSAGE, null, null, view.name());
+        if (newName == null || newName.isBlank() || newName.strip().equals(view.name())) return;
+        try {
+            service.renameSavedView(view.name(), newName.strip());
+            onRenamed.accept(newName.strip());
+        } catch (IOException | IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -135,9 +158,16 @@ public final class SavedViewPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
-                case 2 -> String.join(", ", r.tags());
+                case 2 -> new String[]{
+                        String.join(", ", r.tags()),
+                        String.join(", ", r.inheritedTags())};
                 default -> null;
             };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int col) {
+            return col == 2 ? String[].class : String.class;
         }
     }
 }

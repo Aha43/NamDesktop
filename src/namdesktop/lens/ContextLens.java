@@ -29,9 +29,14 @@ public final class ContextLens {
                     var parent = workspace.getParent(n.getId())
                             .filter(p -> !structural.contains(p.getId()))
                             .orElse(null);
+                    var ownTags = n.getTags();
+                    var inherited = workspace.effectiveTags(n.getId()).stream()
+                            .filter(t -> !ownTags.contains(t))
+                            .sorted()
+                            .toList();
                     return new ContextItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
-                            List.copyOf(n.getTags()));
+                            List.copyOf(ownTags), inherited);
                 })
                 .toList();
     }

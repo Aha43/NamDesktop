@@ -75,7 +75,7 @@ public final class MainFrame extends JFrame {
         toolbar.setFloatable(false);
         var manageTagsButton = UiHelper.iconButton("Manage Tags…", new FlatSVGIcon(MainFrame.class.getResource("/icons/tag.svg")).derive(16, 16));
         manageTagsButton.addActionListener(e ->
-                new TagManagementDialog(this, workspace, service).setVisible(true));
+                new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         toolbar.add(manageTagsButton);
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
@@ -97,7 +97,7 @@ public final class MainFrame extends JFrame {
 
         var manageTagsItem = new JMenuItem("Manage Tags…");
         manageTagsItem.addActionListener(e ->
-                new TagManagementDialog(this, workspace, service).setVisible(true));
+                new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
@@ -153,10 +153,15 @@ public final class MainFrame extends JFrame {
             workspace.getSavedViews().stream()
                     .filter(sv -> sv.name().equals(name))
                     .findFirst()
-                    .ifPresent(sv -> contentArea.setContent(new SavedViewPanel(sv, workspace, service, () -> {
-                        rebuildSavedViewsNav();
-                        navPanel.selectById("context");
-                    })));
+                    .ifPresent(sv -> contentArea.setContent(new SavedViewPanel(sv, workspace, service,
+                            () -> {
+                                rebuildSavedViewsNav();
+                                navPanel.selectById("context");
+                            },
+                            newName -> {
+                                rebuildSavedViewsNav();
+                                navPanel.selectById("saved-view:" + newName);
+                            })));
             return;
         }
         switch (entry.id()) {
@@ -189,8 +194,16 @@ public final class MainFrame extends JFrame {
             final var isOk    = success;
             SwingUtilities.invokeLater(() -> {
                 setCursor(Cursor.getDefaultCursor());
-                if (isOk) JOptionPane.showMessageDialog(this, msg, push ? "Push" : "Pull", JOptionPane.INFORMATION_MESSAGE);
-                else      JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+                if (isOk && !push) {
+                    int choice = JOptionPane.showOptionDialog(this, msg, "Pull",
+                            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
+                            new Object[]{"Exit now", "Later"}, "Exit now");
+                    if (choice == 0) System.exit(0);
+                } else if (isOk) {
+                    JOptionPane.showMessageDialog(this, msg, "Push", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+                }
             });
         }, "sync-thread").start();
     }

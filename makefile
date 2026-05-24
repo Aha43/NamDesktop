@@ -15,9 +15,19 @@ TEST_SOURCES := $(shell find test -name "*.java" 2>/dev/null)
 
 JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
 
-.PHONY: clean classes jar app run all test e2e
+.PHONY: clean classes jar app run all test e2e help
 
 all: app
+
+help:
+	@echo "Usage: make <target>"
+	@echo ""
+	@echo "  all     Build the app (default)"
+	@echo "  run     Build and launch the app"
+	@echo "  e2e     Build and run the e2e regression suite"
+	@echo "  test    Compile and run unit tests"
+	@echo "  clean   Delete build output"
+	@echo ""
 
 clean:
 	rm -rf $(BUILD_DIR)

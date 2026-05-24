@@ -26,10 +26,13 @@ public final class NextActionsLens {
                             .map(gp -> !gp.getId().equals(workspace.getProjectsNodeId()))
                             .orElse(false);
                     var projectPath = parent != null ? buildProjectPath(workspace, parent.getId(), structural) : null;
+                    var ownTags = n.getTags();
+                    var inherited = workspace.effectiveTags(n.getId()).stream()
+                            .filter(t -> !ownTags.contains(t)).sorted().toList();
                     return new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
                             parent != null ? parent.getId() : null,
-                            isSubProject, projectPath, List.copyOf(n.getTags()));
+                            isSubProject, projectPath, List.copyOf(ownTags), inherited);
                 })
                 .toList();
     }

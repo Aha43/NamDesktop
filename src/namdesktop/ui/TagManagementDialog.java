@@ -16,13 +16,15 @@ public final class TagManagementDialog extends JDialog {
 
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
+    private final Runnable onChanged;
     private final TagTableModel tableModel;
     private final JTable table;
 
-    public TagManagementDialog(Window parent, NamWorkspace workspace, NamWorkspaceService service) {
+    public TagManagementDialog(Window parent, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
         super(parent, "Manage Tags", ModalityType.APPLICATION_MODAL);
         this.workspace  = workspace;
         this.service    = service;
+        this.onChanged  = onChanged;
         this.tableModel = new TagTableModel();
 
         table = new JTable(tableModel);
@@ -83,6 +85,7 @@ public final class TagManagementDialog extends JDialog {
         try {
             service.renameTag(oldTag, newTag);
             refresh();
+            onChanged.run();
         } catch (IOException e) {
             error("Failed to rename: " + e.getMessage());
         }
@@ -102,6 +105,7 @@ public final class TagManagementDialog extends JDialog {
         try {
             service.deleteTag(tag);
             refresh();
+            onChanged.run();
         } catch (IOException e) {
             error("Failed to delete: " + e.getMessage());
         }
