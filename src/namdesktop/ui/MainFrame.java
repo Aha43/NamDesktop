@@ -70,6 +70,7 @@ public final class MainFrame extends JFrame {
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.0);
+        splitPane.setOneTouchExpandable(true);
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
