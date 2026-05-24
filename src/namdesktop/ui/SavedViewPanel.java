@@ -142,7 +142,7 @@ public final class SavedViewPanel extends JPanel {
     }
 
     private static final class ViewTableModel extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Title", "Project", "Tags"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags"};
         private List<ContextItemRow> rows = List.of();
 
         void setRows(List<ContextItemRow> rows) { this.rows = rows; fireTableDataChanged(); }
