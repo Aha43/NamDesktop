@@ -23,6 +23,19 @@ public final class NamWorkspace {
 
     public NamWorkspace() {}
 
+    public void resetToDefault() {
+        var fresh = createDefault();
+        this.rootNodeId        = fresh.rootNodeId;
+        this.inboxNodeId       = fresh.inboxNodeId;
+        this.projectsNodeId    = fresh.projectsNodeId;
+        this.nextActionsNodeId = fresh.nextActionsNodeId;
+        this.nodes             = fresh.nodes;
+        this.registeredTags    = fresh.registeredTags;
+        this.savedViews        = fresh.savedViews;
+        this.templates         = fresh.templates;
+        this.viewOrders        = fresh.viewOrders;
+    }
+
     public static NamWorkspace createDefault() {
         var workspace    = new NamWorkspace();
         var root         = new NamNode(UUID.randomUUID(), "NAM");

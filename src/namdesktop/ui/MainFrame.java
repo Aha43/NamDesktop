@@ -108,14 +108,15 @@ public final class MainFrame extends JFrame {
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
 
-        var runDemoItem = new JMenuItem("Run Demo…");
-        runDemoItem.addActionListener(e -> runDemo());
-
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
-        fileMenu.add(runDemoItem);
+        if (devMode) {
+            var runDemoItem = new JMenuItem("Run Demo…");
+            runDemoItem.addActionListener(e -> runDemo());
+            fileMenu.add(runDemoItem);
+        }
         fileMenu.addSeparator();
 
         if (!devMode && syncService.isConfigured()) {
@@ -210,6 +211,13 @@ public final class MainFrame extends JFrame {
         var script = MainFrame.class.getResourceAsStream("/demo.json");
         if (script == null) {
             JOptionPane.showMessageDialog(this, "demo.json not found in JAR.", "Demo", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            service.resetWorkspaceToDefault();
+            refreshAll();
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, "Failed to reset workspace: " + ex.getMessage(), "Demo", JOptionPane.ERROR_MESSAGE);
             return;
         }
         demoStatusBar.setVisible(true);

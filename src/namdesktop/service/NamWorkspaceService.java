@@ -104,6 +104,11 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void resetWorkspaceToDefault() throws IOException {
+        workspace.resetToDefault();
+        repository.save(path, workspace);
+    }
+
     public void deleteLeaf(UUID nodeId) throws IOException {
         var node = require(nodeId);
         if (!node.getChildIds().isEmpty()) {

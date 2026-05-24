@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Run Demo…" restricted to dev mode only and resets the workspace to a clean default state before running — gives a reproducible known-good dataset for manual testing with one click. Closes #175.
+
 - Recursive delete for non-empty projects: deleting a project that contains actions or sub-projects now works from both the workbench delete button and the raw tree context menu. A confirmation dialog shows the exact blast radius ("This will also permanently remove N sub-project(s) and M action(s).") before any data is removed. Next Actions and Backlog views update immediately. Closes #174.
 
 - `make e2e` target: launches the app with `--e2e` flag against a fresh empty workspace, runs `e2e.json` (14 build steps + 16 assertions), and exits 0/1 — ready for regression runs without a full framework. `NamAssertWiring` provides the six assertion handlers; any unhandled exception or failed assertion increments the failure count and results in a non-zero exit. Closes #172.
