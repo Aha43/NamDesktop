@@ -61,8 +61,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
         }
         removeAll();
         var projection  = new ProjectWorkbenchLens().project(workspace, currentProjectId);
-        var sectionIds  = projection.childSections().stream()
-                .map(s -> s.project().getId()).toList();
+        var sectionIds  = new java.util.ArrayList<UUID>();
+        sectionIds.add(currentProjectId);
+        projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
         add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds), BorderLayout.NORTH);
         add(new JScrollPane(buildContent(projection)),                BorderLayout.CENTER);
         revalidate();
@@ -160,7 +161,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, true));
+        content.add(buildSection("Actions", projection.directActions(), currentProjectId, -1, 0, false, true));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
@@ -379,38 +380,45 @@ public final class ProjectWorkbenchPanel extends JPanel {
                                           JButton toggleButton) {
         var header = new JPanel(new BorderLayout());
 
-        var btn = new JButton(title + " ›");
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
-        btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.addActionListener(e -> navigateTo(navigateToId));
-
-        var upButton = UiHelper.iconButton("Move section up",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
-        var downButton = UiHelper.iconButton("Move section down",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
-        upButton.setToolTipText("Move this sub-project up");
-        downButton.setToolTipText("Move this sub-project down");
-        upButton.setEnabled(sectionIndex > 0);
-        downButton.setEnabled(sectionIndex < sectionCount - 1);
-
-        upButton.addActionListener(e -> {
-            try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-        downButton.addActionListener(e -> {
-            try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-
         var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
         orderButtons.add(toggleButton);
-        orderButtons.add(upButton);
-        orderButtons.add(downButton);
 
-        header.add(btn,          BorderLayout.CENTER);
+        if (sectionIndex < 0) {
+            var lbl = new JLabel(title);
+            lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+            header.add(lbl, BorderLayout.CENTER);
+        } else {
+            var btn = new JButton(title + " ›");
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
+            btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.addActionListener(e -> navigateTo(navigateToId));
+
+            var upButton = UiHelper.iconButton("Move section up",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+            var downButton = UiHelper.iconButton("Move section down",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+            upButton.setToolTipText("Move this sub-project up");
+            downButton.setToolTipText("Move this sub-project down");
+            upButton.setEnabled(sectionIndex > 0);
+            downButton.setEnabled(sectionIndex < sectionCount - 1);
+
+            upButton.addActionListener(e -> {
+                try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            downButton.addActionListener(e -> {
+                try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+
+            orderButtons.add(upButton);
+            orderButtons.add(downButton);
+            header.add(btn, BorderLayout.CENTER);
+        }
+
         header.add(orderButtons, BorderLayout.EAST);
         return header;
     }
