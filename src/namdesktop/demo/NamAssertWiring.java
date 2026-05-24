@@ -24,6 +24,7 @@ public final class NamAssertWiring {
     public void configure(ScriptRunner runner) {
         runner
             .register("assertNodeExists",      this::assertNodeExists)
+            .register("assertNodeNotExists",   this::assertNodeNotExists)
             .register("assertNodeStatus",      this::assertNodeStatus)
             .register("assertTagOnNode",       this::assertTagOnNode)
             .register("assertProjectExists",   this::assertProjectExists)
@@ -36,6 +37,13 @@ public final class NamAssertWiring {
         var found = workspace.getNodes().values().stream()
                 .anyMatch(n -> title.equals(n.getTitle()));
         if (!found) throw new IllegalStateException("Expected node with title \"" + title + "\" but it was not found");
+    }
+
+    private void assertNodeNotExists(Map<String, Object> args) {
+        var title = str(args, "title");
+        var found = workspace.getNodes().values().stream()
+                .anyMatch(n -> title.equals(n.getTitle()));
+        if (found) throw new IllegalStateException("Expected node with title \"" + title + "\" to be absent but it was found");
     }
 
     private void assertNodeStatus(Map<String, Object> args) {

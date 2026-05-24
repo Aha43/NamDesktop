@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import namdesktop.model.NamNode;
+import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
@@ -13,6 +14,8 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     private final JTree tree;
     private final WorkspaceTreeModel model;
     private final NamWorkspaceService service;
+    private final NamWorkspace workspace;
+    private final Runnable onDelete;
     private final JMenuItem markDoneItem;
     private final JMenuItem deleteItem;
     private final JMenuItem moveUpItem;
@@ -20,10 +23,12 @@ public final class NodeTreeContextMenu extends JPopupMenu {
 
     private NamNode targetNode;
 
-    public NodeTreeContextMenu(JTree tree, WorkspaceTreeModel model, NamWorkspaceService service) {
+    public NodeTreeContextMenu(JTree tree, WorkspaceTreeModel model, NamWorkspaceService service, Runnable onDelete) {
+        this.workspace = model.getWorkspace();
         this.tree = tree;
         this.model = model;
         this.service = service;
+        this.onDelete = onDelete;
 
         var addItem    = new JMenuItem("Add child");
         var renameItem = new JMenuItem("Rename");
@@ -120,11 +125,30 @@ public final class NodeTreeContextMenu extends JPopupMenu {
     }
 
     private void delete() {
+        var subtree  = workspace.collectSubtree(targetNode.getId());
+        var projects = (int) subtree.stream().skip(1)
+                .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                .filter(NamNode::isProject).count();
+        var actions  = (int) subtree.stream().skip(1)
+                .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                .filter(n -> !n.isProject()).count();
+        String msg;
+        if (projects == 0 && actions == 0) {
+            msg = "Delete \"" + targetNode.getTitle() + "\"? This cannot be undone.";
+        } else {
+            var parts = new java.util.ArrayList<String>();
+            if (projects > 0) parts.add(projects + " sub-project" + (projects > 1 ? "s" : ""));
+            if (actions  > 0) parts.add(actions  + " action"      + (actions  > 1 ? "s" : ""));
+            msg = "Delete \"" + targetNode.getTitle() + "\"? This will also permanently remove "
+                    + String.join(" and ", parts) + ".";
+        }
+        var confirm = JOptionPane.showConfirmDialog(parent(), msg,
+                "Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
         try {
-            service.deleteLeaf(targetNode.getId());
+            service.deleteRecursive(targetNode.getId());
             reload();
-        } catch (IllegalStateException e) {
-            showError(e.getMessage());
+            onDelete.run();
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());
         }

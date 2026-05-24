@@ -19,6 +19,8 @@ public final class WorkspaceTreeModel implements TreeModel {
         this.workspace = workspace;
     }
 
+    public NamWorkspace getWorkspace() { return workspace; }
+
     @Override
     public Object getRoot() {
         return workspace.getNode(workspace.getRootNodeId()).orElseThrow();

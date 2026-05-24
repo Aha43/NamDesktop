@@ -4,12 +4,10 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.ProjectItemRow;
 import namdesktop.lens.ProjectsLens;
 import namdesktop.model.NamWorkspace;
-import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -32,15 +30,7 @@ public final class ProjectsPanel extends JPanel {
         this.onOpenProject = onOpenProject;
         this.tableModel    = new ProjectsTableModel();
 
-        JTable table = new JTable(tableModel) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                var c = super.prepareRenderer(renderer, row, column);
-                var status = tableModel.getRow(row).status();
-                c.setForeground(status == NodeStatus.DONE ? Color.GRAY : getForeground());
-                return c;
-            }
-        };
+        JTable table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         table.addMouseListener(new MouseAdapter() {
@@ -84,7 +74,7 @@ public final class ProjectsPanel extends JPanel {
 
     private static final class ProjectsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Tags", "Status"};
+        private static final String[] COLUMNS = {"Title", "Tags"};
         private List<ProjectItemRow> rows = List.of();
 
         void setRows(List<ProjectItemRow> rows) {
@@ -104,7 +94,6 @@ public final class ProjectsPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> String.join(", ", r.tags());
-                case 2 -> r.status();
                 default -> null;
             };
         }

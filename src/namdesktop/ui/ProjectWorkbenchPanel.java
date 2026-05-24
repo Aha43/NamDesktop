@@ -286,17 +286,29 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
             deleteButton.setToolTipText("Delete project: " + targetName);
             deleteButton.addActionListener(e -> {
-                var confirm = JOptionPane.showConfirmDialog(parent,
-                        "Delete \"" + targetName + "\"? This cannot be undone.",
+                var subtree  = workspace.collectSubtree(targetProjectId);
+                var projects = (int) subtree.stream().skip(1)
+                        .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                        .filter(n -> n.isProject()).count();
+                var actions  = (int) subtree.stream().skip(1)
+                        .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                        .filter(n -> !n.isProject()).count();
+                String msg;
+                if (projects == 0 && actions == 0) {
+                    msg = "Delete \"" + targetName + "\"? This cannot be undone.";
+                } else {
+                    var parts = new java.util.ArrayList<String>();
+                    if (projects > 0) parts.add(projects + " sub-project" + (projects > 1 ? "s" : ""));
+                    if (actions  > 0) parts.add(actions  + " action"      + (actions  > 1 ? "s" : ""));
+                    msg = "Delete \"" + targetName + "\"? This will also permanently remove "
+                            + String.join(" and ", parts) + ".";
+                }
+                var confirm = JOptionPane.showConfirmDialog(parent, msg,
                         "Delete project", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
                 if (confirm != JOptionPane.YES_OPTION) return;
                 try {
-                    service.deleteLeaf(targetProjectId);
+                    service.deleteRecursive(targetProjectId);
                     rebuild();
-                } catch (IllegalStateException ex) {
-                    JOptionPane.showMessageDialog(parent,
-                            "\"" + targetName + "\" still has items inside and cannot be deleted.",
-                            "Cannot delete", JOptionPane.ERROR_MESSAGE);
                 } catch (IOException ex) {
                     showError(ex.getMessage());
                 }

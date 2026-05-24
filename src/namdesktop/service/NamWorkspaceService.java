@@ -104,6 +104,11 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void resetWorkspaceToDefault() throws IOException {
+        workspace.resetToDefault();
+        repository.save(path, workspace);
+    }
+
     public void deleteLeaf(UUID nodeId) throws IOException {
         var node = require(nodeId);
         if (!node.getChildIds().isEmpty()) {
@@ -114,6 +119,18 @@ public final class NamWorkspaceService {
             parent.getChildIds().remove(nodeId);
         }
         workspace.getNodes().remove(nodeId);
+        repository.save(path, workspace);
+    }
+
+    public void deleteRecursive(UUID nodeId) throws IOException {
+        require(nodeId);
+        var toDelete = workspace.collectSubtree(nodeId);
+        var parent = findParent(nodeId);
+        if (parent != null) parent.getChildIds().remove(nodeId);
+        for (var id : toDelete) {
+            workspace.getNodes().remove(id);
+            workspace.getViewOrders().values().forEach(order -> order.remove(id));
+        }
         repository.save(path, workspace);
     }
 

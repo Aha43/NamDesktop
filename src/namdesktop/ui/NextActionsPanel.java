@@ -18,12 +18,14 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public final class NextActionsPanel extends JPanel {
 
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
+    private final Consumer<UUID> onOpenProject;
     private final NextActionsTableModel tableModel;
     private final JTable table;
     private final JButton upButton;
@@ -33,11 +35,12 @@ public final class NextActionsPanel extends JPanel {
     private TableColumn statusColumn;
     private boolean statusColumnVisible = true;
 
-    public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service) {
+    public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
-        this.workspace  = workspace;
-        this.service    = service;
-        this.tableModel = new NextActionsTableModel();
+        this.workspace     = workspace;
+        this.service       = service;
+        this.onOpenProject = onOpenProject;
+        this.tableModel    = new NextActionsTableModel();
 
         upButton   = UiHelper.iconButton("Move up",
                 new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
@@ -63,9 +66,22 @@ public final class NextActionsPanel extends JPanel {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
-                var status = tableModel.getRow(row).status();
-                c.setForeground(status == NodeStatus.DONE ? Color.GRAY : getForeground());
+                var item = tableModel.getRow(row);
+                c.setForeground(item.status() == NodeStatus.DONE ? Color.GRAY : getForeground());
+                if (column == 1 && item.isSubProject()) {
+                    c.setFont(c.getFont().deriveFont(Font.ITALIC));
+                } else {
+                    c.setFont(c.getFont().deriveFont(Font.PLAIN));
+                }
                 return c;
+            }
+
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                var row = rowAtPoint(e.getPoint());
+                var col = columnAtPoint(e.getPoint());
+                if (row < 0 || col != 1) return null;
+                return tableModel.getRow(row).projectPath();
             }
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -82,12 +98,18 @@ public final class NextActionsPanel extends JPanel {
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() != 2) return;
                 var row = table.rowAtPoint(e.getPoint());
+                var col = table.columnAtPoint(e.getPoint());
                 if (row < 0) return;
-                var selected = tableModel.getRow(row);
-                new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
-                        selected.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
+                var item = tableModel.getRow(row);
+                if (col == 1 && e.getClickCount() == 1 && item.parentId() != null) {
+                    onOpenProject.accept(item.parentId());
+                    return;
+                }
+                if (e.getClickCount() == 2 && col != 1) {
+                    new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                            item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
+                }
             }
         });
 
