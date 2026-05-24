@@ -9,6 +9,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - `swingdemo` — reusable library for driving Java Swing apps from a JSON script (`ActionHandler`, `RefreshBus`, `DemoStep`, `ScriptRunner`). Closes #168.
+- Demo script (`demo.json`) bundled in the JAR builds a realistic GTD workspace live — projects, sub-projects, actions, tags, and saved views. Triggered via File → Run Demo… or `--demo` CLI flag. Step descriptions appear in a status bar at the bottom of the window. Closes #170.
 - `NamDemoWiring` registers NamDesktop action handlers on a `ScriptRunner` (`addProject`, `addSubProject`, `addAction`, `addNextAction`, `addInboxItem`, `markNext`, `markDone`, `markBacklog`, `addTag`, `createSavedView`). `MainFrame.refreshAll()` added as the `RefreshBus` target. Closes #169.
 
 - Status toggle in ActionDialog replaced with Backlog / Next / Done radio group — all three statuses reachable without closing the dialog. Closes #162.

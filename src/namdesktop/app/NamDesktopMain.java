@@ -22,10 +22,10 @@ public final class NamDesktopMain {
             System.getProperty("user.home"), ".namdesktop", "sync");
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(NamDesktopMain::start);
+        SwingUtilities.invokeLater(() -> start(args));
     }
 
-    private static void start() {
+    private static void start(String[] args) {
         var settings = AppSettings.load();
         AppSettings.setInstance(settings);
         if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
@@ -45,6 +45,9 @@ public final class NamDesktopMain {
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version() + (devMode ? " [DEV]" : ""));
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        if (java.util.Arrays.asList(args).contains("--demo")) {
+            frame.runDemo();
+        }
     }
 
     private static NamWorkspace loadWorkspace(JsonWorkspaceRepository repository, Path path) {

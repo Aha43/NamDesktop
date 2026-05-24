@@ -20,20 +20,24 @@ public final class DemoStep {
     private final String              action;
     private final Map<String, Object> args;
     private final int                 delayMs;
+    private final String              description;
 
     @JsonCreator
     public DemoStep(
-            @JsonProperty("action")  String              action,
-            @JsonProperty("args")    Map<String, Object> args,
-            @JsonProperty("delayMs") int                 delayMs) {
-        this.action  = action  != null ? action  : "";
-        this.args    = args    != null ? args    : Map.of();
-        this.delayMs = Math.max(0, delayMs);
+            @JsonProperty("action")      String              action,
+            @JsonProperty("args")        Map<String, Object> args,
+            @JsonProperty("delayMs")     int                 delayMs,
+            @JsonProperty("description") String              description) {
+        this.action      = action      != null ? action      : "";
+        this.args        = args        != null ? args        : Map.of();
+        this.delayMs     = Math.max(0, delayMs);
+        this.description = description != null ? description : "";
     }
 
-    public String              action()  { return action; }
-    public Map<String, Object> args()    { return args; }
-    public int                 delayMs() { return delayMs; }
+    public String              action()      { return action; }
+    public Map<String, Object> args()        { return args; }
+    public int                 delayMs()     { return delayMs; }
+    public String              description() { return description; }
 
     @Override public String toString() {
         return "DemoStep[action=" + action + ", delayMs=" + delayMs + "]";

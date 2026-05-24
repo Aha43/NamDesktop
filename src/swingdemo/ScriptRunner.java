@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Reads a JSON script of {@link DemoStep}s and replays them on the Swing EDT,
@@ -28,9 +29,11 @@ import java.util.Map;
  */
 public final class ScriptRunner {
 
-    private final ObjectMapper            mapper;
-    private final RefreshBus              bus;
-    private final Map<String, ActionHandler> handlers = new HashMap<>();
+    private final ObjectMapper               mapper;
+    private final RefreshBus                 bus;
+    private final Map<String, ActionHandler> handlers   = new HashMap<>();
+    private Consumer<DemoStep>               onStep     = step -> {};
+    private Runnable                         onComplete = () -> {};
 
     public ScriptRunner(ObjectMapper mapper, RefreshBus bus) {
         this.mapper = mapper;
@@ -42,16 +45,30 @@ public final class ScriptRunner {
         return this;
     }
 
+    public ScriptRunner setOnStep(Consumer<DemoStep> listener) {
+        this.onStep = listener != null ? listener : step -> {};
+        return this;
+    }
+
+    public ScriptRunner setOnComplete(Runnable listener) {
+        this.onComplete = listener != null ? listener : () -> {};
+        return this;
+    }
+
     public void run(InputStream json) throws IOException {
         var steps = mapper.readValue(json, new TypeReference<List<DemoStep>>() {});
         schedule(steps, 0);
     }
 
     private void schedule(List<DemoStep> steps, int index) {
-        if (index >= steps.size()) return;
+        if (index >= steps.size()) {
+            onComplete.run();
+            return;
+        }
         var step  = steps.get(index);
         int delay = step.delayMs() > 0 ? step.delayMs() : 1;
         var timer = new Timer(delay, e -> {
+            onStep.accept(step);
             execute(step);
             bus.refresh();
             schedule(steps, index + 1);

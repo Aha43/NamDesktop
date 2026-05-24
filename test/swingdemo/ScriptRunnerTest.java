@@ -116,12 +116,49 @@ class ScriptRunnerTest {
     }
 
     @Test
-    void demoStep_defaultsArgsAndDelayWhenAbsent() throws IOException {
+    void run_callsOnCompleteAfterLastStep() throws Exception {
+        var latch = new CountDownLatch(1);
+
+        var runner = new ScriptRunner(MAPPER, () -> {})
+                .register("noop", args -> {})
+                .setOnComplete(latch::countDown);
+
+        runner.run(json("""
+                [{"action":"noop","delayMs":10}]
+                """));
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
+    }
+
+    @Test
+    void run_callsOnStepBeforeEachStep() throws Exception {
+        var descriptions = new ArrayList<String>();
+        var latch        = new CountDownLatch(2);
+
+        var runner = new ScriptRunner(MAPPER, () -> {})
+                .register("noop", args -> latch.countDown())
+                .setOnStep(step -> descriptions.add(step.description()));
+
+        runner.run(json("""
+                [
+                  {"action":"noop","delayMs":10,"description":"first"},
+                  {"action":"noop","delayMs":10,"description":"second"}
+                ]
+                """));
+
+        assertTrue(latch.await(2, TimeUnit.SECONDS));
+        Thread.sleep(50);
+        assertEquals(List.of("first", "second"), descriptions);
+    }
+
+    @Test
+    void demoStep_defaultsArgsDelayAndDescriptionWhenAbsent() throws IOException {
         var step = MAPPER.readValue("""
                 {"action":"x"}
                 """, DemoStep.class);
         assertEquals("x", step.action());
         assertTrue(step.args().isEmpty());
         assertEquals(0, step.delayMs());
+        assertEquals("", step.description());
     }
 }
