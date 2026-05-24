@@ -54,9 +54,9 @@ public final class MainFrame extends JFrame {
         this.treePanel        = new TreePanel(workspace, service);
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service, this::openProjectWorkbench);
-        this.nextActionsPanel = new NextActionsPanel(workspace, service);
+        this.nextActionsPanel = new NextActionsPanel(workspace, service, this::openProjectWorkbench);
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
-        this.backlogPanel     = new BacklogPanel(workspace, service);
+        this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
 
         this.demoStatusBar = new JLabel(" ");
