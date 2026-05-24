@@ -75,7 +75,7 @@ public final class MainFrame extends JFrame {
         toolbar.setFloatable(false);
         var manageTagsButton = UiHelper.iconButton("Manage Tags…", new FlatSVGIcon(MainFrame.class.getResource("/icons/tag.svg")).derive(16, 16));
         manageTagsButton.addActionListener(e ->
-                new TagManagementDialog(this, workspace, service).setVisible(true));
+                new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         toolbar.add(manageTagsButton);
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
@@ -97,7 +97,7 @@ public final class MainFrame extends JFrame {
 
         var manageTagsItem = new JMenuItem("Manage Tags…");
         manageTagsItem.addActionListener(e ->
-                new TagManagementDialog(this, workspace, service).setVisible(true));
+                new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
