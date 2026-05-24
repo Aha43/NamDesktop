@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `make e2e` target: launches the app with `--e2e` flag against a fresh empty workspace, runs `e2e.json` (14 build steps + 16 assertions), and exits 0/1 — ready for regression runs without a full framework. `NamAssertWiring` provides the six assertion handlers; any unhandled exception or failed assertion increments the failure count and results in a non-zero exit. Closes #172.
+
 - `swingdemo` — reusable library for driving Java Swing apps from a JSON script (`ActionHandler`, `RefreshBus`, `DemoStep`, `ScriptRunner`). Closes #168.
 - Demo script (`demo.json`) bundled in the JAR builds a realistic GTD workspace live — projects, sub-projects, actions, tags, and saved views. Triggered via File → Run Demo… or `--demo` CLI flag. Step descriptions appear in a status bar at the bottom of the window. Closes #170.
 - `NamDemoWiring` registers NamDesktop action handlers on a `ScriptRunner` (`addProject`, `addSubProject`, `addAction`, `addNextAction`, `addInboxItem`, `markNext`, `markDone`, `markBacklog`, `addTag`, `createSavedView`). `MainFrame.refreshAll()` added as the `RefreshBus` target. Closes #169.
