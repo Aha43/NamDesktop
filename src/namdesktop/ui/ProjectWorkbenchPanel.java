@@ -281,6 +281,29 @@ public final class ProjectWorkbenchPanel extends JPanel {
             bar.add(downButton);
         }
 
+        if (showEditButton) {
+            var deleteButton = UiHelper.iconButton("Delete project",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+            deleteButton.setToolTipText("Delete project: " + targetName);
+            deleteButton.addActionListener(e -> {
+                var confirm = JOptionPane.showConfirmDialog(parent,
+                        "Delete \"" + targetName + "\"? This cannot be undone.",
+                        "Delete project", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirm != JOptionPane.YES_OPTION) return;
+                try {
+                    service.deleteLeaf(targetProjectId);
+                    rebuild();
+                } catch (IllegalStateException ex) {
+                    JOptionPane.showMessageDialog(parent,
+                            "\"" + targetName + "\" still has items inside and cannot be deleted.",
+                            "Cannot delete", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException ex) {
+                    showError(ex.getMessage());
+                }
+            });
+            bar.add(deleteButton);
+        }
+
         if (editButton != null) bar.add(editButton);
 
         return bar;
