@@ -191,6 +191,15 @@ public final class MainFrame extends JFrame {
         }));
     }
 
+    public void refreshAll() {
+        inboxPanel.refresh();
+        projectsPanel.refresh();
+        nextActionsPanel.refresh();
+        contextPanel.refresh();
+        backlogPanel.refresh();
+        navPanel.rebuildSavedViews(workspace.getSavedViews());
+    }
+
     private void rebuildSavedViewsNav() {
         navPanel.rebuildSavedViews(workspace.getSavedViews());
     }
