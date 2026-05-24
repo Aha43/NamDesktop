@@ -420,7 +420,16 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var model = new DefaultListModel<NamNode>();
         for (var a : actions) model.addElement(a);
 
-        var list = new JList<>(model);
+        var list = new JList<>(model) {
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                var idx = locationToIndex(e.getPoint());
+                if (idx < 0) return null;
+                var desc = model.getElementAt(idx).getDescription();
+                if (desc == null || desc.isBlank()) return null;
+                return desc.length() <= 100 ? desc : desc.substring(0, 100) + "…";
+            }
+        };
         list.setCellRenderer(new ActionCellRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
