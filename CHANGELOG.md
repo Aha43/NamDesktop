@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `swingdemo` — reusable library for driving Java Swing apps from a JSON script (`ActionHandler`, `RefreshBus`, `DemoStep`, `ScriptRunner`). Closes #168.
+
 - Status toggle in ActionDialog replaced with Backlog / Next / Done radio group — all three statuses reachable without closing the dialog. Closes #162.
 
 - Actions inherit tags from ancestor projects at query time: filtering the Context view by a project's tag now surfaces all NEXT actions in that project and its sub-projects, even when the actions carry no tags themselves. Closes #159.
