@@ -14,10 +14,16 @@ import java.util.stream.Stream;
 public final class ContextLens {
 
     public List<ContextItemRow> items(NamWorkspace workspace, Collection<String> requiredTags) {
+        return items(workspace, requiredTags, false);
+    }
+
+    public List<ContextItemRow> items(NamWorkspace workspace, Collection<String> requiredTags, boolean nextOnly) {
         var structural = structuralIds(workspace);
         return workspace.getNodes().values().stream()
                 .filter(n -> !structural.contains(n.getId()))
-                .filter(n -> n.getStatus() == NodeStatus.NEXT)
+                .filter(n -> !n.isProject())
+                .filter(n -> n.getStatus() != NodeStatus.DONE)
+                .filter(n -> !nextOnly || n.getStatus() == NodeStatus.NEXT)
                 .filter(n -> workspace.effectiveTags(n.getId()).containsAll(requiredTags))
                 .map(n -> {
                     var parent = workspace.getParent(n.getId())

@@ -52,7 +52,9 @@ public final class SavedViewPanel extends JPanel {
         header.add(nameLabel,   BorderLayout.WEST);
         header.add(eastButtons, BorderLayout.EAST);
 
-        var tagsLabel = new JLabel("Tags: " + String.join(", ", view.tags()));
+        var tagsText  = "Tags: " + (view.tags().isEmpty() ? "(any)" : String.join(", ", view.tags()));
+        var filterText = view.nextOnly() ? tagsText + " · Next only" : tagsText;
+        var tagsLabel = new JLabel(filterText);
         tagsLabel.setBorder(BorderFactory.createEmptyBorder(0, 6, 4, 6));
 
         var northPanel = new JPanel(new BorderLayout());
@@ -89,7 +91,7 @@ public final class SavedViewPanel extends JPanel {
     }
 
     public void refresh() {
-        tableModel.setRows(new ContextLens().items(workspace, view.tags()));
+        tableModel.setRows(new ContextLens().items(workspace, view.tags(), view.nextOnly()));
     }
 
     private void addTaggedAction() {

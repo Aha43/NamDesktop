@@ -23,12 +23,15 @@ class ContextLensTest {
     }
 
     @Test
-    void items_noTagsRequired_returnsAllNextActions() {
-        var node = new NamNode(UUID.randomUUID(), "Call dentist");
-        node.setStatus(NodeStatus.NEXT);
-        workspace.getNodes().put(node.getId(), node);
+    void items_noTagsRequired_returnsAllActiveActions() {
+        var next    = new NamNode(UUID.randomUUID(), "Call dentist");
+        next.setStatus(NodeStatus.NEXT);
+        var backlog = new NamNode(UUID.randomUUID(), "Research options");
+        backlog.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(next.getId(),    next);
+        workspace.getNodes().put(backlog.getId(), backlog);
 
-        assertEquals(1, lens.items(workspace, List.of()).size());
+        assertEquals(2, lens.items(workspace, List.of()).size());
     }
 
     @Test
@@ -78,13 +81,33 @@ class ContextLensTest {
     }
 
     @Test
-    void items_excludesBacklogNodes() {
+    void items_includesBacklogNodes() {
         var node = new NamNode(UUID.randomUUID(), "Someday thing");
         node.setStatus(NodeStatus.BACKLOG);
         node.getTags().add("@computer");
         workspace.getNodes().put(node.getId(), node);
 
-        assertTrue(lens.items(workspace, List.of("@computer")).isEmpty());
+        assertEquals(1, lens.items(workspace, List.of("@computer")).size());
+    }
+
+    @Test
+    void items_nextOnly_excludesBacklogNodes() {
+        var node = new NamNode(UUID.randomUUID(), "Someday thing");
+        node.setStatus(NodeStatus.BACKLOG);
+        node.getTags().add("@computer");
+        workspace.getNodes().put(node.getId(), node);
+
+        assertTrue(lens.items(workspace, List.of("@computer"), true).isEmpty());
+    }
+
+    @Test
+    void items_nextOnly_includesNextNodes() {
+        var node = new NamNode(UUID.randomUUID(), "Do this now");
+        node.setStatus(NodeStatus.NEXT);
+        node.getTags().add("@computer");
+        workspace.getNodes().put(node.getId(), node);
+
+        assertEquals(1, lens.items(workspace, List.of("@computer"), true).size());
     }
 
     @Test
