@@ -26,6 +26,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private final NamWorkspaceService service;
     private final Runnable          onNavigateToProjects;
     private       UUID              currentProjectId;
+    private       UUID              parentProjectId;
     private       UUID              pendingSelection;
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
@@ -37,10 +38,24 @@ public final class ProjectWorkbenchPanel extends JPanel {
         this.service              = service;
         this.onNavigateToProjects = onNavigateToProjects;
         this.currentProjectId     = initialProjectId;
+        this.parentProjectId      = workspace.getParent(initialProjectId)
+                .map(n -> n.getId()).orElse(null);
         rebuild();
     }
 
     private void rebuild() {
+        if (workspace.getNode(currentProjectId).isEmpty()) {
+            if (parentProjectId != null
+                    && !parentProjectId.equals(workspace.getProjectsNodeId())
+                    && workspace.getNode(parentProjectId).isPresent()) {
+                currentProjectId = parentProjectId;
+                parentProjectId  = workspace.getParent(currentProjectId)
+                        .map(n -> n.getId()).orElse(null);
+            } else {
+                onNavigateToProjects.run();
+                return;
+            }
+        }
         removeAll();
         var projection = new ProjectWorkbenchLens().project(workspace, currentProjectId);
         add(buildBreadcrumbBar(projection.breadcrumb()), BorderLayout.NORTH);
@@ -266,6 +281,29 @@ public final class ProjectWorkbenchPanel extends JPanel {
             bar.add(downButton);
         }
 
+        if (showEditButton) {
+            var deleteButton = UiHelper.iconButton("Delete project",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+            deleteButton.setToolTipText("Delete project: " + targetName);
+            deleteButton.addActionListener(e -> {
+                var confirm = JOptionPane.showConfirmDialog(parent,
+                        "Delete \"" + targetName + "\"? This cannot be undone.",
+                        "Delete project", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                if (confirm != JOptionPane.YES_OPTION) return;
+                try {
+                    service.deleteLeaf(targetProjectId);
+                    rebuild();
+                } catch (IllegalStateException ex) {
+                    JOptionPane.showMessageDialog(parent,
+                            "\"" + targetName + "\" still has items inside and cannot be deleted.",
+                            "Cannot delete", JOptionPane.ERROR_MESSAGE);
+                } catch (IOException ex) {
+                    showError(ex.getMessage());
+                }
+            });
+            bar.add(deleteButton);
+        }
+
         if (editButton != null) bar.add(editButton);
 
         return bar;
@@ -361,6 +399,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private void navigateTo(UUID projectId) {
+        parentProjectId  = currentProjectId;
         currentProjectId = projectId;
         rebuild();
     }

@@ -29,6 +29,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Delete button (trash icon) added to sub-project action bar in the workbench — confirms before deleting, shows a clear error if the project still has items inside. Full-edit button remains rightmost. Closes #166.
+- Deleting a sub-project while viewing it in the workbench now navigates back to the parent project instead of leaving a blank screen; deleting a top-level project returns to the Projects list. Closes #165.
 - "Make project" in ActionDialog no longer crashes when the action is inside a project; it now promotes the action to a sub-project in place instead of requiring it to be in the Next Actions area. Closes #163.
 - Git sync push/pull buttons and menu items are now hidden in dev mode, preventing accidental overwrite of production data. Closes #150.
 - GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
