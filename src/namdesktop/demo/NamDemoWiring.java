@@ -36,7 +36,8 @@ public final class NamDemoWiring {
             .register("markDone",        this::markDone)
             .register("markBacklog",     this::markBacklog)
             .register("addTag",          this::addTag)
-            .register("createSavedView", this::createSavedView);
+            .register("createSavedView", this::createSavedView)
+            .register("deleteProject",   this::deleteProject);
     }
 
     private void addProject(Map<String, Object> args) throws Exception {
@@ -85,6 +86,10 @@ public final class NamDemoWiring {
         var tags     = args.containsKey("tags") ? (List<String>) args.get("tags") : List.<String>of();
         var nextOnly = args.containsKey("nextOnly") && (boolean) args.get("nextOnly");
         service.createSavedView(name, tags, nextOnly);
+    }
+
+    private void deleteProject(Map<String, Object> args) throws Exception {
+        service.deleteRecursive(findByTitle(str(args, "title")).getId());
     }
 
     private NamNode findByTitle(String title) {

@@ -15,7 +15,7 @@ public final class TreePanel extends JPanel {
     private final JTree tree;
     private final WorkspaceTreeModel model;
 
-    public TreePanel(NamWorkspace workspace, NamWorkspaceService service) {
+    public TreePanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onDelete) {
         this.workspace = workspace;
         setLayout(new BorderLayout());
         model = new WorkspaceTreeModel(workspace);
@@ -32,7 +32,7 @@ public final class TreePanel extends JPanel {
         tree.setCellRenderer(new NodeCellRenderer());
         tree.expandRow(0);
 
-        var contextMenu = new NodeTreeContextMenu(tree, model, service);
+        var contextMenu = new NodeTreeContextMenu(tree, model, service, onDelete);
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {

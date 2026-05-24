@@ -117,6 +117,18 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void deleteRecursive(UUID nodeId) throws IOException {
+        require(nodeId);
+        var toDelete = workspace.collectSubtree(nodeId);
+        var parent = findParent(nodeId);
+        if (parent != null) parent.getChildIds().remove(nodeId);
+        for (var id : toDelete) {
+            workspace.getNodes().remove(id);
+            workspace.getViewOrders().values().forEach(order -> order.remove(id));
+        }
+        repository.save(path, workspace);
+    }
+
     public UUID addInboxItem(String title) throws IOException {
         var inboxId = workspace.getInboxNodeId();
         if (inboxId == null) throw new IllegalStateException("Workspace has no inbox node");

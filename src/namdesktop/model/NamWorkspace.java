@@ -1,6 +1,7 @@
 package namdesktop.model;
 
 import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +116,19 @@ public final class NamWorkspace {
 
     public Map<String, List<UUID>> getViewOrders() { return viewOrders; }
     public void setViewOrders(Map<String, List<UUID>> viewOrders) { this.viewOrders = viewOrders != null ? viewOrders : new LinkedHashMap<>(); }
+
+    public List<UUID> collectSubtree(UUID rootId) {
+        var result = new ArrayList<UUID>();
+        var queue  = new ArrayDeque<UUID>();
+        queue.add(rootId);
+        while (!queue.isEmpty()) {
+            var id = queue.poll();
+            result.add(id);
+            var node = nodes.get(id);
+            if (node != null) queue.addAll(node.getChildIds());
+        }
+        return List.copyOf(result);
+    }
 
     public List<NamNode> buildPath(UUID nodeId) {
         var path = new ArrayList<NamNode>();

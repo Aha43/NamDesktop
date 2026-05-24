@@ -51,7 +51,7 @@ public final class MainFrame extends JFrame {
         this.syncService      = syncService;
         this.workspacePath    = workspacePath;
         this.contentArea      = new ContentArea();
-        this.treePanel        = new TreePanel(workspace, service);
+        this.treePanel        = new TreePanel(workspace, service, this::refreshAll);
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service, this::openProjectWorkbench);
         this.nextActionsPanel = new NextActionsPanel(workspace, service, this::openProjectWorkbench);
