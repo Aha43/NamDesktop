@@ -153,10 +153,15 @@ public final class MainFrame extends JFrame {
             workspace.getSavedViews().stream()
                     .filter(sv -> sv.name().equals(name))
                     .findFirst()
-                    .ifPresent(sv -> contentArea.setContent(new SavedViewPanel(sv, workspace, service, () -> {
-                        rebuildSavedViewsNav();
-                        navPanel.selectById("context");
-                    })));
+                    .ifPresent(sv -> contentArea.setContent(new SavedViewPanel(sv, workspace, service,
+                            () -> {
+                                rebuildSavedViewsNav();
+                                navPanel.selectById("context");
+                            },
+                            newName -> {
+                                rebuildSavedViewsNav();
+                                navPanel.selectById("saved-view:" + newName);
+                            })));
             return;
         }
         switch (entry.id()) {

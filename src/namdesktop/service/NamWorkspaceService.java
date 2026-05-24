@@ -200,6 +200,23 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void renameSavedView(String oldName, String newName) throws IOException {
+        var trimmed = newName.strip();
+        if (trimmed.isEmpty()) throw new IllegalArgumentException("View name must not be blank");
+        var views = workspace.getSavedViews();
+        if (views.stream().anyMatch(v -> v.name().equals(trimmed) && !v.name().equals(oldName))) {
+            throw new IllegalArgumentException("A view named \"" + trimmed + "\" already exists");
+        }
+        for (int i = 0; i < views.size(); i++) {
+            if (views.get(i).name().equals(oldName)) {
+                var old = views.get(i);
+                views.set(i, new namdesktop.model.SavedView(trimmed, old.tags(), old.nextOnly()));
+                repository.save(path, workspace);
+                return;
+            }
+        }
+    }
+
     public void deleteSavedView(String name) throws IOException {
         var views = workspace.getSavedViews();
         if (views.removeIf(v -> v.name().equals(name))) {
