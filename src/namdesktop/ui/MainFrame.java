@@ -43,6 +43,8 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
     private final JLabel           demoStatusBar;
+    private       ProjectWorkbenchPanel cachedWorkbench;
+    private       java.util.UUID        cachedWorkbenchId;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
@@ -215,10 +217,16 @@ public final class MainFrame extends JFrame {
     }
 
     private void openProjectWorkbench(java.util.UUID projectId) {
-        contentArea.setContent(new ProjectWorkbenchPanel(this, workspace, service, projectId, () -> {
-            contentArea.setContent(projectsPanel);
-            projectsPanel.refresh();
-        }));
+        if (cachedWorkbench == null || !projectId.equals(cachedWorkbenchId)) {
+            cachedWorkbenchId = projectId;
+            cachedWorkbench   = new ProjectWorkbenchPanel(this, workspace, service, projectId, () -> {
+                cachedWorkbench   = null;
+                cachedWorkbenchId = null;
+                contentArea.setContent(projectsPanel);
+                projectsPanel.refresh();
+            });
+        }
+        contentArea.setContent(cachedWorkbench);
     }
 
     public void runDemo() {
@@ -258,6 +266,8 @@ public final class MainFrame extends JFrame {
     }
 
     public void refreshAll() {
+        cachedWorkbench   = null;
+        cachedWorkbenchId = null;
         inboxPanel.refresh();
         projectsPanel.refresh();
         nextActionsPanel.refresh();
