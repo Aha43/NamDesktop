@@ -1,11 +1,13 @@
 package namdesktop.ui;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import namdesktop.ui.UiHelper;
 import namdesktop.app.AppSettings;
+import namdesktop.demo.NamDemoWiring;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
 import namdesktop.sync.WorkspaceSyncService;
+import swingdemo.ScriptRunner;
 
 import javax.swing.*;
 import java.awt.*;
@@ -40,6 +42,7 @@ public final class MainFrame extends JFrame {
     private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
     private final SearchPanel      searchPanel;
+    private final JLabel           demoStatusBar;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
@@ -55,6 +58,13 @@ public final class MainFrame extends JFrame {
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
         this.backlogPanel     = new BacklogPanel(workspace, service);
         this.searchPanel      = new SearchPanel(workspace, service);
+
+        this.demoStatusBar = new JLabel(" ");
+        this.demoStatusBar.setFont(demoStatusBar.getFont().deriveFont(Font.ITALIC));
+        this.demoStatusBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Separator.foreground")),
+                BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+        this.demoStatusBar.setVisible(false);
 
         this.navPanel = new NavigationPanel(buildNavEntries(devMode), this::onNavSelected);
         var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -98,10 +108,14 @@ public final class MainFrame extends JFrame {
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
 
+        var runDemoItem = new JMenuItem("Run Demo…");
+        runDemoItem.addActionListener(e -> runDemo());
+
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
+        fileMenu.add(runDemoItem);
         fileMenu.addSeparator();
 
         if (!devMode && syncService.isConfigured()) {
@@ -123,8 +137,9 @@ public final class MainFrame extends JFrame {
         menuBar.add(fileMenu);
 
         setJMenuBar(menuBar);
-        add(toolbar,   BorderLayout.NORTH);
-        add(splitPane, BorderLayout.CENTER);
+        add(toolbar,        BorderLayout.NORTH);
+        add(splitPane,      BorderLayout.CENTER);
+        add(demoStatusBar,  BorderLayout.SOUTH);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
 
@@ -189,6 +204,44 @@ public final class MainFrame extends JFrame {
             contentArea.setContent(projectsPanel);
             projectsPanel.refresh();
         }));
+    }
+
+    public void runDemo() {
+        var script = MainFrame.class.getResourceAsStream("/demo.json");
+        if (script == null) {
+            JOptionPane.showMessageDialog(this, "demo.json not found in JAR.", "Demo", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        demoStatusBar.setVisible(true);
+        var runner = new ScriptRunner(new ObjectMapper(), this::refreshAll);
+        new NamDemoWiring(workspace, service).configure(runner);
+        runner
+            .setOnStep(step -> {
+                var desc = step.description();
+                demoStatusBar.setText(desc.isEmpty() ? " " : desc);
+            })
+            .setOnComplete(() -> {
+                demoStatusBar.setText("Demo complete.");
+                javax.swing.Timer hideTimer = new javax.swing.Timer(3000, e -> demoStatusBar.setVisible(false));
+                hideTimer.setRepeats(false);
+                hideTimer.start();
+                refreshAll();
+            });
+        try {
+            runner.run(script);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Demo failed: " + ex.getMessage(), "Demo", JOptionPane.ERROR_MESSAGE);
+            demoStatusBar.setVisible(false);
+        }
+    }
+
+    public void refreshAll() {
+        inboxPanel.refresh();
+        projectsPanel.refresh();
+        nextActionsPanel.refresh();
+        contextPanel.refresh();
+        backlogPanel.refresh();
+        navPanel.rebuildSavedViews(workspace.getSavedViews());
     }
 
     private void rebuildSavedViewsNav() {

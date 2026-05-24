@@ -1,0 +1,36 @@
+[
+  {"action":"addInboxItem",    "args":{"title":"Call dentist"},                                           "delayMs":900,  "description":"Everything starts in the Inbox — capture first, organise later"},
+  {"action":"addInboxItem",    "args":{"title":"Buy birthday gift for mum"},                              "delayMs":800,  "description":"Inbox holds all your open loops until you process them"},
+  {"action":"addInboxItem",    "args":{"title":"Research standing desk options"},                         "delayMs":800},
+
+  {"action":"addProject",      "args":{"title":"Trip to Rome"},                                           "delayMs":1100, "description":"Projects are multi-step outcomes — anything needing more than one action"},
+  {"action":"addTag",          "args":{"title":"Trip to Rome",        "tag":"@travel"},                   "delayMs":700,  "description":"Tag a project and all its actions inherit the tag for context filtering"},
+  {"action":"addAction",       "args":{"project":"Trip to Rome",      "title":"Book flights"},            "delayMs":700,  "description":"Actions live inside projects"},
+  {"action":"addAction",       "args":{"project":"Trip to Rome",      "title":"Book hotel"},              "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Trip to Rome",      "title":"Get travel insurance"},    "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Trip to Rome",      "title":"Pack bags"},               "delayMs":700},
+  {"action":"markNext",        "args":{"title":"Book flights"},                                           "delayMs":700,  "description":"Mark the very next physical action as Next"},
+
+  {"action":"addProject",      "args":{"title":"Home"},                                                   "delayMs":1100, "description":"Projects can contain sub-projects for larger outcomes"},
+  {"action":"addSubProject",   "args":{"parent":"Home",               "title":"Kitchen renovation"},      "delayMs":800,  "description":"Sub-projects keep complexity organised without losing the big picture"},
+  {"action":"addTag",          "args":{"title":"Kitchen renovation",  "tag":"@home"},                     "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Kitchen renovation", "title":"Get quotes from contractors"}, "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Kitchen renovation", "title":"Choose new countertops"}, "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Kitchen renovation", "title":"Order tiles"},            "delayMs":700},
+  {"action":"markNext",        "args":{"title":"Get quotes from contractors"},                            "delayMs":700,  "description":"The first action in each project should be Next"},
+
+  {"action":"addProject",      "args":{"title":"Learning"},                                               "delayMs":1100},
+  {"action":"addAction",       "args":{"project":"Learning",          "title":"Finish Java book chapter 7"}, "delayMs":700},
+  {"action":"addAction",       "args":{"project":"Learning",          "title":"Watch Swing tutorial series"}, "delayMs":700},
+  {"action":"addTag",          "args":{"title":"Finish Java book chapter 7", "tag":"@computer"},          "delayMs":700},
+  {"action":"addTag",          "args":{"title":"Watch Swing tutorial series","tag":"@computer"},          "delayMs":700},
+  {"action":"markNext",        "args":{"title":"Finish Java book chapter 7"},                             "delayMs":700},
+
+  {"action":"addNextAction",   "args":{"title":"Reply to John's email"},                                  "delayMs":1000, "description":"Standalone next actions need no project — just do them"},
+  {"action":"addNextAction",   "args":{"title":"Review monthly budget"},                                  "delayMs":800},
+  {"action":"addTag",          "args":{"title":"Reply to John's email",  "tag":"@computer"},              "delayMs":700},
+  {"action":"addTag",          "args":{"title":"Review monthly budget",   "tag":"@computer"},             "delayMs":700},
+
+  {"action":"createSavedView", "args":{"name":"Travel",   "tags":["@travel"]},                           "delayMs":1100, "description":"Save a context view — filter by tag to see what you can do right now"},
+  {"action":"createSavedView", "args":{"name":"At computer","tags":["@computer"],"nextOnly":true},        "delayMs":900,  "description":"Next-only views show just your committed actions for a context"}
+]
