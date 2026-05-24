@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Actions inherit tags from ancestor projects at query time: filtering the Context view by a project's tag now surfaces all NEXT actions in that project and its sub-projects, even when the actions carry no tags themselves. Closes #159.
+
 - Quick rename button (cursor-text icon) in sub-project section action bar — opens a pre-filled input dialog, no full edit dialog needed. Closes #155.
 - Quick description button (notes icon) in sub-project section action bar — opens a textarea dialog pre-filled with current description. Closes #156.
 - Full Edit button moved to far right of sub-project action bar, signalling it is the "do all" option.

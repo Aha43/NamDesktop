@@ -81,6 +81,20 @@ public final class NamWorkspace {
                 .findFirst();
     }
 
+    public java.util.Set<String> effectiveTags(UUID nodeId) {
+        var result = new java.util.HashSet<String>();
+        var current = getNode(nodeId);
+        if (current.isEmpty()) return result;
+        result.addAll(current.get().getTags());
+        var ancestor = getParent(nodeId);
+        while (ancestor.isPresent()) {
+            var a = ancestor.get();
+            if (a.isProject()) result.addAll(a.getTags());
+            ancestor = getParent(a.getId());
+        }
+        return result;
+    }
+
     public List<String> allTags() {
         return java.util.stream.Stream.concat(
                         registeredTags.stream(),

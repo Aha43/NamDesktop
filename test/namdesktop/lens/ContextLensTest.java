@@ -111,6 +111,38 @@ class ContextLensTest {
     }
 
     @Test
+    void items_matchesActionViaAncestorProjectTag() {
+        var project = new NamNode(UUID.randomUUID(), "Trip to Rome");
+        project.setProject(true);
+        project.getTags().add("@trip");
+        var action = new NamNode(UUID.randomUUID(), "Book hotel");
+        action.setStatus(NodeStatus.NEXT);
+        project.getChildIds().add(action.getId());
+        workspace.getNodes().put(project.getId(), project);
+        workspace.getNodes().put(action.getId(), action);
+
+        var rows = lens.items(workspace, List.of("@trip"));
+        assertEquals(1, rows.size());
+        assertEquals("Book hotel", rows.get(0).title());
+    }
+
+    @Test
+    void items_matchesOnCombinedOwnAndAncestorTags() {
+        var project = new NamNode(UUID.randomUUID(), "Project");
+        project.setProject(true);
+        project.getTags().add("@urgent");
+        var action = new NamNode(UUID.randomUUID(), "Do thing");
+        action.setStatus(NodeStatus.NEXT);
+        action.getTags().add("@phone");
+        project.getChildIds().add(action.getId());
+        workspace.getNodes().put(project.getId(), project);
+        workspace.getNodes().put(action.getId(), action);
+
+        var rows = lens.items(workspace, List.of("@phone", "@urgent"));
+        assertEquals(1, rows.size());
+    }
+
+    @Test
     void items_includesTags() {
         var node = new NamNode(UUID.randomUUID(), "Task");
         node.setStatus(NodeStatus.NEXT);

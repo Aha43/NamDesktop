@@ -18,7 +18,7 @@ public final class ContextLens {
         return workspace.getNodes().values().stream()
                 .filter(n -> !structural.contains(n.getId()))
                 .filter(n -> n.getStatus() == NodeStatus.NEXT)
-                .filter(n -> n.getTags().containsAll(requiredTags))
+                .filter(n -> workspace.effectiveTags(n.getId()).containsAll(requiredTags))
                 .map(n -> {
                     var parent = workspace.getParent(n.getId())
                             .filter(p -> !structural.contains(p.getId()))
