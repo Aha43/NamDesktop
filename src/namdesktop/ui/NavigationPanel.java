@@ -52,8 +52,9 @@ public final class NavigationPanel extends JPanel {
             model.addElement(NavigationEntry.divider());
             savedViews.forEach(sv -> {
                 var tooltip = sv.tags().isEmpty()
-                        ? "No tags configured"
+                        ? "No tag filter"
                         : "Tags: " + String.join(", ", sv.tags());
+                if (sv.nextOnly()) tooltip += " · Next only";
                 model.addElement(new NavigationEntry("saved-view:" + sv.name(), sv.name(), tooltip));
             });
         }

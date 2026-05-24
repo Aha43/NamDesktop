@@ -274,4 +274,65 @@ class NamWorkspaceTest {
         assertEquals("First",  items.get(0).getTitle());
         assertEquals("Second", items.get(1).getTitle());
     }
+
+    @Test
+    void effectiveTags_includesOwnTags() {
+        var ws = NamWorkspace.createDefault();
+        var action = new NamNode(UUID.randomUUID(), "Call dentist");
+        action.getTags().add("@phone");
+        ws.getNodes().put(action.getId(), action);
+
+        assertTrue(ws.effectiveTags(action.getId()).contains("@phone"));
+    }
+
+    @Test
+    void effectiveTags_includesParentProjectTags() {
+        var ws = NamWorkspace.createDefault();
+        var project = new NamNode(UUID.randomUUID(), "Trip to Rome");
+        project.setProject(true);
+        project.getTags().add("@trip");
+        var action = new NamNode(UUID.randomUUID(), "Book hotel");
+        project.getChildIds().add(action.getId());
+        ws.getNodes().put(project.getId(), project);
+        ws.getNodes().put(action.getId(), action);
+
+        var tags = ws.effectiveTags(action.getId());
+        assertTrue(tags.contains("@trip"));
+    }
+
+    @Test
+    void effectiveTags_includesMultiLevelAncestorTags() {
+        var ws = NamWorkspace.createDefault();
+        var projectA = new NamNode(UUID.randomUUID(), "Project A");
+        projectA.setProject(true);
+        projectA.getTags().add("@urgent");
+        var projectB = new NamNode(UUID.randomUUID(), "Project B");
+        projectB.setProject(true);
+        projectB.getTags().add("@home");
+        projectA.getChildIds().add(projectB.getId());
+        var action = new NamNode(UUID.randomUUID(), "Do thing");
+        action.getTags().add("@car");
+        projectB.getChildIds().add(action.getId());
+        ws.getNodes().put(projectA.getId(), projectA);
+        ws.getNodes().put(projectB.getId(), projectB);
+        ws.getNodes().put(action.getId(), action);
+
+        var tags = ws.effectiveTags(action.getId());
+        assertTrue(tags.contains("@car"));
+        assertTrue(tags.contains("@home"));
+        assertTrue(tags.contains("@urgent"));
+    }
+
+    @Test
+    void effectiveTags_doesNotIncludeNonProjectAncestorTags() {
+        var ws = NamWorkspace.createDefault();
+        var nonProject = new NamNode(UUID.randomUUID(), "Some container");
+        nonProject.getTags().add("@shouldNotInherit");
+        var action = new NamNode(UUID.randomUUID(), "Action");
+        nonProject.getChildIds().add(action.getId());
+        ws.getNodes().put(nonProject.getId(), nonProject);
+        ws.getNodes().put(action.getId(), action);
+
+        assertFalse(ws.effectiveTags(action.getId()).contains("@shouldNotInherit"));
+    }
 }

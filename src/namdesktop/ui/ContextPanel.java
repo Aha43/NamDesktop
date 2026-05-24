@@ -165,10 +165,19 @@ public final class ContextPanel extends JPanel {
                 .filter(JCheckBox::isSelected)
                 .map(JCheckBox::getText)
                 .toList();
-        var name = JOptionPane.showInputDialog(this, "View name:", "Save as view", JOptionPane.PLAIN_MESSAGE);
-        if (name == null) return;
+        var nameField  = new JTextField(20);
+        var nextCheck  = new JCheckBox("Next actions only");
+        var panel      = new JPanel(new java.awt.GridLayout(0, 1, 0, 4));
+        panel.add(new JLabel("View name:"));
+        panel.add(nameField);
+        panel.add(nextCheck);
+        var result = JOptionPane.showConfirmDialog(this, panel, "Save as view",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result != JOptionPane.OK_OPTION) return;
+        var name = nameField.getText();
+        if (name == null || name.isBlank()) return;
         try {
-            service.createSavedView(name, selected);
+            service.createSavedView(name, selected, nextCheck.isSelected());
             onViewCreated.run();
         } catch (IllegalArgumentException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Cannot save view", JOptionPane.ERROR_MESSAGE);

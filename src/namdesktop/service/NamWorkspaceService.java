@@ -172,14 +172,14 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
-    public void createSavedView(String name, List<String> tags) throws IOException {
+    public void createSavedView(String name, List<String> tags, boolean nextOnly) throws IOException {
         var trimmed = name.strip();
         if (trimmed.isEmpty()) throw new IllegalArgumentException("View name must not be blank");
         var views = workspace.getSavedViews();
         if (views.stream().anyMatch(v -> v.name().equals(trimmed))) {
             throw new IllegalArgumentException("A view named \"" + trimmed + "\" already exists");
         }
-        views.add(new namdesktop.model.SavedView(trimmed, List.copyOf(tags)));
+        views.add(new namdesktop.model.SavedView(trimmed, List.copyOf(tags), nextOnly));
         repository.save(path, workspace);
     }
 
@@ -255,7 +255,15 @@ public final class NamWorkspaceService {
     }
 
     public void convertNextActionToProject(UUID id) throws IOException {
-        convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
+        var node   = require(id);
+        var parent = findParent(id);
+        if (parent != null && parent.getId().equals(workspace.getNextActionsNodeId())) {
+            convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
+        } else {
+            // action is inside a project — promote in place as a sub-project
+            node.setProject(true);
+            repository.save(path, workspace);
+        }
     }
 
     public void convertProjectToAction(UUID id) throws IOException {

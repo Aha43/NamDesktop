@@ -356,10 +356,13 @@ class NamWorkspaceServiceTest {
     }
 
     @Test
-    void convertNextActionToProject_throwsIfNotNextActionsChild() throws IOException {
-        var id = service.addInboxItem("Task");
-        assertThrows(IllegalArgumentException.class,
-                () -> service.convertNextActionToProject(id));
+    void convertNextActionToProject_promotesInPlaceWhenInsideProject() throws IOException {
+        var projectId = service.addSubProject(workspace.getProjectsNodeId(), "My Project");
+        var actionId  = service.addChild(projectId, "Sub action");
+        service.convertNextActionToProject(actionId);
+        var action = workspace.getNode(actionId).orElseThrow();
+        assertTrue(action.isProject());
+        assertTrue(workspace.getNode(projectId).orElseThrow().getChildIds().contains(actionId));
     }
 
     // --- convertInboxItemToProject ---
@@ -452,7 +455,7 @@ class NamWorkspaceServiceTest {
 
     @Test
     void createSavedView_addsView() throws IOException {
-        service.createSavedView("My view", List.of("@computer"));
+        service.createSavedView("My view", List.of("@computer"), false);
         assertEquals(1, workspace.getSavedViews().size());
         assertEquals("My view", workspace.getSavedViews().get(0).name());
         assertEquals(List.of("@computer"), workspace.getSavedViews().get(0).tags());
@@ -460,26 +463,26 @@ class NamWorkspaceServiceTest {
 
     @Test
     void createSavedView_savesWorkspace() throws IOException {
-        service.createSavedView("My view", List.of("@computer"));
+        service.createSavedView("My view", List.of("@computer"), false);
         assertEquals(1, repository.saveCount);
     }
 
     @Test
     void createSavedView_throwsOnBlankName() {
         assertThrows(IllegalArgumentException.class,
-                () -> service.createSavedView("  ", List.of("@computer")));
+                () -> service.createSavedView("  ", List.of("@computer"), false));
     }
 
     @Test
     void createSavedView_throwsOnDuplicateName() throws IOException {
-        service.createSavedView("My view", List.of("@computer"));
+        service.createSavedView("My view", List.of("@computer"), false);
         assertThrows(IllegalArgumentException.class,
-                () -> service.createSavedView("My view", List.of("@home")));
+                () -> service.createSavedView("My view", List.of("@home"), false));
     }
 
     @Test
     void deleteSavedView_removesView() throws IOException {
-        service.createSavedView("My view", List.of("@computer"));
+        service.createSavedView("My view", List.of("@computer"), false);
         repository.saveCount = 0;
         service.deleteSavedView("My view");
         assertTrue(workspace.getSavedViews().isEmpty());

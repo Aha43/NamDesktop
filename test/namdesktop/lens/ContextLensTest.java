@@ -23,12 +23,15 @@ class ContextLensTest {
     }
 
     @Test
-    void items_noTagsRequired_returnsAllNextActions() {
-        var node = new NamNode(UUID.randomUUID(), "Call dentist");
-        node.setStatus(NodeStatus.NEXT);
-        workspace.getNodes().put(node.getId(), node);
+    void items_noTagsRequired_returnsAllActiveActions() {
+        var next    = new NamNode(UUID.randomUUID(), "Call dentist");
+        next.setStatus(NodeStatus.NEXT);
+        var backlog = new NamNode(UUID.randomUUID(), "Research options");
+        backlog.setStatus(NodeStatus.BACKLOG);
+        workspace.getNodes().put(next.getId(),    next);
+        workspace.getNodes().put(backlog.getId(), backlog);
 
-        assertEquals(1, lens.items(workspace, List.of()).size());
+        assertEquals(2, lens.items(workspace, List.of()).size());
     }
 
     @Test
@@ -78,13 +81,33 @@ class ContextLensTest {
     }
 
     @Test
-    void items_excludesBacklogNodes() {
+    void items_includesBacklogNodes() {
         var node = new NamNode(UUID.randomUUID(), "Someday thing");
         node.setStatus(NodeStatus.BACKLOG);
         node.getTags().add("@computer");
         workspace.getNodes().put(node.getId(), node);
 
-        assertTrue(lens.items(workspace, List.of("@computer")).isEmpty());
+        assertEquals(1, lens.items(workspace, List.of("@computer")).size());
+    }
+
+    @Test
+    void items_nextOnly_excludesBacklogNodes() {
+        var node = new NamNode(UUID.randomUUID(), "Someday thing");
+        node.setStatus(NodeStatus.BACKLOG);
+        node.getTags().add("@computer");
+        workspace.getNodes().put(node.getId(), node);
+
+        assertTrue(lens.items(workspace, List.of("@computer"), true).isEmpty());
+    }
+
+    @Test
+    void items_nextOnly_includesNextNodes() {
+        var node = new NamNode(UUID.randomUUID(), "Do this now");
+        node.setStatus(NodeStatus.NEXT);
+        node.getTags().add("@computer");
+        workspace.getNodes().put(node.getId(), node);
+
+        assertEquals(1, lens.items(workspace, List.of("@computer"), true).size());
     }
 
     @Test
@@ -108,6 +131,38 @@ class ContextLensTest {
         var rows = lens.items(workspace, List.of("@computer"));
         assertEquals(1, rows.size());
         assertEquals("My Project", rows.get(0).parentTitle());
+    }
+
+    @Test
+    void items_matchesActionViaAncestorProjectTag() {
+        var project = new NamNode(UUID.randomUUID(), "Trip to Rome");
+        project.setProject(true);
+        project.getTags().add("@trip");
+        var action = new NamNode(UUID.randomUUID(), "Book hotel");
+        action.setStatus(NodeStatus.NEXT);
+        project.getChildIds().add(action.getId());
+        workspace.getNodes().put(project.getId(), project);
+        workspace.getNodes().put(action.getId(), action);
+
+        var rows = lens.items(workspace, List.of("@trip"));
+        assertEquals(1, rows.size());
+        assertEquals("Book hotel", rows.get(0).title());
+    }
+
+    @Test
+    void items_matchesOnCombinedOwnAndAncestorTags() {
+        var project = new NamNode(UUID.randomUUID(), "Project");
+        project.setProject(true);
+        project.getTags().add("@urgent");
+        var action = new NamNode(UUID.randomUUID(), "Do thing");
+        action.setStatus(NodeStatus.NEXT);
+        action.getTags().add("@phone");
+        project.getChildIds().add(action.getId());
+        workspace.getNodes().put(project.getId(), project);
+        workspace.getNodes().put(action.getId(), action);
+
+        var rows = lens.items(workspace, List.of("@phone", "@urgent"));
+        assertEquals(1, rows.size());
     }
 
     @Test
