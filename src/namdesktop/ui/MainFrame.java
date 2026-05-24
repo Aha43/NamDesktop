@@ -189,8 +189,16 @@ public final class MainFrame extends JFrame {
             final var isOk    = success;
             SwingUtilities.invokeLater(() -> {
                 setCursor(Cursor.getDefaultCursor());
-                if (isOk) JOptionPane.showMessageDialog(this, msg, push ? "Push" : "Pull", JOptionPane.INFORMATION_MESSAGE);
-                else      JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+                if (isOk && !push) {
+                    int choice = JOptionPane.showOptionDialog(this, msg, "Pull",
+                            JOptionPane.DEFAULT_OPTION, JOptionPane.INFORMATION_MESSAGE, null,
+                            new Object[]{"Exit now", "Later"}, "Exit now");
+                    if (choice == 0) System.exit(0);
+                } else if (isOk) {
+                    JOptionPane.showMessageDialog(this, msg, "Push", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, msg, "Sync error", JOptionPane.ERROR_MESSAGE);
+                }
             });
         }, "sync-thread").start();
     }
