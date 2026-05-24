@@ -207,7 +207,7 @@ Format version field present for future migrations.
 | # | Area | Notes |
 |---|---|---|
 | #39 | Sub-project support | "Make project" disabled when opening action from ProjectDialog |
-| #57 | Dialog stacking UX | Navigating action↔project stacks modals unboundedly |
+| #160 | ActionDialog | Show inherited project tags as read-only in ActionDialog |
 
 ---
 
