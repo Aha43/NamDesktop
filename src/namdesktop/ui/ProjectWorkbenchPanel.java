@@ -249,17 +249,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.setToolTipText("Add action to project " + targetName);
-        addActionButton.addActionListener(e -> {
-            var title = JOptionPane.showInputDialog(parent, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
-            if (title == null || title.isBlank()) return;
-            try {
-                service.addChild(targetProjectId, title.strip());
-                rebuild();
-            } catch (IOException ex) {
-                JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        });
+        addActionButton.addActionListener(e -> showAddActionDialog(targetProjectId));
 
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
@@ -454,6 +444,32 @@ public final class ProjectWorkbenchPanel extends JPanel {
         }
 
         return list;
+    }
+
+    private void showAddActionDialog(UUID targetProjectId) {
+        var titleField = new JTextField(24);
+        var panel = new JPanel(new BorderLayout(0, 4));
+        panel.add(new JLabel("Action title:"), BorderLayout.NORTH);
+        panel.add(titleField, BorderLayout.CENTER);
+
+        var options = new Object[]{"Create & Edit", "Create", "Cancel"};
+        var result  = JOptionPane.showOptionDialog(parent, panel, "Add action",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
+                null, options, options[1]);
+
+        if (result == 2 || result < 0) return;
+        var title = titleField.getText().strip();
+        if (title.isBlank()) return;
+
+        try {
+            var newId = service.addChild(targetProjectId, title);
+            rebuild();
+            if (result == 0)
+                new ActionDialog(parent, newId, workspace, service, true, this::rebuild).setVisible(true);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void showDescriptionDialog(UUID projectId, String projectName) {
