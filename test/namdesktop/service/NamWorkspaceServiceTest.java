@@ -60,6 +60,36 @@ class NamWorkspaceServiceTest {
                 () -> service.addChild(UUID.randomUUID(), "Child"));
     }
 
+    // --- insertChildBefore ---
+
+    @Test
+    void insertChildBefore_insertsAboveAnchor() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var first    = service.addChild(parentId, "First");
+        var second   = service.addChild(parentId, "Second");
+        var newId    = service.insertChildBefore(parentId, second, "New");
+        var ids      = workspace.getNode(parentId).get().getChildIds();
+        assertEquals(List.of(first, newId, second), ids);
+    }
+
+    @Test
+    void insertChildBefore_appendsWhenAnchorNotFound() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var first    = service.addChild(parentId, "First");
+        var newId    = service.insertChildBefore(parentId, UUID.randomUUID(), "New");
+        var ids      = workspace.getNode(parentId).get().getChildIds();
+        assertEquals(List.of(first, newId), ids);
+    }
+
+    @Test
+    void insertChildBefore_savesWorkspace() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var anchor   = service.addChild(parentId, "Anchor");
+        repository.saveCount = 0;
+        service.insertChildBefore(parentId, anchor, "New");
+        assertEquals(1, repository.saveCount);
+    }
+
     // --- moveChildUp / moveChildDown ---
 
     @Test

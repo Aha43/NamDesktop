@@ -249,7 +249,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var addActionButton = UiHelper.iconButton("Add action",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.setToolTipText("Add action to project " + targetName);
-        addActionButton.addActionListener(e -> showAddActionDialog(targetProjectId));
+        addActionButton.addActionListener(e -> {
+            var selected = actionList != null ? actionList.getSelectedValue() : null;
+            showAddActionDialog(targetProjectId, selected != null ? selected.getId() : null);
+        });
 
         var bar = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         bar.add(addActionButton);
@@ -446,7 +449,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return list;
     }
 
-    private void showAddActionDialog(UUID targetProjectId) {
+    private void showAddActionDialog(UUID targetProjectId, UUID beforeId) {
         var titleField = new JTextField(24);
         var panel = new JPanel(new BorderLayout(0, 4));
         panel.add(new JLabel("Action title:"), BorderLayout.NORTH);
@@ -462,7 +465,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (title.isBlank()) return;
 
         try {
-            var newId = service.addChild(targetProjectId, title);
+            var newId = beforeId != null
+                    ? service.insertChildBefore(targetProjectId, beforeId, title)
+                    : service.addChild(targetProjectId, title);
             rebuild();
             if (result == 0)
                 new ActionDialog(parent, newId, workspace, service, true, this::rebuild).setVisible(true);

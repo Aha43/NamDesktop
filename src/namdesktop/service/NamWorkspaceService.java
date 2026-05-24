@@ -40,6 +40,19 @@ public final class NamWorkspaceService {
         return child.getId();
     }
 
+    public UUID insertChildBefore(UUID parentId, UUID beforeId, String title) throws IOException {
+        var parent = require(parentId);
+        var child  = new NamNode(UUID.randomUUID(), title);
+        if (parentId.equals(workspace.getProjectsNodeId())) child.setProject(true);
+        workspace.getNodes().put(child.getId(), child);
+        var ids   = parent.getChildIds();
+        var index = ids.indexOf(beforeId);
+        if (index < 0) ids.add(child.getId());
+        else           ids.add(index, child.getId());
+        repository.save(path, workspace);
+        return child.getId();
+    }
+
     public UUID addSubProject(UUID parentId, String title) throws IOException {
         var parent = require(parentId);
         var child = new NamNode(UUID.randomUUID(), title);
