@@ -7,4 +7,4 @@ import java.util.UUID;
 
 public record NextActionItemRow(UUID id, String title, NodeStatus status,
                                 String parentTitle, UUID parentId, boolean isSubProject,
-                                String projectPath, List<String> tags) {}
+                                String projectPath, List<String> tags, List<String> inheritedTags) {}

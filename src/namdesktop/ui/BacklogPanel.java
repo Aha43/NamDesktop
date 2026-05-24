@@ -126,6 +126,7 @@ public final class BacklogPanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         });
 
+        table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         statusColumn = table.getColumnModel().getColumn(3);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
@@ -202,10 +203,17 @@ public final class BacklogPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
-                case 2 -> String.join(", ", r.tags());
+                case 2 -> new String[]{
+                        String.join(", ", r.tags()),
+                        String.join(", ", r.inheritedTags())};
                 case 3 -> r.status();
                 default -> null;
             };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int col) {
+            return col == 2 ? String[].class : String.class;
         }
     }
 }

@@ -82,6 +82,7 @@ public final class SavedViewPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -157,9 +158,16 @@ public final class SavedViewPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
-                case 2 -> String.join(", ", r.tags());
+                case 2 -> new String[]{
+                        String.join(", ", r.tags()),
+                        String.join(", ", r.inheritedTags())};
                 default -> null;
             };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int col) {
+            return col == 2 ? String[].class : String.class;
         }
     }
 }

@@ -3,7 +3,9 @@ package namdesktop.ui;
 import namdesktop.app.AppSettings;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.util.List;
 
 public final class UiHelper {
 
@@ -27,6 +29,24 @@ public final class UiHelper {
         var btn = new JButton("", icon);
         btn.setToolTipText(label);
         return btn;
+    }
+
+    public static DefaultTableCellRenderer tagsRenderer() {
+        return new DefaultTableCellRenderer() {
+            @Override
+            public void setValue(Object value) {
+                if (value instanceof String[] pair) {
+                    var own       = pair[0];
+                    var inherited = pair[1];
+                    if (own.isEmpty() && inherited.isEmpty()) { setText(""); return; }
+                    if (inherited.isEmpty()) { setText(own); return; }
+                    if (own.isEmpty()) { setText("<html><i>" + inherited + "</i></html>"); return; }
+                    setText("<html>" + own + ", <i>" + inherited + "</i></html>");
+                } else {
+                    setText(value != null ? value.toString() : "");
+                }
+            }
+        };
     }
 
     public static void applyDense(boolean dense) {

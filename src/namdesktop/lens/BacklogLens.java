@@ -26,10 +26,13 @@ public final class BacklogLens {
                             .map(gp -> !gp.getId().equals(workspace.getProjectsNodeId()))
                             .orElse(false);
                     var projectPath = displayParent != null ? buildProjectPath(workspace, displayParent.getId(), structural) : null;
+                    var ownTags = n.getTags();
+                    var inherited = workspace.effectiveTags(n.getId()).stream()
+                            .filter(t -> !ownTags.contains(t)).sorted().toList();
                     return new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             displayParent != null ? displayParent.getTitle() : null,
                             displayParent != null ? displayParent.getId() : null,
-                            isSubProject, projectPath, List.copyOf(n.getTags()), isInboxItem);
+                            isSubProject, projectPath, List.copyOf(ownTags), inherited, isInboxItem);
                 })
                 .toList();
     }
