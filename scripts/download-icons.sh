@@ -28,6 +28,8 @@ ICONS=(
   arrow-down
   cursor-text
   notes
+  chevron-down
+  chevron-up
 )
 
 mkdir -p "$ICONS_DIR"

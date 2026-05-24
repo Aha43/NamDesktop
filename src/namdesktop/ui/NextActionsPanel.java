@@ -185,7 +185,7 @@ public final class NextActionsPanel extends JPanel {
 
     private static final class NextActionsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Project", "Tags", "Status"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status"};
         private List<NextActionItemRow> rows = List.of();
 
         void setRows(List<NextActionItemRow> rows) {

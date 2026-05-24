@@ -183,7 +183,7 @@ public final class BacklogPanel extends JPanel {
 
     private static final class BacklogTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Project", "Tags", "Status"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status"};
         private List<BacklogItemRow> rows = List.of();
 
         void setRows(List<BacklogItemRow> rows) {

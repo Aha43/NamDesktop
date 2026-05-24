@@ -16,7 +16,9 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ProjectWorkbenchPanel extends JPanel {
@@ -28,6 +30,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       UUID              currentProjectId;
     private       UUID              parentProjectId;
     private       UUID              pendingSelection;
+    private final Set<UUID>         collapsedSections = new HashSet<>();
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
@@ -57,16 +60,19 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         }
         removeAll();
-        var projection = new ProjectWorkbenchLens().project(workspace, currentProjectId);
-        add(buildBreadcrumbBar(projection.breadcrumb()), BorderLayout.NORTH);
-        add(new JScrollPane(buildContent(projection)),   BorderLayout.CENTER);
+        var projection  = new ProjectWorkbenchLens().project(workspace, currentProjectId);
+        var sectionIds  = new java.util.ArrayList<UUID>();
+        sectionIds.add(currentProjectId);
+        projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
+        add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds), BorderLayout.NORTH);
+        add(new JScrollPane(buildContent(projection)),                BorderLayout.CENTER);
         revalidate();
         repaint();
     }
 
     // --- breadcrumb ---
 
-    private JPanel buildBreadcrumbBar(List<NamNode> breadcrumb) {
+    private JPanel buildBreadcrumbBar(List<NamNode> breadcrumb, List<UUID> sectionIds) {
         var bar = new JPanel(new BorderLayout());
         bar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Separator.foreground")),
@@ -98,7 +104,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
             var title = JOptionPane.showInputDialog(parent, "Project title:", "New project", JOptionPane.PLAIN_MESSAGE);
             if (title == null || title.isBlank()) return;
             try {
-                service.addSubProject(currentProjectId, title.strip());
+                var newId = service.addSubProject(currentProjectId, title.strip());
+                collapsedSections.remove(newId);
                 rebuild();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
@@ -112,7 +119,21 @@ public final class ProjectWorkbenchPanel extends JPanel {
         editButton.addActionListener(e ->
                 new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true));
 
+        var collapseAllIcon = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-up.svg")).derive(16, 16);
+        var expandAllIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-down.svg")).derive(16, 16);
+        var allCollapsed    = !sectionIds.isEmpty() && collapsedSections.containsAll(sectionIds);
+        var toggleAllButton = UiHelper.iconOnlyButton(allCollapsed ? "Expand all" : "Collapse all",
+                allCollapsed ? expandAllIcon : collapseAllIcon);
+        toggleAllButton.addActionListener(e -> {
+            var nowAllCollapsed = !sectionIds.isEmpty() && collapsedSections.containsAll(sectionIds);
+            if (nowAllCollapsed) collapsedSections.removeAll(sectionIds);
+            else                 collapsedSections.addAll(sectionIds);
+            rebuild();
+        });
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        if (!sectionIds.isEmpty()) {
+            buttons.add(toggleAllButton);
+        }
         buttons.add(newProjectButton);
         buttons.add(editButton);
 
@@ -140,7 +161,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        content.add(buildSection(null, projection.directActions(), currentProjectId, -1, 0, false, true));
+        content.add(buildSection("Actions", projection.directActions(), currentProjectId, -1, 0, false, true));
 
         var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
@@ -165,9 +186,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
         section.setLayout(new BorderLayout());
         section.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-        if (title != null) section.add(
-                buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount, hasSubProjects), BorderLayout.NORTH);
-
         JList<NamNode> actionList = null;
         JComponent listContent;
         if (actions.isEmpty()) {
@@ -183,9 +201,45 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var listWrapper = new JPanel(new BorderLayout());
         listWrapper.setBorder(BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")));
         listWrapper.add(listContent, BorderLayout.CENTER);
-        section.add(listWrapper, BorderLayout.CENTER);
 
-        section.add(buildAddActionBar(targetProjectId, actionList, showEditButton), BorderLayout.SOUTH);
+        var bar = buildAddActionBar(targetProjectId, actionList, showEditButton);
+
+        if (title != null) {
+            var collapsed = collapsedSections.contains(targetProjectId);
+            listWrapper.setVisible(!collapsed);
+            bar.setVisible(!collapsed);
+
+            var collapseIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-down.svg")).derive(14, 14);
+            var expandIcon     = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-up.svg")).derive(14, 14);
+            var toggleButton   = UiHelper.iconOnlyButton(collapsed ? "Expand" : "Collapse", collapsed ? expandIcon : collapseIcon);
+
+            toggleButton.addActionListener(e -> {
+                var nowCollapsed = collapsedSections.contains(targetProjectId);
+                if (nowCollapsed) {
+                    collapsedSections.remove(targetProjectId);
+                    listWrapper.setVisible(true);
+                    bar.setVisible(true);
+                    toggleButton.setIcon(collapseIcon);
+                    toggleButton.setToolTipText("Collapse");
+                } else {
+                    collapsedSections.add(targetProjectId);
+                    listWrapper.setVisible(false);
+                    bar.setVisible(false);
+                    toggleButton.setIcon(expandIcon);
+                    toggleButton.setToolTipText("Expand");
+                }
+                section.revalidate();
+                section.repaint();
+                var ancestor = SwingUtilities.getAncestorOfClass(JScrollPane.class, section);
+                if (ancestor != null) ancestor.getParent().revalidate();
+                else if (section.getParent() != null) section.getParent().revalidate();
+            });
+
+            section.add(buildSectionHeader(title, targetProjectId, sectionIndex, sectionCount, hasSubProjects, toggleButton), BorderLayout.NORTH);
+        }
+
+        section.add(listWrapper, BorderLayout.CENTER);
+        section.add(bar,         BorderLayout.SOUTH);
 
         return section;
     }
@@ -322,40 +376,49 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private JComponent buildSectionHeader(String title, UUID navigateToId,
-                                          int sectionIndex, int sectionCount, boolean hasSubProjects) {
+                                          int sectionIndex, int sectionCount, boolean hasSubProjects,
+                                          JButton toggleButton) {
         var header = new JPanel(new BorderLayout());
 
-        var btn = new JButton(title + " ›");
-        btn.setBorderPainted(false);
-        btn.setContentAreaFilled(false);
-        var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
-        btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
-        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.addActionListener(e -> navigateTo(navigateToId));
-
-        var upButton = UiHelper.iconButton("Move section up",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
-        var downButton = UiHelper.iconButton("Move section down",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
-        upButton.setToolTipText("Move this sub-project up");
-        downButton.setToolTipText("Move this sub-project down");
-        upButton.setEnabled(sectionIndex > 0);
-        downButton.setEnabled(sectionIndex < sectionCount - 1);
-
-        upButton.addActionListener(e -> {
-            try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-        downButton.addActionListener(e -> {
-            try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-
         var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        orderButtons.add(upButton);
-        orderButtons.add(downButton);
+        orderButtons.add(toggleButton);
 
-        header.add(btn,          BorderLayout.CENTER);
+        if (sectionIndex < 0) {
+            var lbl = new JLabel(title);
+            lbl.setFont(lbl.getFont().deriveFont(Font.BOLD));
+            header.add(lbl, BorderLayout.CENTER);
+        } else {
+            var btn = new JButton(title + " ›");
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            var style = Font.BOLD | (hasSubProjects ? Font.ITALIC : Font.PLAIN);
+            btn.setFont(btn.getFont().deriveFont((float) btn.getFont().getSize()).deriveFont(style));
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.addActionListener(e -> navigateTo(navigateToId));
+
+            var upButton = UiHelper.iconButton("Move section up",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+            var downButton = UiHelper.iconButton("Move section down",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+            upButton.setToolTipText("Move this sub-project up");
+            downButton.setToolTipText("Move this sub-project down");
+            upButton.setEnabled(sectionIndex > 0);
+            downButton.setEnabled(sectionIndex < sectionCount - 1);
+
+            upButton.addActionListener(e -> {
+                try { service.moveProjectUp(currentProjectId, navigateToId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            downButton.addActionListener(e -> {
+                try { service.moveProjectDown(currentProjectId, navigateToId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+
+            orderButtons.add(upButton);
+            orderButtons.add(downButton);
+            header.add(btn, BorderLayout.CENTER);
+        }
+
         header.add(orderButtons, BorderLayout.EAST);
         return header;
     }
@@ -413,6 +476,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private void navigateTo(UUID projectId) {
         parentProjectId  = currentProjectId;
         currentProjectId = projectId;
+        collapsedSections.clear();
         rebuild();
     }
 
