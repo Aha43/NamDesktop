@@ -1,0 +1,38 @@
+[
+  {"action":"addProject",    "args":{"title":"Trip to Rome"},                                 "delayMs":50},
+  {"action":"addTag",        "args":{"title":"Trip to Rome",      "tag":"@travel"},           "delayMs":50},
+  {"action":"addAction",     "args":{"project":"Trip to Rome",    "title":"Book flights"},    "delayMs":50},
+  {"action":"addAction",     "args":{"project":"Trip to Rome",    "title":"Book hotel"},      "delayMs":50},
+  {"action":"markNext",      "args":{"title":"Book flights"},                                 "delayMs":50},
+
+  {"action":"addProject",    "args":{"title":"Home"},                                         "delayMs":50},
+  {"action":"addSubProject", "args":{"parent":"Home",             "title":"Kitchen"},         "delayMs":50},
+  {"action":"addTag",        "args":{"title":"Kitchen",           "tag":"@home"},             "delayMs":50},
+  {"action":"addAction",     "args":{"project":"Kitchen",         "title":"Get quotes"},      "delayMs":50},
+  {"action":"markNext",      "args":{"title":"Get quotes"},                                   "delayMs":50},
+
+  {"action":"addNextAction", "args":{"title":"Call dentist"},                                 "delayMs":50},
+  {"action":"addTag",        "args":{"title":"Call dentist",      "tag":"@phone"},            "delayMs":50},
+
+  {"action":"addInboxItem",  "args":{"title":"Research options"},                             "delayMs":50},
+
+  {"action":"createSavedView","args":{"name":"Travel","tags":["@travel"]},                    "delayMs":50},
+
+  {"action":"assertNodeExists",      "args":{"title":"Trip to Rome"},                         "delayMs":20, "description":"Checking project exists"},
+  {"action":"assertProjectExists",   "args":{"title":"Trip to Rome"},                         "delayMs":20},
+  {"action":"assertTagOnNode",       "args":{"title":"Trip to Rome",  "tag":"@travel"},       "delayMs":20},
+  {"action":"assertNodeExists",      "args":{"title":"Book flights"},                         "delayMs":20},
+  {"action":"assertNodeStatus",      "args":{"title":"Book flights",  "status":"NEXT"},       "delayMs":20, "description":"Checking action status"},
+  {"action":"assertNodeStatus",      "args":{"title":"Book hotel",    "status":"BACKLOG"},    "delayMs":20},
+  {"action":"assertNodeExists",      "args":{"title":"Home"},                                 "delayMs":20},
+  {"action":"assertProjectExists",   "args":{"title":"Kitchen"},                              "delayMs":20},
+  {"action":"assertTagOnNode",       "args":{"title":"Kitchen",       "tag":"@home"},         "delayMs":20},
+  {"action":"assertNodeExists",      "args":{"title":"Get quotes"},                           "delayMs":20},
+  {"action":"assertNodeStatus",      "args":{"title":"Get quotes",    "status":"NEXT"},       "delayMs":20},
+  {"action":"assertNodeExists",      "args":{"title":"Call dentist"},                         "delayMs":20},
+  {"action":"assertTagOnNode",       "args":{"title":"Call dentist",  "tag":"@phone"},        "delayMs":20},
+  {"action":"assertNodeStatus",      "args":{"title":"Call dentist",  "status":"NEXT"},       "delayMs":20},
+  {"action":"assertNodeExists",      "args":{"title":"Research options"},                     "delayMs":20},
+  {"action":"assertSavedViewExists", "args":{"name":"Travel"},                                "delayMs":20, "description":"Checking saved view"},
+  {"action":"assertNodeCount",       "args":{"count":8},                                      "delayMs":20, "description":"Checking total node count"}
+]

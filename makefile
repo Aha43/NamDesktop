@@ -15,7 +15,7 @@ TEST_SOURCES := $(shell find test -name "*.java" 2>/dev/null)
 
 JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
 
-.PHONY: clean classes jar app run all test
+.PHONY: clean classes jar app run all test e2e
 
 all: app
 
@@ -30,6 +30,8 @@ classes:
 		-d $(CLASSES_DIR) \
 		$(SOURCES)
 	@if [ -d $(SRC_DIR)/icons ]; then cp -r $(SRC_DIR)/icons $(CLASSES_DIR)/; fi
+	@if [ -f $(SRC_DIR)/demo.json ]; then cp $(SRC_DIR)/demo.json $(CLASSES_DIR)/; fi
+	@if [ -f $(SRC_DIR)/e2e.json ];  then cp $(SRC_DIR)/e2e.json  $(CLASSES_DIR)/; fi
 
 jar: classes
 	mkdir -p $(APP_DIR)
@@ -49,6 +51,11 @@ run: app
 	java \
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
 		$(MAIN_CLASS)
+
+e2e: app
+	java \
+		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
+		$(MAIN_CLASS) --e2e
 
 test: classes
 	rm -rf $(TEST_CLASSES)

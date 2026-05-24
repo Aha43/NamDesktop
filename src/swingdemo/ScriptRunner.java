@@ -31,9 +31,12 @@ public final class ScriptRunner {
 
     private final ObjectMapper               mapper;
     private final RefreshBus                 bus;
-    private final Map<String, ActionHandler> handlers   = new HashMap<>();
-    private Consumer<DemoStep>               onStep     = step -> {};
-    private Runnable                         onComplete = () -> {};
+    private final Map<String, ActionHandler> handlers     = new HashMap<>();
+    private Consumer<DemoStep>               onStep       = step -> {};
+    private Runnable                         onComplete   = () -> {};
+    private int                              failureCount = 0;
+
+    public int getFailureCount() { return failureCount; }
 
     public ScriptRunner(ObjectMapper mapper, RefreshBus bus) {
         this.mapper = mapper;
@@ -81,12 +84,14 @@ public final class ScriptRunner {
         var handler = handlers.get(step.action());
         if (handler == null) {
             System.err.println("[swingdemo] Unknown action: " + step.action());
+            failureCount++;
             return;
         }
         try {
             handler.execute(step.args());
         } catch (Exception ex) {
             System.err.println("[swingdemo] Step failed (" + step.action() + "): " + ex.getMessage());
+            failureCount++;
         }
     }
 }

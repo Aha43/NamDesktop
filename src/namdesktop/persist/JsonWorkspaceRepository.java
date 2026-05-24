@@ -49,6 +49,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
 
     @Override
     public void save(Path path, NamWorkspace workspace) throws IOException {
+        if (path == null) return;
         Files.createDirectories(path.getParent());
         var file = new WorkspaceFile();
         file.formatVersion      = FORMAT_VERSION;
