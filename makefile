@@ -17,6 +17,8 @@ JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
 
 .PHONY: clean classes jar app run all test e2e help
 
+all: app
+
 help:
 	@echo "Usage: make <target>"
 	@echo ""
@@ -26,8 +28,6 @@ help:
 	@echo "  test    Compile and run unit tests"
 	@echo "  clean   Delete build output"
 	@echo ""
-
-all: app
 
 clean:
 	rm -rf $(BUILD_DIR)
