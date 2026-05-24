@@ -255,7 +255,15 @@ public final class NamWorkspaceService {
     }
 
     public void convertNextActionToProject(UUID id) throws IOException {
-        convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
+        var node   = require(id);
+        var parent = findParent(id);
+        if (parent != null && parent.getId().equals(workspace.getNextActionsNodeId())) {
+            convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
+        } else {
+            // action is inside a project — promote in place as a sub-project
+            node.setProject(true);
+            repository.save(path, workspace);
+        }
     }
 
     public void convertProjectToAction(UUID id) throws IOException {

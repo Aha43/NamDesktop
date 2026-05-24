@@ -24,7 +24,10 @@ public class NodeDialog extends JDialog {
     private final JTextField titleField;
     private final JTextArea descriptionArea;
     private final TagsField tagsField;
-    private final JButton statusButton;
+    private final JPanel statusPanel;
+    private final JToggleButton backlogBtn = new JToggleButton("Backlog");
+    private final JToggleButton nextBtn    = new JToggleButton("Next");
+    private final JToggleButton doneBtn    = new JToggleButton("Done");
     private final JToolBar toolbar;
     private final JPanel centre;
     private final Runnable onChanged;
@@ -48,17 +51,27 @@ public class NodeDialog extends JDialog {
         titleField.setFont(titleField.getFont().deriveFont(Font.BOLD, 16f));
         titleField.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
-        statusButton = new JButton(statusLabel(),
-                new FlatSVGIcon(NodeDialog.class.getResource("/icons/check.svg")).derive(16, 16));
-        statusButton.setToolTipText("Toggle action status");
-        statusButton.addActionListener(e -> toggleStatus());
+        var statusGroup = new ButtonGroup();
+        statusGroup.add(backlogBtn);
+        statusGroup.add(nextBtn);
+        statusGroup.add(doneBtn);
+        syncStatusButtons();
+        backlogBtn.addActionListener(e -> setStatus(NodeStatus.BACKLOG));
+        nextBtn.addActionListener(e -> setStatus(NodeStatus.NEXT));
+        doneBtn.addActionListener(e -> setStatus(NodeStatus.DONE));
+
+        statusPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
+        statusPanel.setOpaque(false);
+        statusPanel.add(backlogBtn);
+        statusPanel.add(nextBtn);
+        statusPanel.add(doneBtn);
 
         var deleteButton = UiHelper.iconButton("Delete", new FlatSVGIcon(NodeDialog.class.getResource("/icons/trash.svg")).derive(16, 16));
         deleteButton.addActionListener(e -> delete(originalTitle));
 
         toolbar = new JToolBar();
         toolbar.setFloatable(false);
-        toolbar.add(statusButton);
+        toolbar.add(statusPanel);
         toolbar.addSeparator();
         toolbar.add(deleteButton);
 
@@ -112,23 +125,25 @@ public class NodeDialog extends JDialog {
         setLocationRelativeTo(parent);
     }
 
-    private String statusLabel() {
-        return currentStatus == NodeStatus.DONE ? "Mark next" :
-               currentStatus == NodeStatus.NEXT ? "Mark done" : "Mark next";
+    private void syncStatusButtons() {
+        backlogBtn.setSelected(currentStatus == NodeStatus.BACKLOG);
+        nextBtn.setSelected(currentStatus == NodeStatus.NEXT);
+        doneBtn.setSelected(currentStatus == NodeStatus.DONE);
     }
 
-    private void toggleStatus() {
+    private void setStatus(NodeStatus status) {
+        if (status == currentStatus) return;
         try {
-            if (currentStatus == NodeStatus.NEXT) {
-                service.markDone(nodeId);
-                currentStatus = NodeStatus.DONE;
-            } else {
-                service.markNext(nodeId);
-                currentStatus = NodeStatus.NEXT;
+            switch (status) {
+                case BACKLOG -> service.markBacklog(nodeId);
+                case NEXT    -> service.markNext(nodeId);
+                case DONE    -> service.markDone(nodeId);
             }
-            statusButton.setText(statusLabel());
+            currentStatus = status;
+            syncStatusButtons();
             notifyChanged();
         } catch (IOException e) {
+            syncStatusButtons(); // revert button selection
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
@@ -183,7 +198,7 @@ public class NodeDialog extends JDialog {
     protected void notifyChanged() { onChanged.run(); }
 
     protected void hideStatusButton() {
-        toolbar.remove(statusButton);
+        toolbar.remove(statusPanel);
         toolbar.revalidate();
         toolbar.repaint();
     }

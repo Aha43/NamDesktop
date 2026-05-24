@@ -356,10 +356,13 @@ class NamWorkspaceServiceTest {
     }
 
     @Test
-    void convertNextActionToProject_throwsIfNotNextActionsChild() throws IOException {
-        var id = service.addInboxItem("Task");
-        assertThrows(IllegalArgumentException.class,
-                () -> service.convertNextActionToProject(id));
+    void convertNextActionToProject_promotesInPlaceWhenInsideProject() throws IOException {
+        var projectId = service.addSubProject(workspace.getProjectsNodeId(), "My Project");
+        var actionId  = service.addChild(projectId, "Sub action");
+        service.convertNextActionToProject(actionId);
+        var action = workspace.getNode(actionId).orElseThrow();
+        assertTrue(action.isProject());
+        assertTrue(workspace.getNode(projectId).orElseThrow().getChildIds().contains(actionId));
     }
 
     // --- convertInboxItemToProject ---

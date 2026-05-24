@@ -30,12 +30,6 @@ public final class ActionDialog extends NodeDialog {
             makeProjectButton.setToolTipText("Convert this action into a project");
             makeProjectButton.addActionListener(e -> makeProject(nodeId, service));
             addToolbarButton(makeProjectButton);
-
-            var backlogButton = UiHelper.iconButton("Move to backlog",
-                    new FlatSVGIcon(ActionDialog.class.getResource("/icons/archive.svg")).derive(16, 16));
-            backlogButton.setToolTipText("Move this action to the backlog");
-            backlogButton.addActionListener(e -> moveToBacklog(nodeId, service));
-            addToolbarButton(backlogButton);
         }
 
         var structural = structuralIds(workspace);
@@ -85,14 +79,5 @@ public final class ActionDialog extends NodeDialog {
         }
     }
 
-    private void moveToBacklog(UUID nodeId, NamWorkspaceService service) {
-        try {
-            service.markBacklog(nodeId);
-            notifyChanged();
-            dispose();
-        } catch (IOException e) {
-            JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
-        }
-    }
+
 }

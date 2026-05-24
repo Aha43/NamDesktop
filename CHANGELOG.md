@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Status toggle in ActionDialog replaced with Backlog / Next / Done radio group — all three statuses reachable without closing the dialog. Closes #162.
+
 - Actions inherit tags from ancestor projects at query time: filtering the Context view by a project's tag now surfaces all NEXT actions in that project and its sub-projects, even when the actions carry no tags themselves. Closes #159.
 - Context lens and saved views now show all active (non-done) matching actions, not just NEXT — making the Context view a true inventory. Saved views gain a "Next actions only" toggle (default off) for users who want a tighter committed-next list. Closes #161.
 
@@ -27,6 +29,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- "Make project" in ActionDialog no longer crashes when the action is inside a project; it now promotes the action to a sub-project in place instead of requiring it to be in the Next Actions area. Closes #163.
 - Git sync push/pull buttons and menu items are now hidden in dev mode, preventing accidental overwrite of production data. Closes #150.
 - GTD correctness: Next Actions and Backlog lenses now exclude projects — only actions belong in these views. Closes #145.
 
