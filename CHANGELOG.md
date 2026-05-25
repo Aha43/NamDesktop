@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Moon Cards: Esc key exits deck mode; exit button label updated to "Exit  [Esc]" for consistency with other shortcut hints. Closes #196.
+
 - "Saved Views" section header in the navigation panel: replaces the bare separator with a small dimmed label and top border, making the split between built-in lenses and user-created saved views immediately clear.
 
 - Done lens view: a dedicated "Done" nav entry (below Backlog) lists all completed actions in grey. Toolbar provides Delete (with confirmation), Mark as Next, and Mark as Backlog for housekeeping and resurrection. Closes #192.
