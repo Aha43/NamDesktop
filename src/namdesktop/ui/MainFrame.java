@@ -10,6 +10,7 @@ import namdesktop.sync.WorkspaceSyncService;
 import swingdemo.ScriptRunner;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.awt.*;
 import java.nio.file.Path;
 import java.util.List;
@@ -135,6 +136,8 @@ public final class MainFrame extends JFrame {
         fileMenu.add(settingsItem);
         fileMenu.addSeparator();
         var exitItem = new JMenuItem("Exit");
+        exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         exitItem.addActionListener(e -> System.exit(0));
         fileMenu.add(exitItem);
         var menuBar = new JMenuBar();
