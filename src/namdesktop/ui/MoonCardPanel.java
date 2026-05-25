@@ -5,6 +5,7 @@ import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -77,9 +78,12 @@ public final class MoonCardPanel extends JPanel {
         gbc.insets  = new Insets(32, 80, 32, 80);
         centerWrapper.add(cardContent, gbc);
 
-        prevButton = new JButton("Previous");
-        doneButton = new JButton("Done");
-        nextButton = new JButton("Next");
+        prevButton = new JButton("← Previous");
+        doneButton = new JButton("Done  [Space]");
+        nextButton = new JButton("Next →");
+        prevButton.setToolTipText("Previous card (←)");
+        doneButton.setToolTipText("Mark done and advance (Space)");
+        nextButton.setToolTipText("Next card (→)");
         prevButton.addActionListener(e -> navigate(-1));
         nextButton.addActionListener(e -> navigate(1));
         doneButton.addActionListener(e -> markDoneAndAdvance());
@@ -93,7 +97,30 @@ public final class MoonCardPanel extends JPanel {
         add(centerWrapper, BorderLayout.CENTER);
         add(footer,        BorderLayout.SOUTH);
 
+        keyDispatcher = e -> {
+            if (e.getID() != KeyEvent.KEY_PRESSED || !isShowing()) return false;
+            return switch (e.getKeyCode()) {
+                case KeyEvent.VK_LEFT  -> { navigate(-1); yield true; }
+                case KeyEvent.VK_RIGHT -> { navigate(1);  yield true; }
+                case KeyEvent.VK_SPACE -> { if (doneButton.isEnabled()) markDoneAndAdvance(); yield true; }
+                default -> false;
+            };
+        };
         showCard();
+    }
+
+    private KeyEventDispatcher keyDispatcher;
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(keyDispatcher);
+    }
+
+    @Override
+    public void removeNotify() {
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(keyDispatcher);
+        super.removeNotify();
     }
 
     private void showCard() {
