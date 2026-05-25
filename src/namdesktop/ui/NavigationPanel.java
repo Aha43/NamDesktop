@@ -37,7 +37,7 @@ public final class NavigationPanel extends JPanel {
             if (e.getValueIsAdjusting()) return;
             var selected = list.getSelectedValue();
             if (selected == null) return;
-            if (selected.isDivider()) { list.clearSelection(); return; }
+            if (selected.isDivider() || selected.isSectionHeader()) { list.clearSelection(); return; }
             onSelect.accept(selected);
         });
 
@@ -49,7 +49,7 @@ public final class NavigationPanel extends JPanel {
     public void rebuildSavedViews(List<SavedView> savedViews) {
         while (model.size() > staticEntries.size()) model.removeElementAt(model.size() - 1);
         if (!savedViews.isEmpty()) {
-            model.addElement(NavigationEntry.divider());
+            model.addElement(NavigationEntry.sectionHeader("Saved Views"));
             savedViews.forEach(sv -> {
                 var tooltip = sv.tags().isEmpty()
                         ? "No tag filter"
@@ -74,6 +74,15 @@ public final class NavigationPanel extends JPanel {
                 var sep = new JSeparator();
                 sep.setBorder(new EmptyBorder(3, 4, 3, 4));
                 return sep;
+            }
+            if (value instanceof NavigationEntry e && e.isSectionHeader()) {
+                var label = new JLabel(e.title().toUpperCase());
+                label.setFont(label.getFont().deriveFont(Font.BOLD, 10f));
+                label.setForeground(UIManager.getColor("Label.disabledForeground"));
+                label.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Separator.foreground")),
+                        new EmptyBorder(6, 6, 2, 4)));
+                return label;
             }
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
             if (value instanceof NavigationEntry e) setText(e.title());

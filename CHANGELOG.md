@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Saved Views" section header in the navigation panel: replaces the bare separator with a small dimmed label and top border, making the split between built-in lenses and user-created saved views immediately clear.
+
 - Done lens view: a dedicated "Done" nav entry (below Backlog) lists all completed actions in grey. Toolbar provides Delete (with confirmation), Mark as Next, and Mark as Backlog for housekeeping and resurrection. Closes #192.
 
 - Moon Cards deck mode for Next Actions, Backlog, and Saved Views: a stack-2 icon button in each lens toolbar opens a full-screen card view showing one action at a time (title, description, project path). Navigate circularly with Previous/Next, mark an action done and advance with Done, or exit back to the list with the exit button. Uses CardLayout internally for reliable exit in all window modes including macOS native full screen. Closes #190.
