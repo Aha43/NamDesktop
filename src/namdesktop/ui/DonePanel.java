@@ -109,10 +109,20 @@ public final class DonePanel extends JPanel {
 
         deleteButton.addActionListener(e -> deleteSelected());
         markNextButton.addActionListener(e -> withSelected(id -> {
+            var title = workspace.getNode(id).map(n -> n.getTitle()).orElse("this action");
+            var confirm = JOptionPane.showConfirmDialog(this,
+                    "Move \"" + title + "\" back to Next Actions?",
+                    "Confirm", JOptionPane.OK_CANCEL_OPTION);
+            if (confirm != JOptionPane.OK_OPTION) return;
             try { service.markNext(id); refreshKeepSelection(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
         markBacklogButton.addActionListener(e -> withSelected(id -> {
+            var title = workspace.getNode(id).map(n -> n.getTitle()).orElse("this action");
+            var confirm = JOptionPane.showConfirmDialog(this,
+                    "Move \"" + title + "\" back to Backlog?",
+                    "Confirm", JOptionPane.OK_CANCEL_OPTION);
+            if (confirm != JOptionPane.OK_OPTION) return;
             try { service.markBacklog(id); refreshKeepSelection(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
@@ -122,6 +132,8 @@ public final class DonePanel extends JPanel {
 
     public void refresh() {
         tableModel.setRows(new DoneLens().items(workspace));
+        if (tableModel.getRowCount() > 0 && table.getSelectedRow() < 0)
+            table.setRowSelectionInterval(0, 0);
         var row = table.getSelectedRow();
         deleteButton.setEnabled(row >= 0);
         markNextButton.setEnabled(row >= 0);
