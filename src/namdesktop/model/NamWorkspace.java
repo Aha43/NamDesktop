@@ -18,6 +18,7 @@ public final class NamWorkspace {
     private Map<UUID, NamNode> nodes = new LinkedHashMap<>();
     private List<String> registeredTags = new ArrayList<>();
     private List<SavedView> savedViews = new ArrayList<>();
+    private List<MissionControl> missionControls = new ArrayList<>();
     private List<ProjectTemplate> templates = new ArrayList<>();
     private Map<String, List<UUID>> viewOrders = new LinkedHashMap<>();
 
@@ -32,6 +33,7 @@ public final class NamWorkspace {
         this.nodes             = fresh.nodes;
         this.registeredTags    = fresh.registeredTags;
         this.savedViews        = fresh.savedViews;
+        this.missionControls   = fresh.missionControls;
         this.templates         = fresh.templates;
         this.viewOrders        = fresh.viewOrders;
     }
@@ -123,6 +125,9 @@ public final class NamWorkspace {
 
     public List<SavedView> getSavedViews() { return savedViews; }
     public void setSavedViews(List<SavedView> views) { this.savedViews = views != null ? views : new ArrayList<>(); }
+
+    public List<MissionControl> getMissionControls() { return missionControls; }
+    public void setMissionControls(List<MissionControl> mcs) { this.missionControls = mcs != null ? mcs : new ArrayList<>(); }
 
     public List<ProjectTemplate> getTemplates() { return templates; }
     public void setTemplates(List<ProjectTemplate> templates) { this.templates = templates != null ? templates : new ArrayList<>(); }

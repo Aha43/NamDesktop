@@ -121,6 +121,8 @@ final class TagsField extends JTextField {
         return (lastComma >= 0 ? text.substring(lastComma + 1) : text).strip().toLowerCase();
     }
 
+    List<String> getTags() { return parsedTags(); }
+
     private List<String> parsedTags() {
         var result = new java.util.ArrayList<String>();
         for (var part : getText().split(",")) {

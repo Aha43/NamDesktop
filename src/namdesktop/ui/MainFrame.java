@@ -61,7 +61,7 @@ public final class MainFrame extends JFrame {
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service, this::openProjectWorkbench);
         this.nextActionsPanel = new NextActionsPanel(workspace, service, this::openProjectWorkbench);
-        this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
+        this.contextPanel     = new ContextPanel(workspace, service, this::rebuildDynamicNavSections);
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
@@ -88,6 +88,11 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
+        var newMcButton = UiHelper.iconButton("New Mission Control…",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16));
+        newMcButton.setToolTipText("New Mission Control…");
+        newMcButton.addActionListener(e -> createMissionControl());
+        toolbar.add(newMcButton);
         if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
             pushButton.addActionListener(e -> runSync(true));
@@ -115,11 +120,14 @@ public final class MainFrame extends JFrame {
         }).setVisible(true));
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
+        var newMcItem = new JMenuItem("New Mission Control…");
+        newMcItem.addActionListener(e -> createMissionControl());
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
+        fileMenu.add(newMcItem);
         if (devMode) {
             var runDemoItem = new JMenuItem("Run Demo…");
             runDemoItem.addActionListener(e -> runDemo());
@@ -154,7 +162,7 @@ public final class MainFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(900, 600);
 
-        navPanel.rebuildSavedViews(workspace.getSavedViews());
+        navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
     }
 
     private void saveSession() {
@@ -167,6 +175,34 @@ public final class MainFrame extends JFrame {
             settings.setLastProjectId(null);
             saveSession();
         }
+        if (entry.id().startsWith("mc:")) {
+            var name = entry.id().substring("mc:".length());
+            workspace.getMissionControls().stream()
+                    .filter(mc -> mc.name().equals(name))
+                    .findFirst()
+                    .ifPresent(mc -> {
+                        final MissionControlPanel[] ref = {null};
+                        ref[0] = new MissionControlPanel(mc, workspace, service,
+                                id -> {
+                                    if (cachedWorkbench == null || !id.equals(cachedWorkbenchId)) {
+                                        cachedWorkbenchId = id;
+                                        cachedWorkbench   = new ProjectWorkbenchPanel(this, workspace, service, id, mc.name(), () -> {
+                                            cachedWorkbench   = null;
+                                            cachedWorkbenchId = null;
+                                            contentArea.setContent(ref[0]);
+                                            ref[0].refresh();
+                                        });
+                                    }
+                                    contentArea.setContent(cachedWorkbench);
+                                },
+                                () -> {
+                                    rebuildDynamicNavSections();
+                                    navPanel.selectById("projects");
+                                });
+                        contentArea.setContent(ref[0]);
+                    });
+            return;
+        }
         if (entry.id().startsWith("saved-view:")) {
             var name = entry.id().substring("saved-view:".length());
             workspace.getSavedViews().stream()
@@ -174,11 +210,11 @@ public final class MainFrame extends JFrame {
                     .findFirst()
                     .ifPresent(sv -> contentArea.setContent(new SavedViewPanel(sv, workspace, service,
                             () -> {
-                                rebuildSavedViewsNav();
+                                rebuildDynamicNavSections();
                                 navPanel.selectById("context");
                             },
                             newName -> {
-                                rebuildSavedViewsNav();
+                                rebuildDynamicNavSections();
                                 navPanel.selectById("saved-view:" + newName);
                             })));
             return;
@@ -311,11 +347,30 @@ public final class MainFrame extends JFrame {
         contextPanel.refresh();
         backlogPanel.refresh();
         donePanel.refresh();
-        navPanel.rebuildSavedViews(workspace.getSavedViews());
+        rebuildDynamicNavSections();
     }
 
-    private void rebuildSavedViewsNav() {
-        navPanel.rebuildSavedViews(workspace.getSavedViews());
+    private void rebuildDynamicNavSections() {
+        navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
+    }
+
+    private void createMissionControl() {
+        var dialog = new MissionControlCreateDialog(this, workspace);
+        dialog.setVisible(true);
+        if (!dialog.isConfirmed()) return;
+        var name = dialog.getMcName();
+        var tags = dialog.getMcTags();
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Name must not be blank.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        try {
+            service.createMissionControl(name, tags);
+            rebuildDynamicNavSections();
+            navPanel.selectById("mc:" + name);
+        } catch (IllegalArgumentException | java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private static JPanel placeholder(String label) {

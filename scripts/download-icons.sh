@@ -32,6 +32,7 @@ ICONS=(
   chevron-up
   layout-list
   stack-2
+  layout-dashboard
 )
 
 mkdir -p "$ICONS_DIR"
