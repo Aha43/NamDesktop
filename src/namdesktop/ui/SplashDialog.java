@@ -34,19 +34,22 @@ public final class SplashDialog extends JDialog {
         });
         getRootPane().setDefaultButton(launchButton);
 
-        var launchTab = new JPanel(new BorderLayout(0, 8));
+        var launchTab = new JPanel(new BorderLayout());
         launchTab.setBorder(BorderFactory.createEmptyBorder(12, 8, 8, 8));
-        launchTab.add(devModeBox,   BorderLayout.NORTH);
-        launchTab.add(launchButton, BorderLayout.SOUTH);
+        launchTab.add(devModeBox, BorderLayout.NORTH);
 
         var tabs = new JTabbedPane();
         tabs.addTab("Launch",   launchTab);
         tabs.addTab("Settings", new SettingsPanel(settings));
 
-        var content = new JPanel(new BorderLayout(0, 16));
+        var footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
+        footer.add(launchButton);
+
+        var content = new JPanel(new BorderLayout(0, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 40, 20, 40));
         content.add(titleLabel, BorderLayout.NORTH);
         content.add(tabs,       BorderLayout.CENTER);
+        content.add(footer,     BorderLayout.SOUTH);
 
         setContentPane(content);
         setResizable(false);
