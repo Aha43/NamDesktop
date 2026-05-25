@@ -31,6 +31,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       UUID              parentProjectId;
     private       UUID              pendingSelection;
     private final Set<UUID>         collapsedSections = new HashSet<>();
+    private       boolean           accordionMode     = false;
+    private       List<UUID>        currentSectionIds = List.of();
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
@@ -64,6 +66,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var sectionIds  = new java.util.ArrayList<UUID>();
         sectionIds.add(currentProjectId);
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
+        currentSectionIds = List.copyOf(sectionIds);
         add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds), BorderLayout.NORTH);
         add(new JScrollPane(buildContent(projection)),                BorderLayout.CENTER);
         revalidate();
@@ -130,8 +133,22 @@ public final class ProjectWorkbenchPanel extends JPanel {
             else                 collapsedSections.addAll(sectionIds);
             rebuild();
         });
+        var accordionIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-list.svg")).derive(16, 16);
+        var accordionButton = new JToggleButton(accordionIcon);
+        accordionButton.setSelected(accordionMode);
+        accordionButton.setToolTipText(accordionMode
+                ? "Accordion mode on — opening a section closes others (click to turn off)"
+                : "Accordion mode off — click to open one section at a time");
+        accordionButton.addActionListener(e -> {
+            accordionMode = accordionButton.isSelected();
+            accordionButton.setToolTipText(accordionMode
+                    ? "Accordion mode on — opening a section closes others (click to turn off)"
+                    : "Accordion mode off — click to open one section at a time");
+        });
+
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         if (!sectionIds.isEmpty()) {
+            buttons.add(accordionButton);
             buttons.add(toggleAllButton);
         }
         buttons.add(newProjectButton);
@@ -215,6 +232,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
             toggleButton.addActionListener(e -> {
                 var nowCollapsed = collapsedSections.contains(targetProjectId);
+                if (nowCollapsed && accordionMode) {
+                    collapsedSections.addAll(currentSectionIds);
+                    collapsedSections.remove(targetProjectId);
+                    rebuild();
+                    return;
+                }
                 if (nowCollapsed) {
                     collapsedSections.remove(targetProjectId);
                     listWrapper.setVisible(true);

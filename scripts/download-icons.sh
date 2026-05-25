@@ -30,6 +30,7 @@ ICONS=(
   notes
   chevron-down
   chevron-up
+  layout-list
 )
 
 mkdir -p "$ICONS_DIR"
