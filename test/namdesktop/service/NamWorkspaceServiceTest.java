@@ -1026,6 +1026,57 @@ class NamWorkspaceServiceTest {
         assertEquals(1, repository.saveCount);
     }
 
+    // --- createMissionControl / deleteMissionControl ---
+
+    @Test
+    void createMissionControl_addsMissionControl() throws IOException {
+        service.createMissionControl("Q3 Goals", List.of("@q3"));
+        assertEquals(1, workspace.getMissionControls().size());
+        assertEquals("Q3 Goals", workspace.getMissionControls().get(0).name());
+        assertEquals(List.of("@q3"), workspace.getMissionControls().get(0).tags());
+    }
+
+    @Test
+    void createMissionControl_allowsMultipleTags() throws IOException {
+        service.createMissionControl("Finance", List.of("@retirement", "@financial-independence"));
+        assertEquals(List.of("@retirement", "@financial-independence"),
+                workspace.getMissionControls().get(0).tags());
+    }
+
+    @Test
+    void createMissionControl_savesWorkspace() throws IOException {
+        service.createMissionControl("Q3 Goals", List.of("@q3"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void createMissionControl_throwsOnBlankName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createMissionControl("  ", List.of("@q3")));
+    }
+
+    @Test
+    void createMissionControl_throwsOnDuplicateName() throws IOException {
+        service.createMissionControl("Q3 Goals", List.of("@q3"));
+        assertThrows(IllegalArgumentException.class,
+                () -> service.createMissionControl("Q3 Goals", List.of("@other")));
+    }
+
+    @Test
+    void deleteMissionControl_removesMissionControl() throws IOException {
+        service.createMissionControl("Q3 Goals", List.of("@q3"));
+        repository.saveCount = 0;
+        service.deleteMissionControl("Q3 Goals");
+        assertTrue(workspace.getMissionControls().isEmpty());
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteMissionControl_isNoOpWhenNotFound() throws IOException {
+        service.deleteMissionControl("nonexistent");
+        assertEquals(0, repository.saveCount);
+    }
+
     // --- stub ---
 
     private static final class InMemoryRepository implements WorkspaceRepository {

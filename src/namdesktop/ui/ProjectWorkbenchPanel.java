@@ -26,6 +26,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private final Window            parent;
     private final NamWorkspace      workspace;
     private final NamWorkspaceService service;
+    private final String            backLabel;
     private final Runnable          onNavigateToProjects;
     private       UUID              currentProjectId;
     private       UUID              parentProjectId;
@@ -37,10 +38,17 @@ public final class ProjectWorkbenchPanel extends JPanel {
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
                                   Runnable onNavigateToProjects) {
+        this(parent, workspace, service, initialProjectId, "Projects", onNavigateToProjects);
+    }
+
+    public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
+                                  NamWorkspaceService service, UUID initialProjectId,
+                                  String backLabel, Runnable onNavigateToProjects) {
         super(new BorderLayout());
         this.parent               = parent;
         this.workspace            = workspace;
         this.service              = service;
+        this.backLabel            = backLabel;
         this.onNavigateToProjects = onNavigateToProjects;
         this.currentProjectId     = initialProjectId;
         this.parentProjectId      = workspace.getParent(initialProjectId)
@@ -82,7 +90,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 BorderFactory.createEmptyBorder(4, 8, 4, 8)));
 
         var crumbs = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        crumbs.add(breadcrumbLink("Projects", onNavigateToProjects));
+        crumbs.add(breadcrumbLink(backLabel, onNavigateToProjects));
         for (int i = 0; i < breadcrumb.size(); i++) {
             var node = breadcrumb.get(i);
             crumbs.add(new JLabel(" › "));

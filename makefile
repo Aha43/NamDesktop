@@ -62,6 +62,11 @@ run: app
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
 		$(MAIN_CLASS)
 
+run-dev: app
+	java \
+		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
+		$(MAIN_CLASS) --dev
+
 e2e: app
 	java \
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \

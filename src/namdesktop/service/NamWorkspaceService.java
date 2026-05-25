@@ -202,6 +202,24 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void createMissionControl(String name, List<String> tags) throws IOException {
+        var trimmed = name.strip();
+        if (trimmed.isEmpty()) throw new IllegalArgumentException("Mission Control name must not be blank");
+        var mcs = workspace.getMissionControls();
+        if (mcs.stream().anyMatch(mc -> mc.name().equals(trimmed))) {
+            throw new IllegalArgumentException("A Mission Control named \"" + trimmed + "\" already exists");
+        }
+        mcs.add(new namdesktop.model.MissionControl(trimmed, List.copyOf(tags)));
+        repository.save(path, workspace);
+    }
+
+    public void deleteMissionControl(String name) throws IOException {
+        var mcs = workspace.getMissionControls();
+        if (mcs.removeIf(mc -> mc.name().equals(name))) {
+            repository.save(path, workspace);
+        }
+    }
+
     public void createSavedView(String name, List<String> tags, boolean nextOnly) throws IOException {
         var trimmed = name.strip();
         if (trimmed.isEmpty()) throw new IllegalArgumentException("View name must not be blank");

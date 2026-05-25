@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import namdesktop.model.MissionControl;
 import namdesktop.model.SavedView;
 
 import javax.swing.*;
@@ -46,7 +47,7 @@ public final class NavigationPanel extends JPanel {
         if (!staticEntries.isEmpty()) list.setSelectedIndex(0);
     }
 
-    public void rebuildSavedViews(List<SavedView> savedViews) {
+    public void rebuildDynamicSections(List<SavedView> savedViews, List<MissionControl> missionControls) {
         while (model.size() > staticEntries.size()) model.removeElementAt(model.size() - 1);
         if (!savedViews.isEmpty()) {
             model.addElement(NavigationEntry.sectionHeader("Saved Views"));
@@ -56,6 +57,15 @@ public final class NavigationPanel extends JPanel {
                         : "Tags: " + String.join(", ", sv.tags());
                 if (sv.nextOnly()) tooltip += " · Next only";
                 model.addElement(new NavigationEntry("saved-view:" + sv.name(), sv.name(), tooltip));
+            });
+        }
+        if (!missionControls.isEmpty()) {
+            model.addElement(NavigationEntry.sectionHeader("Mission Controls"));
+            missionControls.forEach(mc -> {
+                var tooltip = mc.tags().isEmpty()
+                        ? "No tags"
+                        : "Tags: " + String.join(", ", mc.tags());
+                model.addElement(new NavigationEntry("mc:" + mc.name(), mc.name(), tooltip));
             });
         }
     }
