@@ -88,6 +88,11 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
+        var newMcButton = UiHelper.iconButton("New Mission Control…",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16));
+        newMcButton.setToolTipText("New Mission Control…");
+        newMcButton.addActionListener(e -> createMissionControl());
+        toolbar.add(newMcButton);
         if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
             pushButton.addActionListener(e -> runSync(true));
