@@ -28,12 +28,16 @@ public final class BacklogPanel extends JPanel {
     private final Consumer<UUID> onOpenProject;
     private final BacklogTableModel tableModel;
     private final JTable table;
+    private final JScrollPane scrollPane;
+    private final JPanel deckWrapper;
+    private final CardLayout deckCards;
     private final JButton upButton;
     private final JButton downButton;
     private List<UUID> currentOrder = List.of();
     private UUID pendingSelection;
     private TableColumn statusColumn;
     private boolean statusColumnVisible = true;
+    private MoonCardPanel moonCardPanel;
 
     public BacklogPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -55,11 +59,18 @@ public final class BacklogPanel extends JPanel {
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
 
+        var moonButton = UiHelper.iconButton("Moon Cards",
+                new FlatSVGIcon(BacklogPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
+        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.addActionListener(e -> enterDeckMode());
+
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(addButton);
         toolbar.add(upButton);
         toolbar.add(downButton);
+        toolbar.add(Box.createHorizontalGlue());
+        toolbar.add(moonButton);
         add(toolbar, BorderLayout.NORTH);
 
         table = new JTable(tableModel) {
@@ -130,7 +141,11 @@ public final class BacklogPanel extends JPanel {
         statusColumn = table.getColumnModel().getColumn(3);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        scrollPane  = new JScrollPane(table);
+        deckCards   = new CardLayout();
+        deckWrapper = new JPanel(deckCards);
+        deckWrapper.add(scrollPane, "table");
+        add(deckWrapper, BorderLayout.CENTER);
     }
 
     public void applyColumnVisibility(boolean show) {
@@ -179,6 +194,32 @@ public final class BacklogPanel extends JPanel {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void enterDeckMode() {
+        var cards = new java.util.ArrayList<MoonCardPanel.Card>();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            var row = tableModel.getRow(i);
+            var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
+            cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
+        }
+        if (cards.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode);
+        deckWrapper.add(moonCardPanel, "moon");
+        deckCards.show(deckWrapper, "moon");
+    }
+
+    private void exitDeckMode() {
+        if (moonCardPanel == null) return;
+        deckCards.show(deckWrapper, "table");
+        refresh();
+        var old = moonCardPanel;
+        moonCardPanel = null;
+        SwingUtilities.invokeLater(() -> deckWrapper.remove(old));
     }
 
     private static final class BacklogTableModel extends AbstractTableModel {

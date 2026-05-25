@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Moon Cards deck mode for Next Actions, Backlog, and Saved Views: a stack-2 icon button in each lens toolbar opens a full-screen card view showing one action at a time (title, description, project path). Navigate circularly with Previous/Next, mark an action done and advance with Done, or exit back to the list with the exit button. Uses CardLayout internally for reliable exit in all window modes including macOS native full screen. Closes #190.
+
 - Inherited project tags visible in all action list views (Next Actions, Backlog, Context, Saved Views): tags inherited at query time from ancestor projects appear in italic after the action's own tags, making it clear why an action matched a filter. Closes #178.
 
 - Rename saved view: cursor-text icon button in the saved view header renames the view in place; the navigation panel updates immediately with the new name selected. Closes #177.
