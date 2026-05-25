@@ -109,11 +109,11 @@ public final class DonePanel extends JPanel {
 
         deleteButton.addActionListener(e -> deleteSelected());
         markNextButton.addActionListener(e -> withSelected(id -> {
-            try { service.markNext(id); refresh(); }
+            try { service.markNext(id); refreshKeepSelection(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
         markBacklogButton.addActionListener(e -> withSelected(id -> {
-            try { service.markBacklog(id); refresh(); }
+            try { service.markBacklog(id); refreshKeepSelection(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
 
@@ -128,6 +128,15 @@ public final class DonePanel extends JPanel {
         markBacklogButton.setEnabled(row >= 0);
     }
 
+    private void refreshKeepSelection() {
+        var row = table.getSelectedRow();
+        refresh();
+        if (tableModel.getRowCount() > 0 && row >= 0) {
+            var newRow = Math.min(row, tableModel.getRowCount() - 1);
+            table.setRowSelectionInterval(newRow, newRow);
+        }
+    }
+
     private void deleteSelected() {
         withSelected(id -> {
             var title = workspace.getNode(id).map(n -> n.getTitle()).orElse("this action");
@@ -137,7 +146,7 @@ public final class DonePanel extends JPanel {
             if (confirm != JOptionPane.OK_OPTION) return;
             try {
                 service.deleteLeaf(id);
-                refresh();
+                refreshKeepSelection();
             } catch (java.io.IOException ex) {
                 showError(ex.getMessage());
             } catch (IllegalArgumentException ex) {
