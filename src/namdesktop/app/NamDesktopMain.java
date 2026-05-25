@@ -53,6 +53,7 @@ public final class NamDesktopMain {
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version() + (devMode ? " [DEV]" : ""));
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+        if (settings.isStartMaximized()) frame.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH);
         if (argList.contains("--demo")) frame.runDemo();
     }
 

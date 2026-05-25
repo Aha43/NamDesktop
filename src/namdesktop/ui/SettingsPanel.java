@@ -67,8 +67,21 @@ public final class SettingsPanel extends JPanel {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(statusBox, gbc);
 
-        // Sync repo URL
+        // Start maximized
         gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Start maximized:"), gbc);
+
+        var maximizedBox = new JCheckBox("Launch app in maximized window", settings.isStartMaximized());
+        maximizedBox.addActionListener(e -> {
+            settings.setStartMaximized(maximizedBox.isSelected());
+            save(settings);
+        });
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(maximizedBox, gbc);
+
+        // Sync repo URL
+        gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         add(new JLabel("Sync repo URL:"), gbc);
 
         var syncUrlField = new JTextField(settings.getSyncRepoUrl(), 30);
@@ -78,7 +91,7 @@ public final class SettingsPanel extends JPanel {
         });
         syncUrlField.addActionListener(e -> saveSyncUrl(settings, syncUrlField));
 
-        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.gridy = 4; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(syncUrlField, gbc);
     }
 

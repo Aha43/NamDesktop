@@ -25,6 +25,7 @@ public final class AppSettings {
     private boolean dense            = false;
     private String  syncRepoUrl      = "";
     private boolean showStatusColumn = false;
+    private boolean startMaximized   = false;
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -34,6 +35,8 @@ public final class AppSettings {
     public void    setSyncRepoUrl(String syncRepoUrl){ this.syncRepoUrl = syncRepoUrl != null ? syncRepoUrl.strip() : ""; }
     public boolean isShowStatusColumn()              { return showStatusColumn; }
     public void    setShowStatusColumn(boolean v)    { this.showStatusColumn = v; }
+    public boolean isStartMaximized()                { return startMaximized; }
+    public void    setStartMaximized(boolean v)      { this.startMaximized = v; }
 
     public static AppSettings load() {
         try {
@@ -44,6 +47,7 @@ public final class AppSettings {
                 s.setDense(dto.dense != null && dto.dense);
                 s.setSyncRepoUrl(dto.syncRepoUrl);
                 s.setShowStatusColumn(dto.showStatusColumn != null && dto.showStatusColumn);
+                s.setStartMaximized(dto.startMaximized != null && dto.startMaximized);
                 return s;
             }
         } catch (Exception e) {
@@ -59,6 +63,7 @@ public final class AppSettings {
         dto.dense            = this.dense;
         dto.syncRepoUrl      = this.syncRepoUrl;
         dto.showStatusColumn = this.showStatusColumn;
+        dto.startMaximized   = this.startMaximized;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -68,5 +73,6 @@ public final class AppSettings {
         public Boolean dense;
         public String  syncRepoUrl;
         public Boolean showStatusColumn;
+        public Boolean startMaximized;
     }
 }
