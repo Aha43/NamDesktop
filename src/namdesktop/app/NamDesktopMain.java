@@ -54,6 +54,7 @@ public final class NamDesktopMain {
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         if (settings.isStartMaximized()) frame.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH);
+        frame.restoreSession();
         if (argList.contains("--demo")) frame.runDemo();
     }
 

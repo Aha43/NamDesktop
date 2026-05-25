@@ -26,6 +26,8 @@ public final class AppSettings {
     private String  syncRepoUrl      = "";
     private boolean showStatusColumn = false;
     private boolean startMaximized   = false;
+    private String  lastNavId        = null;
+    private String  lastProjectId    = null;
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -37,6 +39,10 @@ public final class AppSettings {
     public void    setShowStatusColumn(boolean v)    { this.showStatusColumn = v; }
     public boolean isStartMaximized()                { return startMaximized; }
     public void    setStartMaximized(boolean v)      { this.startMaximized = v; }
+    public String  getLastNavId()                    { return lastNavId; }
+    public void    setLastNavId(String v)            { this.lastNavId = v; }
+    public String  getLastProjectId()                { return lastProjectId; }
+    public void    setLastProjectId(String v)        { this.lastProjectId = v; }
 
     public static AppSettings load() {
         try {
@@ -48,6 +54,8 @@ public final class AppSettings {
                 s.setSyncRepoUrl(dto.syncRepoUrl);
                 s.setShowStatusColumn(dto.showStatusColumn != null && dto.showStatusColumn);
                 s.setStartMaximized(dto.startMaximized != null && dto.startMaximized);
+                s.setLastNavId(dto.lastNavId);
+                s.setLastProjectId(dto.lastProjectId);
                 return s;
             }
         } catch (Exception e) {
@@ -64,6 +72,8 @@ public final class AppSettings {
         dto.syncRepoUrl      = this.syncRepoUrl;
         dto.showStatusColumn = this.showStatusColumn;
         dto.startMaximized   = this.startMaximized;
+        dto.lastNavId        = this.lastNavId;
+        dto.lastProjectId    = this.lastProjectId;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -74,5 +84,7 @@ public final class AppSettings {
         public String  syncRepoUrl;
         public Boolean showStatusColumn;
         public Boolean startMaximized;
+        public String  lastNavId;
+        public String  lastProjectId;
     }
 }

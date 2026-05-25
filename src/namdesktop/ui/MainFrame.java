@@ -46,6 +46,7 @@ public final class MainFrame extends JFrame {
     private final JLabel           demoStatusBar;
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
+    private       boolean               sessionRestored = false;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
@@ -153,7 +154,16 @@ public final class MainFrame extends JFrame {
         navPanel.rebuildSavedViews(workspace.getSavedViews());
     }
 
+    private void saveSession() {
+        try { settings.save(); } catch (java.io.IOException ignored) {}
+    }
+
     private void onNavSelected(NavigationEntry entry) {
+        if (sessionRestored) {
+            settings.setLastNavId(entry.id());
+            settings.setLastProjectId(null);
+            saveSession();
+        }
         if (entry.id().startsWith("saved-view:")) {
             var name = entry.id().substring("saved-view:".length());
             workspace.getSavedViews().stream()
@@ -220,6 +230,10 @@ public final class MainFrame extends JFrame {
     }
 
     private void openProjectWorkbench(java.util.UUID projectId) {
+        if (sessionRestored) {
+            settings.setLastProjectId(projectId.toString());
+            saveSession();
+        }
         if (cachedWorkbench == null || !projectId.equals(cachedWorkbenchId)) {
             cachedWorkbenchId = projectId;
             cachedWorkbench   = new ProjectWorkbenchPanel(this, workspace, service, projectId, () -> {
@@ -266,6 +280,22 @@ public final class MainFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "Demo failed: " + ex.getMessage(), "Demo", JOptionPane.ERROR_MESSAGE);
             demoStatusBar.setVisible(false);
         }
+    }
+
+    public void restoreSession() {
+        var navId     = settings.getLastNavId();
+        var projectId = settings.getLastProjectId();
+
+        if (navId != null) navPanel.selectById(navId);
+
+        if (projectId != null) {
+            try {
+                var id = java.util.UUID.fromString(projectId);
+                if (workspace.getNode(id).isPresent()) openProjectWorkbench(id);
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        sessionRestored = true;
     }
 
     public void refreshAll() {
