@@ -7,6 +7,7 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -32,14 +33,29 @@ public final class ActionDialog extends NodeDialog {
             addToolbarButton(makeProjectButton);
         }
 
-        var structural = structuralIds(workspace);
-        workspace.getParent(nodeId)
+        var structural   = structuralIds(workspace);
+        var parentNode   = workspace.getParent(nodeId)
                 .filter(p -> !structural.contains(p.getId()))
-                .ifPresent(projectNode -> addContextRow(parent, nodeId, projectNode.getId(), projectNode.getTitle(), workspace, service, onChanged));
+                .orElse(null);
+        var ownTags      = workspace.getNode(nodeId).map(n -> n.getTags()).orElse(List.of());
+        var inherited    = workspace.effectiveTags(nodeId).stream()
+                .filter(t -> !ownTags.contains(t))
+                .sorted()
+                .toList();
+
+        if (parentNode != null || !inherited.isEmpty()) {
+            var southPanel = new JPanel();
+            southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
+            if (parentNode != null)
+                southPanel.add(buildProjectRow(parent, parentNode.getId(), parentNode.getTitle(), workspace, service, onChanged));
+            if (!inherited.isEmpty())
+                southPanel.add(buildInheritedTagsRow(inherited));
+            addBelowDescription(southPanel);
+        }
     }
 
-    private void addContextRow(Window parent, UUID actionId, UUID projectId, String projectTitle,
-                               NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
+    private JComponent buildProjectRow(Window parent, UUID projectId, String projectTitle,
+                                       NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
         var path = workspace.buildPath(projectId);
         var breadcrumb = path.stream().skip(1).map(n -> n.getTitle()).collect(Collectors.joining(" > "));
 
@@ -58,8 +74,17 @@ public final class ActionDialog extends NodeDialog {
         row.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
         row.add(label,      BorderLayout.CENTER);
         row.add(openButton, BorderLayout.EAST);
+        return row;
+    }
 
-        addBelowDescription(row);
+    private static JComponent buildInheritedTagsRow(List<String> inherited) {
+        var label = new JLabel("<html><i>Project tags: " + String.join(", ", inherited) + "</i></html>");
+        label.setForeground(UIManager.getColor("Label.disabledForeground"));
+        label.setToolTipText("Tags inherited from ancestor projects — read only");
+        var row = new JPanel(new BorderLayout());
+        row.setBorder(BorderFactory.createEmptyBorder(0, 4, 4, 4));
+        row.add(label, BorderLayout.CENTER);
+        return row;
     }
 
     private static Set<UUID> structuralIds(NamWorkspace workspace) {
