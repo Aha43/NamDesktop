@@ -1,6 +1,8 @@
 package namdesktop.ui;
 
 import namdesktop.lens.ChildSection;
+import namdesktop.lens.MissionControlLens;
+import namdesktop.lens.MissionControlStation;
 import namdesktop.lens.ProjectWorkbenchLens;
 import namdesktop.lens.WorkbenchProjection;
 import namdesktop.model.NamNode;
@@ -33,6 +35,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       UUID              pendingSelection;
     private final Set<UUID>         collapsedSections = new HashSet<>();
     private       boolean           accordionMode     = false;
+    private       boolean           mcrMode           = false;
+    private       UUID              mcrReturnId       = null;
     private       List<UUID>        currentSectionIds = List.of();
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
@@ -75,15 +79,18 @@ public final class ProjectWorkbenchPanel extends JPanel {
         sectionIds.add(currentProjectId);
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
         currentSectionIds = List.copyOf(sectionIds);
-        add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds), BorderLayout.NORTH);
-        add(new JScrollPane(buildContent(projection)),                BorderLayout.CENTER);
+        var hasSubProjects = !projection.childSections().isEmpty();
+        if (mcrMode && !hasSubProjects) mcrMode = false;
+        add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
+        if (mcrMode) add(new JScrollPane(buildMcrGrid()),         BorderLayout.CENTER);
+        else         add(new JScrollPane(buildContent(projection)), BorderLayout.CENTER);
         revalidate();
         repaint();
     }
 
     // --- breadcrumb ---
 
-    private JPanel buildBreadcrumbBar(List<NamNode> breadcrumb, List<UUID> sectionIds) {
+    private JPanel buildBreadcrumbBar(List<NamNode> breadcrumb, List<UUID> sectionIds, boolean hasSubProjects) {
         var bar = new JPanel(new BorderLayout());
         bar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 1, 0, UIManager.getColor("Separator.foreground")),
@@ -154,8 +161,16 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     : "Accordion mode off — click to open one section at a time");
         });
 
+        var mcrIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16);
+        var mcrButton = new JToggleButton(mcrIcon);
+        mcrButton.setSelected(mcrMode);
+        mcrButton.setEnabled(hasSubProjects);
+        mcrButton.setToolTipText(mcrMode ? "MCR view — click to return to workbench" : "Open sub-projects in MCR view");
+        mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); rebuild(); });
+
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        if (!sectionIds.isEmpty()) {
+        buttons.add(mcrButton);
+        if (!mcrMode && !sectionIds.isEmpty()) {
             buttons.add(accordionButton);
             buttons.add(toggleAllButton);
         }
@@ -569,10 +584,111 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private void navigateTo(UUID projectId) {
+        if (mcrMode) mcrReturnId = currentProjectId;
+        mcrMode          = projectId.equals(mcrReturnId);
+        if (mcrMode) mcrReturnId = null;
         parentProjectId  = currentProjectId;
         currentProjectId = projectId;
         collapsedSections.clear();
         rebuild();
+    }
+
+    // --- MCR view ---
+
+    private static final Color MCR_RED   = new Color(180,  60,  60);
+    private static final Color MCR_AMBER = new Color(190, 130,   0);
+    private static final Color MCR_GREEN = new Color( 50, 150,  50);
+
+    private JPanel buildMcrGrid() {
+        var stations = new MissionControlLens().stations(currentProjectId, workspace);
+        var grid = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 12));
+        grid.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        if (stations.isEmpty()) {
+            var lbl = new JLabel("No sub-projects found.", SwingConstants.CENTER);
+            lbl.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
+            grid.add(lbl);
+        } else {
+            for (var s : stations) grid.add(buildMcrCard(s));
+        }
+        return grid;
+    }
+
+    private JPanel buildMcrCard(MissionControlStation s) {
+        var card = new JPanel(new BorderLayout(0, 6));
+        card.setPreferredSize(new Dimension(200, 150));
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(mcrHeatColor(s.doneRatio()), 3),
+                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+
+        var title = new JLabel("<html><center>" + s.title() + "</center></html>", SwingConstants.CENTER);
+        title.setFont(title.getFont().deriveFont(Font.BOLD, 13f));
+
+        var stats = new JPanel();
+        stats.setLayout(new BoxLayout(stats, BoxLayout.PAGE_AXIS));
+        stats.setOpaque(false);
+        stats.add(mcrStat(s.subProjectCount() + " sub-project" + (s.subProjectCount() != 1 ? "s" : "")));
+        stats.add(mcrStat("Max depth: " + s.maxDepth()));
+        stats.add(mcrStat("Done: " + s.doneCount() + " / " + s.totalActions()));
+
+        card.add(title, BorderLayout.NORTH);
+        card.add(stats, BorderLayout.CENTER);
+        addMcrClickHandler(card, () -> navigateTo(s.id()));
+        return card;
+    }
+
+    private void addMcrClickHandler(java.awt.Component c, Runnable onClick) {
+        c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        if (c instanceof JComponent jc) jc.setToolTipText("Open project workbench");
+        c.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { onClick.run(); }
+        });
+        if (c instanceof Container container) {
+            for (var child : container.getComponents()) addMcrClickHandler(child, onClick);
+        }
+    }
+
+    private JLabel mcrStat(String text) {
+        var label = new JLabel(text, SwingConstants.CENTER);
+        label.setFont(label.getFont().deriveFont(12f));
+        label.setAlignmentX(CENTER_ALIGNMENT);
+        return label;
+    }
+
+    private Color mcrHeatColor(double ratio) {
+        if (ratio >= 0.67) return MCR_GREEN;
+        if (ratio >= 0.33) return MCR_AMBER;
+        return MCR_RED;
+    }
+
+    private static final class WrapLayout extends FlowLayout {
+        WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
+        @Override public Dimension preferredLayoutSize(Container t) { return layoutSize(t, true); }
+        @Override public Dimension minimumLayoutSize(Container t)   { return layoutSize(t, false); }
+        private Dimension layoutSize(Container target, boolean preferred) {
+            synchronized (target.getTreeLock()) {
+                var w = target.getSize().width;
+                if (w == 0) w = Integer.MAX_VALUE;
+                var ins = target.getInsets();
+                var maxW = w - ins.left - ins.right - getHgap() * 2;
+                var dim  = new Dimension(0, 0);
+                int rowW = 0, rowH = 0;
+                for (int i = 0; i < target.getComponentCount(); i++) {
+                    var c = target.getComponent(i);
+                    if (!c.isVisible()) continue;
+                    var d = preferred ? c.getPreferredSize() : c.getMinimumSize();
+                    if (rowW + d.width > maxW && rowW > 0) {
+                        dim.width  = Math.max(dim.width, rowW);
+                        dim.height += rowH + getVgap();
+                        rowW = 0; rowH = 0;
+                    }
+                    rowW += d.width + getHgap();
+                    rowH  = Math.max(rowH, d.height);
+                }
+                dim.width  = Math.max(dim.width, rowW);
+                dim.height += rowH + getVgap() * 2 + ins.top + ins.bottom;
+                return dim;
+            }
+        }
     }
 
     private static final class ActionCellRenderer extends DefaultListCellRenderer {
