@@ -460,6 +460,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private void showAddActionDialog(UUID targetProjectId, UUID beforeId) {
         var titleField = new JTextField(24);
+        titleField.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
+                    && titleField.isShowing())
+                SwingUtilities.invokeLater(titleField::requestFocusInWindow);
+        });
         var panel = new JPanel(new BorderLayout(0, 4));
         panel.add(new JLabel("Action title:"), BorderLayout.NORTH);
         panel.add(titleField, BorderLayout.CENTER);
