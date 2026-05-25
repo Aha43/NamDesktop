@@ -447,12 +447,28 @@ public final class ProjectWorkbenchPanel extends JPanel {
         projectButtons.add(deleteBtn);
         projectButtons.add(pencilBtn);
 
-        // RIGHT: toggle + section-move buttons
-        var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
-        orderButtons.add(toggleButton);
+        // RIGHT: toggle + section-move buttons — always same set so CENTER stays aligned
+        var upButton = UiHelper.iconButton("Move section up",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
+        var downButton = UiHelper.iconButton("Move section down",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
+
+        var orderBox = Box.createHorizontalBox();
+        orderBox.add(toggleButton);
+        orderBox.add(Box.createHorizontalStrut(2));
+        orderBox.add(upButton);
+        orderBox.add(Box.createHorizontalStrut(2));
+        orderBox.add(downButton);
 
         if (sectionIndex < 0) {
-            var lbl = new JLabel("<html><b>" + projectName + "</b> <i>(This Project)</i></html>", SwingConstants.CENTER);
+            for (var b : new JButton[]{upButton, downButton}) {
+                b.setIcon(BLANK_ICON);
+                b.setBorderPainted(false);
+                b.setContentAreaFilled(false);
+                b.setFocusable(false);
+                b.setEnabled(false);
+            }
+            var lbl = new JLabel("<html><i>This project</i></html>", SwingConstants.CENTER);
             header.add(lbl, BorderLayout.CENTER);
         } else {
             var btn = new JButton(title + " ›");
@@ -463,10 +479,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
             btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
             btn.addActionListener(e -> navigateTo(navigateToId));
 
-            var upButton = UiHelper.iconButton("Move section up",
-                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
-            var downButton = UiHelper.iconButton("Move section down",
-                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-down.svg")).derive(16, 16));
             upButton.setToolTipText("Move this sub-project up");
             downButton.setToolTipText("Move this sub-project down");
             upButton.setEnabled(sectionIndex > 0);
@@ -481,13 +493,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 catch (IOException ex) { showError(ex.getMessage()); }
             });
 
-            orderButtons.add(upButton);
-            orderButtons.add(downButton);
             header.add(btn, BorderLayout.CENTER);
         }
 
         header.add(projectButtons, BorderLayout.WEST);
-        header.add(orderButtons,   BorderLayout.EAST);
+        header.add(orderBox,       BorderLayout.EAST);
         return header;
     }
 
@@ -594,6 +604,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     // --- MCR view ---
+
+    private static final javax.swing.Icon BLANK_ICON = new javax.swing.Icon() {
+        public void paintIcon(java.awt.Component c, java.awt.Graphics g, int x, int y) {}
+        public int getIconWidth()  { return 16; }
+        public int getIconHeight() { return 16; }
+    };
 
     private static final Color MCR_RED   = new Color(180,  60,  60);
     private static final Color MCR_AMBER = new Color(190, 130,   0);
