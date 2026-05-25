@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Mission Control: tagged-project dashboard accessible from the nav panel and a dedicated toolbar button. Each Mission Control groups projects by one or more tags into a heat-map grid of station cards (red / amber / green border by done ratio). Clicking a card opens the Project Workbench with the MC name in the breadcrumb. Supports create, delete, multi-tag OR matching, deduplication of nested tagged projects, and rolled-up sub-project stats. Closes #197.
+
+- Done lens view: confirm dialog before "Mark as Next" / "Mark as Backlog" to prevent accidental resurrection; first row is auto-selected when entering the Done view. Closes #193.
+
 - Moon Cards: consistent all-done state — counter shows "0 / 0" and card title shows "All done!" when the last card is marked done. Closes #194.
 
 - Moon Cards: Esc key exits deck mode; exit button label updated to "Exit  [Esc]" for consistency with other shortcut hints. Closes #196.
