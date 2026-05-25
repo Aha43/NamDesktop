@@ -126,8 +126,8 @@ public final class MoonCardPanel extends JPanel {
 
     private void showCard() {
         if (cards.isEmpty()) {
-            counterLabel.setText("All done!");
-            titleLabel.setText("No more actions");
+            counterLabel.setText("0 / 0");
+            titleLabel.setText("All done!");
             descArea.setText("");
             pathLabel.setText("");
             pathLabel.setVisible(false);
