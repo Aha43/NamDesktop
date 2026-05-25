@@ -3,7 +3,7 @@
 > This document describes the current implementation state, not the final architecture.
 > Update it at the end of each sprint so design discussions stay grounded.
 
-Last updated: 2026-05-24 (after sprints through #179 — dogfooding polish, e2e, recursive delete, tag inheritance, workbench, templates, sync)
+Last updated: 2026-05-25 (after sprints through #201 — Mission Control, MCR view mode, project path columns, inbox cleanup, workbench alignment)
 
 ---
 
@@ -13,7 +13,7 @@ Java 21 · Swing · No Maven/Gradle (plain Makefile) · FlatDarkLaf / FlatLightL
 Source: `src/namdesktop/` · Deps: `lib/` · Tests: `test/namdesktop/`
 Icons: Tabler Icons SVG (`src/icons/`), loaded via `FlatSVGIcon`, `currentColor` adapts to theme.
 
-Build targets: `make` (build) · `make run` · `make test` · `make e2e` · `make clean` · `make help`
+Build targets: `make` (build) · `make run` · `make run-dev` · `make test` · `make e2e` · `make clean` · `make help`
 
 ---
 
@@ -43,10 +43,13 @@ JsonWorkspaceRepository         JSON persistence (~/.namdesktop/workspace.json)
 
 **Tags** — plain strings, normalised to lowercase. Convention: `@context` for GTD contexts. Not enforced by model.
 
+**MissionControl** — `record(String name, List<String> tags)` — named dashboard grouping projects by OR-matched tags.
+
 **NamWorkspace** — `LinkedHashMap<UUID, NamNode> nodes` (insertion-order preserved)
 Well-known UUIDs: `rootNodeId`, `inboxNodeId`, `projectsNodeId`, `nextActionsNodeId`
 Tag registry: `List<String> registeredTags`
 Saved views: `List<SavedView>`
+Mission Controls: `List<MissionControl>`
 Templates: `List<ProjectTemplate>`
 View orders: `Map<String, List<UUID>>`
 
@@ -96,6 +99,8 @@ Key methods:
 | `createTemplateFromProject` | Captures project subtree as a named template |
 | `applyTemplate` | Instantiates a template under a target project |
 | `deleteTemplate` | Removes named template |
+| `createMissionControl(name, tags)` | Creates named Mission Control; validates blank/duplicate name |
+| `deleteMissionControl(name)` | Removes Mission Control by name |
 
 ---
 
@@ -109,12 +114,16 @@ Stateless, return immutable view-model records. Structural nodes always excluded
 | `ProjectsLens` | `id, title, tags` | children of projectsNodeId |
 | `NextActionsLens` | `id, title, status, parentTitle, parentId, isSubProject, projectPath, tags, inheritedTags` | `status == NEXT && !isProject` |
 | `BacklogLens` | `id, title, status, parentTitle, parentId, isSubProject, projectPath, tags, inheritedTags, isInboxItem` | `status == BACKLOG && !isProject` |
-| `ContextLens` | `id, title, status, parentTitle, tags, inheritedTags` | `!DONE && !isProject` + all required tags present (AND, via `effectiveTags`); optional `nextOnly` |
+| `ContextLens` | `id, title, status, parentTitle, projectPath, tags, inheritedTags` | `!DONE && !isProject` + all required tags present (AND, via `effectiveTags`); optional `nextOnly` |
+| `DoneLens` | `id, title, parentTitle, parentId, projectPath, tags, inheritedTags` | `status == DONE && !isProject` |
 | `ProjectWorkbenchLens` | `WorkbenchProjection` — current project, child projects (with actions), breadcrumb path | scoped to one project |
+| `MissionControlLens` | `List<MissionControlStation>` | tag-based: OR-match on own tags, deduplication (highest tagged ancestor wins); node-based overload: direct sub-project children of a given project |
+
+`MissionControlStation` — `id, title, subProjectCount, maxDepth, doneCount, totalActions, rolledUpCount, doneRatio()`
 
 `parentTitle/parentId` — non-null when node is a child of a non-structural parent.
 `isSubProject` — true when parent's parent is not `projectsNodeId`.
-`projectPath` — human-readable ancestor path, e.g. `"Home > Kitchen"` (tooltip).
+`projectPath` — human-readable ancestor path, e.g. `"Home > Kitchen"` (shown in Project column; was tooltip only).
 `inheritedTags` — tags from `effectiveTags()` minus the node's own tags (shown italic in UI).
 
 **Tag inheritance**: `effectiveTags(nodeId)` walks ancestors at query time, unioning tags from `isProject==true` nodes. Removing a project tag immediately affects all descendants.
@@ -130,19 +139,22 @@ Launch modes:
 - Dev (`[DEV]` title): loads from `~/.namdesktop/dev/workspace.json`
 - E2E (`--e2e` flag): fresh in-memory workspace, runs `e2e.json`, exits 0/1
 
-Nav entries: Inbox · Projects · Next Actions · Context · Backlog · [Raw Tree — dev only] · [saved view entries]
+Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · [Raw Tree — dev only] · [Saved Views section] · [Mission Controls section]
 
 **Panels** (each has `refresh()`):
 
 | Panel | Notable behaviour |
 |---|---|
-| `InboxPanel` | Title, Status; right-click: add/rename/mark done/delete/process |
+| `InboxPanel` | Title only (Status column removed — always the same); right-click: add/rename/mark done/delete/process |
 | `ProjectsPanel` | Title, Tags (no Status column) |
-| `NextActionsPanel` | Title, Project (italic if sub-project, tooltip path, single-click navigates to workbench), Tags (inherited italic), Status; manual up/down ordering |
+| `NextActionsPanel` | Title, Project (full path, fills available width; single-click navigates to workbench), Tags (inherited italic), Status (toggleable); manual up/down ordering; Moon Cards deck mode |
 | `BacklogPanel` | Same as NextActionsPanel; inbox items rendered italic |
-| `ContextPanel` | Tag checkbox selector (AND, match count, Clear); table: Title, Project, Tags (inherited italic) |
-| `SavedViewPanel` | Name + filter summary header; rename (cursor-text icon) + delete (trash icon) buttons; table: Title, Project, Tags (inherited italic); Add action button |
-| `ProjectWorkbenchPanel` | Breadcrumb nav; sub-project sections with action lists; quick rename/description/edit/delete buttons per sub-project; delete is recursive with blast-radius warning |
+| `ContextPanel` | Tag checkbox selector (AND, match count, Clear); table: Title, Project (full path, fills width), Tags (inherited italic); Moon Cards deck mode |
+| `SavedViewPanel` | Name + filter summary header; rename + delete buttons; table: Title, Project (full path, fills width), Tags (inherited italic); Add action button; Moon Cards deck mode |
+| `DonePanel` | Title, Project, Tags; Delete / Mark as Next / Mark as Backlog toolbar (confirm dialogs); auto-selects first row on entry |
+| `MissionControlPanel` | Heat-map grid of `MissionControlStation` cards (red/amber/green border by done ratio); create/delete; clicking a card opens `ProjectWorkbenchPanel` with MC name in breadcrumb |
+| `ProjectWorkbenchPanel` | Breadcrumb nav (backLabel aware — shows MC name when entered from Mission Control); MCR view toggle (dashboard icon) shows sub-projects as station cards; clicking a card navigates in, back-breadcrumb restores MCR mode; sub-project sections with action lists; quick rename/description/edit/delete per sub-project; delete is recursive with blast-radius warning; "This project" header aligned with sub-project headers |
+| `SearchPanel` | Full-text search across all nodes |
 | `TreePanel` | Raw node tree; context menu: add/rename/mark done/move/delete (recursive with count warning) — dev only |
 
 **Dialogs** (all `APPLICATION_MODAL`):
@@ -161,10 +173,14 @@ Nav entries: Inbox · Projects · Next Actions · Context · Backlog · [Raw Tre
 
 `SplashDialog` — dev/prod mode selection at launch
 
+**Dialogs (additional):**
+- `MissionControlCreateDialog` — name field + `TagsField`; `isConfirmed()`, `getMcName()`, `getMcTags()`
+
 **Shared helpers:**
 - `UiHelper.iconButton` — label+icon button, goes icon-only in dense mode
 - `UiHelper.iconOnlyButton` — always icon-only (breadcrumbs, compact contexts)
 - `UiHelper.tagsRenderer()` — `DefaultTableCellRenderer` that renders `String[]{own, inherited}` with inherited tags in HTML italic
+- `UiHelper.fillTableColumn(table, col)` — sets `AUTO_RESIZE_OFF`, listens on viewport resize and column model changes; makes the given column absorb all available slack space
 
 ---
 
@@ -220,7 +236,9 @@ Format version field present for future migrations.
 - Structural node exclusion invariant across all lenses
 - Context lens as primary "what can I do now?" surface; saved views as named filters with optional next-only toggle
 - Manual ordering in Next Actions and Backlog views
-- Project workbench as the primary project management surface
+- Project workbench as the primary project management surface; MCR view mode as on-the-fly sub-project dashboard
+- Mission Control as the high-level area/goal dashboard (tag-based, persistent, nav-integrated)
+- Full project path (not just parent title) as the standard in all action list views
 - Templates for creating project hierarchies
 - Demo script (narrative) and e2e script (regression) as separate concerns sharing the same `swingdemo` machinery
 - `make e2e` as the regression gate; e2e script updated alongside features
@@ -229,4 +247,3 @@ Format version field present for future migrations.
 - Sub-project classification rules (#39)
 - Dialog navigation model — replace vs stack vs non-modal panel (#57)
 - OR tag semantics in context lens (currently AND only)
-- "Mission Control" / area-level views (vision doc)
