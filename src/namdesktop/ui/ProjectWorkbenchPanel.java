@@ -405,7 +405,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var orderButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 2, 0));
         orderButtons.add(toggleButton);
 
-        if (sectionIndex >= 0) {
+        if (sectionIndex < 0) {
+            var lbl = new JLabel("<html><b>" + projectName + "</b> <i>(This Project)</i></html>", SwingConstants.CENTER);
+            header.add(lbl, BorderLayout.CENTER);
+        } else {
             var btn = new JButton(title + " ›");
             btn.setBorderPainted(false);
             btn.setContentAreaFilled(false);
