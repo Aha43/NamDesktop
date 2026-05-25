@@ -36,9 +36,9 @@ public final class MoonCardPanel extends JPanel {
         counterLabel = new JLabel("", SwingConstants.CENTER);
         counterLabel.setFont(counterLabel.getFont().deriveFont(Font.PLAIN, 12f));
 
-        var exitButton = UiHelper.iconButton("Exit Moon Cards",
+        var exitButton = UiHelper.iconButton("Exit  [Esc]",
                 new FlatSVGIcon(MoonCardPanel.class.getResource("/icons/logout.svg")).derive(16, 16));
-        exitButton.setToolTipText("Exit Moon Cards");
+        exitButton.setToolTipText("Exit Moon Cards (Esc)");
         exitButton.addActionListener(e -> onExit.run());
 
         var topBar = new JPanel(new BorderLayout());
@@ -100,9 +100,10 @@ public final class MoonCardPanel extends JPanel {
         keyDispatcher = e -> {
             if (e.getID() != KeyEvent.KEY_PRESSED || !isShowing()) return false;
             return switch (e.getKeyCode()) {
-                case KeyEvent.VK_LEFT  -> { navigate(-1); yield true; }
-                case KeyEvent.VK_RIGHT -> { navigate(1);  yield true; }
-                case KeyEvent.VK_SPACE -> { if (doneButton.isEnabled()) markDoneAndAdvance(); yield true; }
+                case KeyEvent.VK_LEFT   -> { navigate(-1); yield true; }
+                case KeyEvent.VK_RIGHT  -> { navigate(1);  yield true; }
+                case KeyEvent.VK_SPACE  -> { if (doneButton.isEnabled()) markDoneAndAdvance(); yield true; }
+                case KeyEvent.VK_ESCAPE -> { onExit.run(); yield true; }
                 default -> false;
             };
         };
@@ -125,8 +126,8 @@ public final class MoonCardPanel extends JPanel {
 
     private void showCard() {
         if (cards.isEmpty()) {
-            counterLabel.setText("All done!");
-            titleLabel.setText("No more actions");
+            counterLabel.setText("0 / 0");
+            titleLabel.setText("All done!");
             descArea.setText("");
             pathLabel.setText("");
             pathLabel.setVisible(false);

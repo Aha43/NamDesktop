@@ -8,6 +8,16 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Moon Cards: consistent all-done state — counter shows "0 / 0" and card title shows "All done!" when the last card is marked done. Closes #194.
+
+- Moon Cards: Esc key exits deck mode; exit button label updated to "Exit  [Esc]" for consistency with other shortcut hints. Closes #196.
+
+- "Saved Views" section header in the navigation panel: replaces the bare separator with a small dimmed label and top border, making the split between built-in lenses and user-created saved views immediately clear.
+
+- Done lens view: selection is preserved after delete or resurrect — the next row is automatically selected so you can keep cleaning without re-clicking.
+
+- Done lens view: a dedicated "Done" nav entry (below Backlog) lists all completed actions in grey. Toolbar provides Delete (with confirmation), Mark as Next, and Mark as Backlog for housekeeping and resurrection. Closes #192.
+
 - Moon Cards deck mode for Next Actions, Backlog, and Saved Views: a stack-2 icon button in each lens toolbar opens a full-screen card view showing one action at a time (title, description, project path). Navigate circularly with Previous/Next, mark an action done and advance with Done, or exit back to the list with the exit button. Uses CardLayout internally for reliable exit in all window modes including macOS native full screen. Closes #190.
 
 - Inherited project tags visible in all action list views (Next Actions, Backlog, Context, Saved Views): tags inherited at query time from ancestor projects appear in italic after the action's own tags, making it clear why an action matched a filter. Closes #178.
