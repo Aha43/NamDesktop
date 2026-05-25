@@ -27,6 +27,13 @@ public final class SavedViewPanel extends JPanel {
     private final Runnable onDeleted;
     private final Consumer<String> onRenamed;
     private final ViewTableModel tableModel;
+    private final JScrollPane scrollPane;
+    private final JPanel deckWrapper;
+    private final CardLayout deckCards;
+    private final JButton addActionButton;
+    private final JButton renameButton;
+    private final JButton deleteButton;
+    private MoonCardPanel moonCardPanel;
 
     public SavedViewPanel(SavedView view, NamWorkspace workspace, NamWorkspaceService service,
                           Runnable onDeleted, Consumer<String> onRenamed) {
@@ -41,18 +48,24 @@ public final class SavedViewPanel extends JPanel {
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
 
-        var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
-        var renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
+        renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
         renameButton.setToolTipText("Rename this view");
         renameButton.addActionListener(e -> renameView());
 
-        var deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+        deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
         deleteButton.setToolTipText("Delete this view");
         deleteButton.addActionListener(e -> deleteView());
 
+        var moonButton = UiHelper.iconButton("Moon Cards",
+                new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
+        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.addActionListener(e -> enterDeckMode());
+
         var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        eastButtons.add(moonButton);
         eastButtons.add(addActionButton);
         eastButtons.add(renameButton);
         eastButtons.add(deleteButton);
@@ -71,7 +84,7 @@ public final class SavedViewPanel extends JPanel {
         northPanel.add(header,    BorderLayout.NORTH);
         northPanel.add(tagsLabel, BorderLayout.CENTER);
 
-        JTable table = new JTable(tableModel) {
+        var table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
@@ -95,14 +108,52 @@ public final class SavedViewPanel extends JPanel {
             }
         });
 
-        add(northPanel,             BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        scrollPane  = new JScrollPane(table);
+        deckCards   = new CardLayout();
+        deckWrapper = new JPanel(deckCards);
+        deckWrapper.add(scrollPane, "table");
+
+        add(northPanel,  BorderLayout.NORTH);
+        add(deckWrapper, BorderLayout.CENTER);
 
         refresh();
     }
 
     public void refresh() {
         tableModel.setRows(new ContextLens().items(workspace, view.tags(), view.nextOnly()));
+    }
+
+    private void enterDeckMode() {
+        var rows  = new java.util.ArrayList<MoonCardPanel.Card>();
+        var count = tableModel.getRowCount();
+        for (int i = 0; i < count; i++) {
+            var row  = tableModel.getRow(i);
+            var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
+            rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.parentTitle()));
+        }
+        if (rows.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
+        moonCardPanel = new MoonCardPanel(rows, service, this::exitDeckMode);
+        deckWrapper.add(moonCardPanel, "moon");
+        deckCards.show(deckWrapper, "moon");
+        addActionButton.setVisible(false);
+        renameButton.setVisible(false);
+        deleteButton.setVisible(false);
+    }
+
+    private void exitDeckMode() {
+        if (moonCardPanel == null) return;
+        deckCards.show(deckWrapper, "table");
+        addActionButton.setVisible(true);
+        renameButton.setVisible(true);
+        deleteButton.setVisible(true);
+        refresh();
+        var old = moonCardPanel;
+        moonCardPanel = null;
+        SwingUtilities.invokeLater(() -> deckWrapper.remove(old));
     }
 
     private void addTaggedAction() {
