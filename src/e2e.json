@@ -36,6 +36,13 @@
   {"action":"assertSavedViewExists", "args":{"name":"Travel"},                                "delayMs":20, "description":"Checking saved view"},
   {"action":"assertNodeCount",       "args":{"count":8},                                      "delayMs":20, "description":"Checking total node count"},
 
+  {"action":"markDone",              "args":{"title":"Book hotel"},                                "delayMs":50, "description":"Mark action done"},
+  {"action":"assertNodeStatus",      "args":{"title":"Book hotel",    "status":"DONE"},             "delayMs":20, "description":"Checking done status"},
+  {"action":"markNext",              "args":{"title":"Book hotel"},                                 "delayMs":50, "description":"Resurrect done action back to next"},
+  {"action":"assertNodeStatus",      "args":{"title":"Book hotel",    "status":"NEXT"},             "delayMs":20, "description":"Checking resurrected to next"},
+  {"action":"markBacklog",           "args":{"title":"Book hotel"},                                 "delayMs":50, "description":"Move back to backlog"},
+  {"action":"assertNodeStatus",      "args":{"title":"Book hotel",    "status":"BACKLOG"},          "delayMs":20, "description":"Checking back to backlog"},
+
   {"action":"deleteProject",         "args":{"title":"Home"},                                 "delayMs":50, "description":"Deleting Home (recursive — removes Kitchen and Get quotes)"},
   {"action":"assertNodeNotExists",   "args":{"title":"Home"},                                 "delayMs":20, "description":"Checking recursive delete removed Home"},
   {"action":"assertNodeNotExists",   "args":{"title":"Kitchen"},                              "delayMs":20},
