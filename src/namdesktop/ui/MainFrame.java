@@ -23,7 +23,8 @@ public final class MainFrame extends JFrame {
                 new NavigationEntry("projects",     "Projects",     "Multi-step outcomes that require more than one action"),
                 new NavigationEntry("next-actions", "Next Actions", "Concrete physical actions you can do right now"),
                 new NavigationEntry("context",      "Context",      "Filter your next actions by tag"),
-                new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time")
+                new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time"),
+                new NavigationEntry("done",         "Done",         "Completed actions — review and clean up")
         ));
         if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree", "Developer view: raw node tree"));
         return List.copyOf(entries);
@@ -42,6 +43,7 @@ public final class MainFrame extends JFrame {
     private final NextActionsPanel nextActionsPanel;
     private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
+    private final DonePanel        donePanel;
     private final SearchPanel      searchPanel;
     private final JLabel           demoStatusBar;
     private       ProjectWorkbenchPanel cachedWorkbench;
@@ -61,6 +63,7 @@ public final class MainFrame extends JFrame {
         this.nextActionsPanel = new NextActionsPanel(workspace, service, this::openProjectWorkbench);
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildSavedViewsNav);
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
+        this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
 
         this.demoStatusBar = new JLabel(" ");
@@ -186,6 +189,7 @@ public final class MainFrame extends JFrame {
             case "next-actions"  -> { contentArea.setContent(nextActionsPanel);  nextActionsPanel.refresh(); }
             case "context"       -> { contentArea.setContent(contextPanel);      contextPanel.refresh(); }
             case "backlog"       -> { contentArea.setContent(backlogPanel);      backlogPanel.refresh(); }
+            case "done"          -> { contentArea.setContent(donePanel);         donePanel.refresh(); }
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
@@ -306,6 +310,7 @@ public final class MainFrame extends JFrame {
         nextActionsPanel.refresh();
         contextPanel.refresh();
         backlogPanel.refresh();
+        donePanel.refresh();
         navPanel.rebuildSavedViews(workspace.getSavedViews());
     }
 
