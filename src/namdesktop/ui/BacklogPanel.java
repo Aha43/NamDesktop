@@ -31,6 +31,7 @@ public final class BacklogPanel extends JPanel {
     private final JScrollPane scrollPane;
     private final JPanel deckWrapper;
     private final CardLayout deckCards;
+    private final JToolBar toolbar;
     private final JButton upButton;
     private final JButton downButton;
     private List<UUID> currentOrder = List.of();
@@ -64,7 +65,7 @@ public final class BacklogPanel extends JPanel {
         moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
         moonButton.addActionListener(e -> enterDeckMode());
 
-        var toolbar = new JToolBar();
+        toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(addButton);
         toolbar.add(upButton);
@@ -211,11 +212,13 @@ public final class BacklogPanel extends JPanel {
         moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode);
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
+        toolbar.setVisible(false);
     }
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
         deckCards.show(deckWrapper, "table");
+        toolbar.setVisible(true);
         refresh();
         var old = moonCardPanel;
         moonCardPanel = null;

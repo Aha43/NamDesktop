@@ -30,6 +30,9 @@ public final class SavedViewPanel extends JPanel {
     private final JScrollPane scrollPane;
     private final JPanel deckWrapper;
     private final CardLayout deckCards;
+    private final JButton addActionButton;
+    private final JButton renameButton;
+    private final JButton deleteButton;
     private MoonCardPanel moonCardPanel;
 
     public SavedViewPanel(SavedView view, NamWorkspace workspace, NamWorkspaceService service,
@@ -45,14 +48,14 @@ public final class SavedViewPanel extends JPanel {
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
 
-        var addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
+        addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
-        var renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
+        renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
         renameButton.setToolTipText("Rename this view");
         renameButton.addActionListener(e -> renameView());
 
-        var deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+        deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
         deleteButton.setToolTipText("Delete this view");
         deleteButton.addActionListener(e -> deleteView());
 
@@ -136,11 +139,17 @@ public final class SavedViewPanel extends JPanel {
         moonCardPanel = new MoonCardPanel(rows, service, this::exitDeckMode);
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
+        addActionButton.setVisible(false);
+        renameButton.setVisible(false);
+        deleteButton.setVisible(false);
     }
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
         deckCards.show(deckWrapper, "table");
+        addActionButton.setVisible(true);
+        renameButton.setVisible(true);
+        deleteButton.setVisible(true);
         refresh();
         var old = moonCardPanel;
         moonCardPanel = null;
