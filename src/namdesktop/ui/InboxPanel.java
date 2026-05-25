@@ -185,7 +185,7 @@ public final class InboxPanel extends JPanel {
 
     private static final class InboxTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Status"};
+        private static final String[] COLUMNS = {"Title"};
         private List<InboxItemRow> rows = List.of();
 
         void setRows(List<InboxItemRow> rows) {
@@ -204,7 +204,6 @@ public final class InboxPanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.status();
                 default -> null;
             };
         }

@@ -51,6 +51,31 @@ public final class MissionControlLens {
         return List.copyOf(result);
     }
 
+    public List<MissionControlStation> stations(UUID rootProjectId, NamWorkspace workspace) {
+        var result = new ArrayList<MissionControlStation>();
+        for (var child : workspace.getChildren(rootProjectId)) {
+            if (!child.isProject()) continue;
+            var subtree = workspace.collectSubtree(child.getId());
+            int subProjectCount = 0, doneCount = 0, totalActions = 0;
+            for (var subId : subtree) {
+                if (subId.equals(child.getId())) continue;
+                var sub = workspace.getNode(subId);
+                if (sub.isEmpty()) continue;
+                var subNode = sub.get();
+                if (subNode.isProject()) subProjectCount++;
+                else {
+                    totalActions++;
+                    if (subNode.getStatus() == NodeStatus.DONE) doneCount++;
+                }
+            }
+            result.add(new MissionControlStation(
+                    child.getId(), child.getTitle(),
+                    subProjectCount, computeMaxDepth(child.getId(), workspace),
+                    doneCount, totalActions, 0));
+        }
+        return List.copyOf(result);
+    }
+
     private boolean hasTaggedAncestor(UUID nodeId, Set<UUID> tagged, NamWorkspace workspace) {
         var ancestor = workspace.getParent(nodeId);
         while (ancestor.isPresent()) {

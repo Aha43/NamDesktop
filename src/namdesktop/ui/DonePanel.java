@@ -80,6 +80,9 @@ public final class DonePanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
+        table.getColumnModel().getColumn(0).setPreferredWidth(210);
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        UiHelper.fillTableColumn(table, 1);
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
@@ -198,7 +201,7 @@ public final class DonePanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
+                case 1 -> r.projectPath() != null ? r.projectPath() : "";
                 case 2 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};

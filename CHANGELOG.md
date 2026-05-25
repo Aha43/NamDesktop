@@ -8,6 +8,17 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCR view mode for any project node: a dashboard toggle button in the Project Workbench opens sub-projects as heat-map station cards. Clicking a card navigates into that sub-project; navigating back restores MCR mode automatically. Closes #200.
+
+- Full project path shown in the Project column of all action list views (Next Actions, Backlog, Done, Context, Saved Views). Project column fills all available horizontal space; tooltip retained as fallback. Action column widened for readability.
+
+### Fixed
+
+- Inbox view: removed always-redundant Status column (items are always unprocessed).
+- Project Workbench: "This project" section header now aligns with sub-project section names.
+
+### Added
+
 - Mission Control: tagged-project dashboard accessible from the nav panel and a dedicated toolbar button. Each Mission Control groups projects by one or more tags into a heat-map grid of station cards (red / amber / green border by done ratio). Clicking a card opens the Project Workbench with the MC name in the breadcrumb. Supports create, delete, multi-tag OR matching, deduplication of nested tagged projects, and rolled-up sub-project stats. Closes #197.
 
 - Done lens view: confirm dialog before "Mark as Next" / "Mark as Backlog" to prevent accidental resurrection; first row is auto-selected when entering the Done view. Closes #193.

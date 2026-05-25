@@ -34,11 +34,23 @@ public final class ContextLens {
                             .filter(t -> !ownTags.contains(t))
                             .sorted()
                             .toList();
+                    var projectPath = parent != null ? buildProjectPath(workspace, parent.getId(), structural) : null;
                     return new ContextItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
-                            List.copyOf(ownTags), inherited);
+                            projectPath, List.copyOf(ownTags), inherited);
                 })
                 .toList();
+    }
+
+    private static String buildProjectPath(NamWorkspace workspace, UUID projectId, Set<UUID> structural) {
+        var path = workspace.buildPath(projectId);
+        var sb = new StringBuilder();
+        for (var node : path) {
+            if (structural.contains(node.getId())) continue;
+            if (!sb.isEmpty()) sb.append(" > ");
+            sb.append(node.getTitle());
+        }
+        return sb.toString();
     }
 
     private Set<UUID> structuralIds(NamWorkspace workspace) {

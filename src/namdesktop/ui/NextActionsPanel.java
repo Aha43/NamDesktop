@@ -142,6 +142,11 @@ public final class NextActionsPanel extends JPanel {
 
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         statusColumn = table.getColumnModel().getColumn(3);
+        table.getColumnModel().getColumn(0).setPreferredWidth(210);
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setPreferredWidth(70);
+        table.getColumnModel().getColumn(3).setMaxWidth(70);
+        UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
         scrollPane  = new JScrollPane(table);
@@ -248,7 +253,7 @@ public final class NextActionsPanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
+                case 1 -> r.projectPath() != null ? r.projectPath() : "";
                 case 2 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};

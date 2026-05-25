@@ -6,4 +6,4 @@ import java.util.List;
 import java.util.UUID;
 
 public record ContextItemRow(UUID id, String title, NodeStatus status, String parentTitle,
-                             List<String> tags, List<String> inheritedTags) {}
+                             String projectPath, List<String> tags, List<String> inheritedTags) {}
