@@ -96,6 +96,9 @@ public final class SavedViewPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
+        table.getColumnModel().getColumn(0).setPreferredWidth(210);
+        table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        UiHelper.fillTableColumn(table, 1);
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -129,7 +132,7 @@ public final class SavedViewPanel extends JPanel {
         for (int i = 0; i < count; i++) {
             var row  = tableModel.getRow(i);
             var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
-            rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.parentTitle()));
+            rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
         }
         if (rows.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
@@ -208,7 +211,7 @@ public final class SavedViewPanel extends JPanel {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.parentTitle() != null ? r.parentTitle() : "";
+                case 1 -> r.projectPath() != null ? r.projectPath() : "";
                 case 2 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};

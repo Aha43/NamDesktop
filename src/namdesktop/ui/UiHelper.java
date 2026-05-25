@@ -3,8 +3,12 @@ package namdesktop.ui;
 import namdesktop.app.AppSettings;
 
 import javax.swing.*;
+import javax.swing.event.TableColumnModelEvent;
+import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.util.List;
 
 public final class UiHelper {
@@ -47,6 +51,48 @@ public final class UiHelper {
                 }
             }
         };
+    }
+
+    /**
+     * Makes {@code fillCol} absorb all slack space as the table is resized or columns are
+     * added/removed (e.g. toggling the Status column). Other columns keep their preferred widths.
+     * Listens on the viewport (table's parent) because with AUTO_RESIZE_OFF the table itself
+     * does not stretch — only the viewport does.
+     */
+    public static void fillTableColumn(JTable table, int fillCol) {
+        table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        Runnable recalc = () -> {
+            var port = table.getParent();
+            int available = (port != null && port.getWidth() > 0) ? port.getWidth() : table.getWidth();
+            if (available <= 0) return;
+            var cm = table.getColumnModel();
+            if (fillCol >= cm.getColumnCount()) return;
+            int reserved = 0;
+            for (int i = 0; i < cm.getColumnCount(); i++) {
+                if (i != fillCol) reserved += cm.getColumn(i).getPreferredWidth();
+            }
+            int w = Math.max(60, available - reserved);
+            var col = cm.getColumn(fillCol);
+            col.setPreferredWidth(w);
+            col.setWidth(w);
+        };
+        // Wire viewport listener once the table is added to a scroll pane
+        table.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.PARENT_CHANGED) != 0
+                    && table.getParent() != null) {
+                table.getParent().addComponentListener(new ComponentAdapter() {
+                    @Override public void componentResized(ComponentEvent e2) { recalc.run(); }
+                });
+                recalc.run();
+            }
+        });
+        table.getColumnModel().addColumnModelListener(new TableColumnModelListener() {
+            public void columnAdded(TableColumnModelEvent e)                 { recalc.run(); }
+            public void columnRemoved(TableColumnModelEvent e)               { recalc.run(); }
+            public void columnMoved(TableColumnModelEvent e)                 {}
+            public void columnMarginChanged(javax.swing.event.ChangeEvent e) {}
+            public void columnSelectionChanged(javax.swing.event.ListSelectionEvent e) {}
+        });
     }
 
     public static void applyDense(boolean dense) {
