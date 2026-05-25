@@ -1,5 +1,6 @@
 package namdesktop.persist;
 
+import namdesktop.model.MissionControl;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.ProjectTemplate;
 import namdesktop.model.TemplateNode;
@@ -117,6 +118,37 @@ class JsonWorkspaceRepositoryTest {
 
         var loaded = repo.load(path);
         assertEquals(List.of(id2, id1), loaded.getViewOrders().get("next-actions"));
+    }
+
+    @Test
+    void saveAndLoad_roundTripsMissionControls(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        var original = NamWorkspace.createDefault();
+        original.getMissionControls().add(new MissionControl("Retirement", List.of("@retirement", "@fi")));
+        repo.save(path, original);
+
+        var loaded = repo.load(path);
+        assertEquals(1, loaded.getMissionControls().size());
+        assertEquals("Retirement", loaded.getMissionControls().get(0).name());
+        assertEquals(List.of("@retirement", "@fi"), loaded.getMissionControls().get(0).tags());
+    }
+
+    @Test
+    void load_oldFileWithoutMissionControls_loadsEmptyList(@TempDir Path dir) throws IOException {
+        var path = dir.resolve("workspace.json");
+        // Write a file that has no missionControls field (simulates pre-MC workspace)
+        Files.writeString(path, """
+                {
+                  "formatVersion" : 1,
+                  "rootNodeId" : "00000000-0000-0000-0000-000000000001",
+                  "inboxNodeId" : "00000000-0000-0000-0000-000000000002",
+                  "nodes" : {}
+                }
+                """);
+
+        var loaded = repo.load(path);
+        assertNotNull(loaded.getMissionControls());
+        assertTrue(loaded.getMissionControls().isEmpty());
     }
 
     @Test
