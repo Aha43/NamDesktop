@@ -24,6 +24,7 @@ public final class ActionDialog extends NodeDialog {
 
     public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, boolean showMakeProject, Runnable onChanged) {
         super(parent, nodeId, workspace, service, onChanged);
+        setTitle("Action: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
 
         if (showMakeProject) {
             var makeProjectButton = UiHelper.iconButton("Make project",
