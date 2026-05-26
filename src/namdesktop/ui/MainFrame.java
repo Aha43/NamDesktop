@@ -220,9 +220,20 @@ public final class MainFrame extends JFrame {
         viewMenu.addSeparator();
         viewMenu.add(zenItem);
 
+        var helpMenuItem = new JMenuItem("Help");
+        helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        helpMenuItem.addActionListener(e -> contentArea.setContent(helpPanel));
+        var aboutItem = new JMenuItem("About " + namdesktop.app.AppInfo.NAME + "…");
+        aboutItem.addActionListener(e -> new AboutDialog(this).setVisible(true));
+        var helpMenu = new JMenu("Help");
+        helpMenu.add(helpMenuItem);
+        helpMenu.addSeparator();
+        helpMenu.add(aboutItem);
+
         var menuBar = new JMenuBar();
         menuBar.add(fileMenu);
         menuBar.add(viewMenu);
+        menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
         toolbar.setVisible(settings.isShowToolbar());
