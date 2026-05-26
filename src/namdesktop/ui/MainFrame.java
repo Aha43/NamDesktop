@@ -164,12 +164,16 @@ public final class MainFrame extends JFrame {
         var toolbarToggleItem = new JMenuItem(settings.isShowToolbar() ? "Hide Toolbar" : "Show Toolbar");
         toolbarToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        final JMenuItem[] zenRef = {null};
         toolbarToggleItem.addActionListener(e -> {
             var show = !toolbar.isVisible();
             toolbar.setVisible(show);
             toolbarToggleItem.setText(show ? "Hide Toolbar" : "Show Toolbar");
             settings.setShowToolbar(show);
             saveSession();
+            if (zenRef[0] != null) zenRef[0].setText(
+                    !toolbar.isVisible() && splitPane.getDividerLocation() == 0
+                            ? "Exit Zen Mode" : "Enter Zen Mode");
         });
         var navToggleItem = new JMenuItem(settings.isShowNavPane() ? "Hide Nav Pane" : "Show Nav Pane");
         navToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
@@ -185,9 +189,36 @@ public final class MainFrame extends JFrame {
             settings.setShowNavPane(shown);
             saveSession();
         });
+        var zenItem = new JMenuItem("Enter Zen Mode");
+        zenRef[0] = zenItem;
+        zenItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        zenItem.addActionListener(e -> {
+            var inZen = !toolbar.isVisible() && splitPane.getDividerLocation() == 0;
+            if (inZen) {
+                toolbar.setVisible(true);
+                toolbarToggleItem.setText("Hide Toolbar");
+                settings.setShowToolbar(true);
+                splitPane.setDividerLocation(lastNavDivider);  // property listener updates navToggleItem
+            } else {
+                if (splitPane.getDividerLocation() > 0) lastNavDivider = splitPane.getDividerLocation();
+                toolbar.setVisible(false);
+                toolbarToggleItem.setText("Show Toolbar");
+                settings.setShowToolbar(false);
+                splitPane.setDividerLocation(0);               // property listener updates navToggleItem
+            }
+            zenItem.setText(inZen ? "Enter Zen Mode" : "Exit Zen Mode");
+            saveSession();
+        });
+        // Keep zen item label in sync when toolbar or nav are toggled individually
+        splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, ev ->
+                zenItem.setText(!toolbar.isVisible() && (int) ev.getNewValue() == 0
+                        ? "Exit Zen Mode" : "Enter Zen Mode"));
         var viewMenu = new JMenu("View");
         viewMenu.add(toolbarToggleItem);
         viewMenu.add(navToggleItem);
+        viewMenu.addSeparator();
+        viewMenu.add(zenItem);
 
         var menuBar = new JMenuBar();
         menuBar.add(fileMenu);
