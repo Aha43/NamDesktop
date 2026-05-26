@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.app.AppSettings;
 import namdesktop.model.NodeStatus;
 
@@ -20,6 +21,10 @@ public final class UiHelper {
     private static final String PROP_LABEL     = "namdesktop.label";
 
     public static final int ACTION_BADGE_W      = 24;
+    public static final int ACTION_PENCIL_W     = 18;
+
+    private static final Icon PENCIL_ICON = new FlatSVGIcon(
+            UiHelper.class.getResource("/icons/pencil.svg")).derive(12, 12);
     private static final Color BADGE_NEXT       = new Color(50, 150, 80);
     private static final Color BADGE_BACKLOG    = new Color(160, 120, 30);
     private static final Color BADGE_DONE_COLOR = new Color(110, 110, 110);
@@ -45,18 +50,23 @@ public final class UiHelper {
 
     public static TableCellRenderer actionBadgeRenderer(IntFunction<NodeStatus> statusFn) {
         return new TableCellRenderer() {
-            private final JPanel cell  = new JPanel(new BorderLayout(4, 0));
-            private final JLabel badge = new JLabel();
-            private final JLabel title = new JLabel();
+            private final JPanel cell   = new JPanel(new BorderLayout(4, 0));
+            private final JLabel badge  = new JLabel();
+            private final JLabel title  = new JLabel();
+            private final JLabel pencil = new JLabel(PENCIL_ICON);
             {
                 cell.setOpaque(true);
                 badge.setOpaque(false);
                 title.setOpaque(false);
+                pencil.setOpaque(false);
                 badge.setPreferredSize(new Dimension(ACTION_BADGE_W, 0));
+                pencil.setPreferredSize(new Dimension(ACTION_PENCIL_W, 0));
+                pencil.setHorizontalAlignment(SwingConstants.CENTER);
                 badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
                 badge.setHorizontalAlignment(SwingConstants.CENTER);
-                cell.add(badge, BorderLayout.WEST);
-                cell.add(title, BorderLayout.CENTER);
+                cell.add(badge,  BorderLayout.WEST);
+                cell.add(title,  BorderLayout.CENTER);
+                cell.add(pencil, BorderLayout.EAST);
             }
 
             @Override
