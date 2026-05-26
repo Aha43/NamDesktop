@@ -159,10 +159,25 @@ public final class MainFrame extends JFrame {
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         exitItem.addActionListener(e -> System.exit(0));
         fileMenu.add(exitItem);
+        var toolbarToggleItem = new JMenuItem(settings.isShowToolbar() ? "Hide Toolbar" : "Show Toolbar");
+        toolbarToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        toolbarToggleItem.addActionListener(e -> {
+            var show = !toolbar.isVisible();
+            toolbar.setVisible(show);
+            toolbarToggleItem.setText(show ? "Hide Toolbar" : "Show Toolbar");
+            settings.setShowToolbar(show);
+            saveSession();
+        });
+        var viewMenu = new JMenu("View");
+        viewMenu.add(toolbarToggleItem);
+
         var menuBar = new JMenuBar();
         menuBar.add(fileMenu);
+        menuBar.add(viewMenu);
 
         setJMenuBar(menuBar);
+        toolbar.setVisible(settings.isShowToolbar());
         add(toolbar,        BorderLayout.NORTH);
         add(splitPane,      BorderLayout.CENTER);
         add(demoStatusBar,  BorderLayout.SOUTH);

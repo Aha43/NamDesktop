@@ -26,6 +26,7 @@ public final class AppSettings {
     private String  syncRepoUrl      = "";
     private boolean showStatusColumn = false;
     private boolean startMaximized   = false;
+    private boolean showToolbar      = true;
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
 
@@ -39,6 +40,8 @@ public final class AppSettings {
     public void    setShowStatusColumn(boolean v)    { this.showStatusColumn = v; }
     public boolean isStartMaximized()                { return startMaximized; }
     public void    setStartMaximized(boolean v)      { this.startMaximized = v; }
+    public boolean isShowToolbar()                   { return showToolbar; }
+    public void    setShowToolbar(boolean v)         { this.showToolbar = v; }
     public String  getLastNavId()                    { return lastNavId; }
     public void    setLastNavId(String v)            { this.lastNavId = v; }
     public String  getLastProjectId()                { return lastProjectId; }
@@ -54,6 +57,7 @@ public final class AppSettings {
                 s.setSyncRepoUrl(dto.syncRepoUrl);
                 s.setShowStatusColumn(dto.showStatusColumn != null && dto.showStatusColumn);
                 s.setStartMaximized(dto.startMaximized != null && dto.startMaximized);
+                s.setShowToolbar(dto.showToolbar == null || dto.showToolbar);
                 s.setLastNavId(dto.lastNavId);
                 s.setLastProjectId(dto.lastProjectId);
                 return s;
@@ -72,6 +76,7 @@ public final class AppSettings {
         dto.syncRepoUrl      = this.syncRepoUrl;
         dto.showStatusColumn = this.showStatusColumn;
         dto.startMaximized   = this.startMaximized;
+        dto.showToolbar      = this.showToolbar;
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
@@ -84,6 +89,7 @@ public final class AppSettings {
         public String  syncRepoUrl;
         public Boolean showStatusColumn;
         public Boolean startMaximized;
+        public Boolean showToolbar;
         public String  lastNavId;
         public String  lastProjectId;
     }
