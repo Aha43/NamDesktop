@@ -22,11 +22,12 @@ all: app
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  all     Build the app (default)"
-	@echo "  run     Build and launch the app"
-	@echo "  e2e     Build and run the e2e regression suite"
-	@echo "  test    Compile and run unit tests"
-	@echo "  clean   Delete build output"
+	@echo "  all       Build the app (default)"
+	@echo "  run       Build and launch the app (prod mode)"
+	@echo "  run-dev   Build and launch the app (dev mode — separate workspace)"
+	@echo "  e2e       Build and run the e2e regression suite"
+	@echo "  test      Compile and run unit tests"
+	@echo "  clean     Delete build output"
 	@echo ""
 
 clean:
