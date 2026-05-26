@@ -175,6 +175,18 @@ public final class BacklogPanel extends JPanel {
         UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(BacklogPanel.this),
+                        item.id(), workspace, service, false, BacklogPanel.this::refresh).setVisible(true);
+            }
+        });
+
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
         deckWrapper = new JPanel(deckCards);

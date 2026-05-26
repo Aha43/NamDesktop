@@ -90,6 +90,19 @@ public final class ContextPanel extends JPanel {
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
         UiHelper.fillTableColumn(table, 1);
+
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
+                        item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
+            }
+        });
+
         final int[] lastRow = {-1};
         table.addMouseListener(new MouseAdapter() {
             @Override

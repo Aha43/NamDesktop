@@ -158,6 +158,18 @@ public final class DonePanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
 
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(DonePanel.this),
+                        item.id(), workspace, service, false, DonePanel.this::refresh).setVisible(true);
+            }
+        });
+
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
