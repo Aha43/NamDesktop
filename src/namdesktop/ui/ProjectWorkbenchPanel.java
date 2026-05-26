@@ -522,20 +522,35 @@ public final class ProjectWorkbenchPanel extends JPanel {
         list.setCellRenderer(new ActionCellRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+
+        final int[] lastSelected = {-1};
         list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastSelected[0] = list.getSelectedIndex();
+            }
             @Override
             public void mouseClicked(MouseEvent e) {
                 var idx = list.locationToIndex(e.getPoint());
                 if (idx < 0) return;
                 var bounds = list.getCellBounds(idx, idx);
+                // Badge zone → status popup
                 if (bounds != null && e.getClickCount() == 1 && e.getX() < bounds.x + BADGE_WIDTH) {
                     showStatusPopup(list, model.getElementAt(idx), e.getX(), e.getY());
                     return;
                 }
-                if (e.getClickCount() != 2) return;
-                var node = model.getElementAt(idx);
-                new ActionDialog(parent, node.getId(), workspace, service, true, ProjectWorkbenchPanel.this::rebuild)
-                        .setVisible(true);
+                // Double-click → open full dialog
+                if (e.getClickCount() == 2) {
+                    var node = model.getElementAt(idx);
+                    new ActionDialog(parent, node.getId(), workspace, service, true, ProjectWorkbenchPanel.this::rebuild)
+                            .setVisible(true);
+                    return;
+                }
+                // Single-click on already-selected title → inline rename
+                if (e.getClickCount() == 1 && idx == lastSelected[0] && bounds != null
+                        && e.getX() >= bounds.x + BADGE_WIDTH) {
+                    startInlineRename(list, model, idx);
+                }
             }
         });
 
@@ -596,6 +611,49 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (result != JOptionPane.OK_OPTION) return;
         try { service.updateDescription(projectId, area.getText().strip()); rebuild(); }
         catch (IOException ex) { showError(ex.getMessage()); }
+    }
+
+    private void startInlineRename(JList<NamNode> list, DefaultListModel<NamNode> model, int idx) {
+        var node   = model.getElementAt(idx);
+        var bounds = list.getCellBounds(idx, idx);
+        if (bounds == null) return;
+
+        var field = new JTextField(node.getTitle());
+        int fx = bounds.x + BADGE_WIDTH + 4;
+        field.setBounds(fx, bounds.y + 1, bounds.width - fx - 2, bounds.height - 2);
+        field.selectAll();
+        list.setLayout(null);
+        list.add(field);
+        list.revalidate();
+        field.requestFocusInWindow();
+
+        Runnable commit = () -> {
+            var text = field.getText().strip();
+            list.remove(field);
+            list.setLayout(null);
+            list.revalidate();
+            list.repaint();
+            if (!text.isBlank() && !text.equals(node.getTitle())) {
+                try { pendingSelection = node.getId(); service.renameNode(node.getId(), text); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            }
+        };
+        Runnable cancel = () -> {
+            list.remove(field);
+            list.setLayout(null);
+            list.revalidate();
+            list.repaint();
+        };
+
+        field.addActionListener(e -> commit.run());
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusLost(java.awt.event.FocusEvent e) { commit.run(); }
+        });
+        field.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) cancel.run();
+            }
+        });
     }
 
     private void showStatusPopup(JComponent source, NamNode node, int x, int y) {
