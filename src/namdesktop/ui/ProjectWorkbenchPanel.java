@@ -318,6 +318,17 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 catch (IOException ex) { showError(ex.getMessage()); }
             });
 
+            var editActionButton = UiHelper.iconButton("Edit action…",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
+            editActionButton.setToolTipText("Edit selected action");
+            editActionButton.setEnabled(false);
+            editActionButton.addActionListener(e -> {
+                var node = actionList.getSelectedValue();
+                if (node == null) return;
+                new ActionDialog(parent, node.getId(), workspace, service, true,
+                        ProjectWorkbenchPanel.this::rebuild).setVisible(true);
+            });
+
             var editTagsButton = UiHelper.iconButton("Edit action tags",
                     new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/tag.svg")).derive(16, 16));
             editTagsButton.setToolTipText("Edit tags of selected action");
@@ -349,6 +360,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 var idx = actionList.getSelectedIndex();
                 var size = actionList.getModel().getSize();
                 renameActionButton.setEnabled(idx >= 0);
+                editActionButton.setEnabled(idx >= 0);
                 editTagsButton.setEnabled(idx >= 0);
                 upButton.setEnabled(idx > 0);
                 downButton.setEnabled(idx >= 0 && idx < size - 1);
@@ -356,6 +368,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
             var restoredIdx = actionList.getSelectedIndex();
             renameActionButton.setEnabled(restoredIdx >= 0);
+            editActionButton.setEnabled(restoredIdx >= 0);
             editTagsButton.setEnabled(restoredIdx >= 0);
             upButton.setEnabled(restoredIdx > 0);
             downButton.setEnabled(restoredIdx >= 0 && restoredIdx < actionList.getModel().getSize() - 1);
@@ -375,6 +388,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
             bar.add(renameActionButton);
             bar.add(editTagsButton);
+            bar.add(editActionButton);
             bar.add(upButton);
             bar.add(downButton);
         }
