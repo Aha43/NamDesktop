@@ -3,7 +3,7 @@
 > This document describes the current implementation state, not the final architecture.
 > Update it at the end of each sprint so design discussions stay grounded.
 
-Last updated: 2026-05-26 (after PR #204 — in-app help browser, View menu, Zen Mode, Help menu, About dialog)
+Last updated: 2026-05-26 (after PR #205 — inline status badge, inline rename, Enter key, workbench edit button)
 
 ---
 
@@ -150,14 +150,14 @@ Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · 
 | Panel | Notable behaviour |
 |---|---|
 | `InboxPanel` | Title only (Status column removed — always the same); right-click: add/rename/mark done/delete/process |
-| `ProjectsPanel` | Title, Tags (no Status column) |
-| `NextActionsPanel` | Title, Project (full path, fills available width; single-click navigates to workbench), Tags (inherited italic), Status (toggleable); manual up/down ordering; Moon Cards deck mode |
+| `ProjectsPanel` | Title, Tags (no Status column); double-click or Enter opens workbench; click already-selected title to rename inline |
+| `NextActionsPanel` | Action col has N/B/D badge (click → status popup) + inline rename; Project col single-click navigates to workbench; Tags (inherited italic); Status col (toggleable); manual up/down ordering; Moon Cards deck mode; Enter opens ActionDialog |
 | `BacklogPanel` | Same as NextActionsPanel; inbox items rendered italic |
-| `ContextPanel` | Tag checkbox selector (AND, match count, Clear); table: Title, Project (full path, fills width), Tags (inherited italic); Moon Cards deck mode |
-| `SavedViewPanel` | Name + filter summary header; rename + delete buttons; table: Title, Project (full path, fills width), Tags (inherited italic); Add action button; Moon Cards deck mode |
-| `DonePanel` | Title, Project, Tags; Delete / Mark as Next / Mark as Backlog toolbar (confirm dialogs); auto-selects first row on entry |
+| `ContextPanel` | Tag checkbox selector (AND, match count, Clear); Action col has badge + inline rename; Project col (full path, fills width); Tags (inherited italic); Moon Cards deck mode; Enter opens ActionDialog |
+| `SavedViewPanel` | Name + filter summary header; rename + delete buttons; Action col has badge + inline rename; Project col (full path, fills width); Tags (inherited italic); Add action button; Moon Cards deck mode; Enter opens ActionDialog |
+| `DonePanel` | Action col has D badge (click → Next/Backlog popup) + inline rename; Project col; Tags; Delete / Mark as Next / Mark as Backlog toolbar (confirm dialogs); auto-selects first row on entry; Enter opens ActionDialog |
 | `MissionControlPanel` | Heat-map grid of `MissionControlStation` cards (red/amber/green border by done ratio); create/delete; clicking a card opens `ProjectWorkbenchPanel` with MC name in breadcrumb |
-| `ProjectWorkbenchPanel` | Breadcrumb nav (backLabel aware — shows MC name when entered from Mission Control); MCR view toggle (dashboard icon) shows sub-projects as station cards; clicking a card navigates in, back-breadcrumb restores MCR mode; sub-project sections with action lists; quick rename/description/edit/delete per sub-project; delete is recursive with blast-radius warning; "This project" header aligned with sub-project headers |
+| `ProjectWorkbenchPanel` | Breadcrumb nav (backLabel aware — shows MC name when entered from Mission Control); MCR view toggle (dashboard icon) shows sub-projects as station cards; clicking a card navigates in, back-breadcrumb restores MCR mode; sub-project sections with action lists; action rows have N/B/D badge (click → status popup) + inline rename + Enter key; action bar: Add · Rename · Tags · Edit… (pencil, opens ActionDialog) · Up · Down; quick rename/description/delete per sub-project; delete is recursive with blast-radius warning; "This project" header aligned with sub-project headers |
 | `HelpPanel` | Three-pane help browser: tutorial list sidebar (JList) · tutorial content (JEditorPane HTML) · concept article pane (slides in on `concept://slug` link click). Two tutorials, nine concept articles in `src/resources/help/`. |
 | `SearchPanel` | Full-text search across all nodes |
 | `TreePanel` | Raw node tree; context menu: add/rename/mark done/move/delete (recursive with count warning) — dev only |
@@ -187,6 +187,13 @@ Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · 
 - `UiHelper.iconOnlyButton` — always icon-only (breadcrumbs, compact contexts)
 - `UiHelper.tagsRenderer()` — `DefaultTableCellRenderer` that renders `String[]{own, inherited}` with inherited tags in HTML italic
 - `UiHelper.fillTableColumn(table, col)` — sets `AUTO_RESIZE_OFF`, listens on viewport resize and column model changes; makes the given column absorb all available slack space
+- `UiHelper.actionBadgeRenderer(IntFunction<NodeStatus>)` — `TableCellRenderer` for the Action col: fixed-width colored N/B/D letter (WEST) + title label (CENTER) in a `JPanel(BorderLayout)`; DONE items gray title; selection colors applied. `ACTION_BADGE_W = 24`.
+
+**Action column interaction pattern** (applied consistently across all action panels and workbench):
+- Badge zone (first 24 px): single-click → `JPopupMenu` with Next / Backlog / Done; current state checked + disabled
+- Title zone: single-click on already-selected row → inline rename via `editCellAt` (table) or overlaid `JTextField` (list); `setClickCountToStart(99)` on editor prevents accidental edits
+- Double-click → opens `ActionDialog`; Enter key → same as double-click
+- Table model `isCellEditable(row, 0) = true`; `setValueAt` calls `service.renameNode` and triggers refresh
 
 ---
 
