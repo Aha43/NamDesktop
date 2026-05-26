@@ -45,7 +45,10 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final DonePanel        donePanel;
     private final SearchPanel      searchPanel;
+    private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
+    private final JSplitPane            splitPane;
+    private       int                   lastNavDivider = 180;
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
     private       boolean               sessionRestored = false;
@@ -65,6 +68,7 @@ public final class MainFrame extends JFrame {
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
+        this.helpPanel        = new HelpPanel();
 
         this.demoStatusBar = new JLabel(" ");
         this.demoStatusBar.setFont(demoStatusBar.getFont().deriveFont(Font.ITALIC));
@@ -74,7 +78,7 @@ public final class MainFrame extends JFrame {
         this.demoStatusBar.setVisible(false);
 
         this.navPanel = new NavigationPanel(buildNavEntries(devMode), this::onNavSelected);
-        var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
+        this.splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.0);
         splitPane.setOneTouchExpandable(true);
@@ -101,6 +105,11 @@ public final class MainFrame extends JFrame {
             toolbar.add(pushButton);
             toolbar.add(pullButton);
         }
+        var helpButton = UiHelper.iconButton("Help",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
+        helpButton.setToolTipText("Help — tutorials and concept reference");
+        helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
+        toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
         var exitButton = UiHelper.iconButton("Exit",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
@@ -152,10 +161,83 @@ public final class MainFrame extends JFrame {
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         exitItem.addActionListener(e -> System.exit(0));
         fileMenu.add(exitItem);
+        var toolbarToggleItem = new JMenuItem(settings.isShowToolbar() ? "Hide Toolbar" : "Show Toolbar");
+        toolbarToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        final JMenuItem[] zenRef = {null};
+        toolbarToggleItem.addActionListener(e -> {
+            var show = !toolbar.isVisible();
+            toolbar.setVisible(show);
+            toolbarToggleItem.setText(show ? "Hide Toolbar" : "Show Toolbar");
+            settings.setShowToolbar(show);
+            saveSession();
+            if (zenRef[0] != null) zenRef[0].setText(
+                    !toolbar.isVisible() && splitPane.getDividerLocation() == 0
+                            ? "Exit Zen Mode" : "Enter Zen Mode");
+        });
+        var navToggleItem = new JMenuItem(settings.isShowNavPane() ? "Hide Nav Pane" : "Show Nav Pane");
+        navToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        navToggleItem.addActionListener(e -> {
+            var show = splitPane.getDividerLocation() == 0;
+            if (!show) lastNavDivider = splitPane.getDividerLocation();
+            splitPane.setDividerLocation(show ? lastNavDivider : 0);
+        });
+        splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
+            var shown = (int) e.getNewValue() > 0;
+            navToggleItem.setText(shown ? "Hide Nav Pane" : "Show Nav Pane");
+            settings.setShowNavPane(shown);
+            saveSession();
+        });
+        var zenItem = new JMenuItem("Enter Zen Mode");
+        zenRef[0] = zenItem;
+        zenItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Z,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        zenItem.addActionListener(e -> {
+            var inZen = !toolbar.isVisible() && splitPane.getDividerLocation() == 0;
+            if (inZen) {
+                toolbar.setVisible(true);
+                toolbarToggleItem.setText("Hide Toolbar");
+                settings.setShowToolbar(true);
+                splitPane.setDividerLocation(lastNavDivider);  // property listener updates navToggleItem
+            } else {
+                if (splitPane.getDividerLocation() > 0) lastNavDivider = splitPane.getDividerLocation();
+                toolbar.setVisible(false);
+                toolbarToggleItem.setText("Show Toolbar");
+                settings.setShowToolbar(false);
+                splitPane.setDividerLocation(0);               // property listener updates navToggleItem
+            }
+            zenItem.setText(inZen ? "Enter Zen Mode" : "Exit Zen Mode");
+            saveSession();
+        });
+        // Keep zen item label in sync when toolbar or nav are toggled individually
+        splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, ev ->
+                zenItem.setText(!toolbar.isVisible() && (int) ev.getNewValue() == 0
+                        ? "Exit Zen Mode" : "Enter Zen Mode"));
+        var viewMenu = new JMenu("View");
+        viewMenu.add(toolbarToggleItem);
+        viewMenu.add(navToggleItem);
+        viewMenu.addSeparator();
+        viewMenu.add(zenItem);
+
+        var helpMenuItem = new JMenuItem("Help");
+        helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
+        helpMenuItem.addActionListener(e -> contentArea.setContent(helpPanel));
+        var aboutItem = new JMenuItem("About " + namdesktop.app.AppInfo.NAME + "…");
+        aboutItem.addActionListener(e -> new AboutDialog(this).setVisible(true));
+        var helpMenu = new JMenu("Help");
+        helpMenu.add(helpMenuItem);
+        helpMenu.addSeparator();
+        helpMenu.add(aboutItem);
+
         var menuBar = new JMenuBar();
         menuBar.add(fileMenu);
+        menuBar.add(viewMenu);
+        menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
+        toolbar.setVisible(settings.isShowToolbar());
+        if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
         add(toolbar,        BorderLayout.NORTH);
         add(splitPane,      BorderLayout.CENTER);
         add(demoStatusBar,  BorderLayout.SOUTH);

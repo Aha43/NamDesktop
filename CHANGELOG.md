@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- In-app help browser: a "Help" entry in the nav sidebar opens a three-pane browser with a tutorial list, a tutorial content pane (HTML), and a concept article pane that slides in when a concept link is clicked. Initial content: "Getting started" and "Planning a goal with MCR" tutorials, plus eight concept articles (GTD, Inbox, Projects, Next Actions, Contexts, Backlog, Mission Control, Project Workbench). Concept links use a `concept://slug` URL scheme intercepted in-process. Closes #202.
+
 - MCR view mode for any project node: a dashboard toggle button in the Project Workbench opens sub-projects as heat-map station cards. Clicking a card navigates into that sub-project; navigating back restores MCR mode automatically. Closes #200.
 
 - Full project path shown in the Project column of all action list views (Next Actions, Backlog, Done, Context, Saved Views). Project column fills all available horizontal space; tooltip retained as fallback. Action column widened for readability.

@@ -33,6 +33,7 @@ ICONS=(
   layout-list
   stack-2
   layout-dashboard
+  help
 )
 
 mkdir -p "$ICONS_DIR"
