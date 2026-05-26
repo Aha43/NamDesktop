@@ -43,6 +43,16 @@ public final class ProjectsPanel extends JPanel {
             }
         });
 
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openProject");
+        table.getActionMap().put("openProject", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                onOpenProject.accept(tableModel.getRow(row).id());
+            }
+        });
+
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
         var addButton = UiHelper.iconButton("Add project",
