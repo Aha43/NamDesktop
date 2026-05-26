@@ -554,6 +554,18 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         });
 
+        list.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        list.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var idx = list.getSelectedIndex();
+                if (idx < 0) return;
+                var node = model.getElementAt(idx);
+                new ActionDialog(parent, node.getId(), workspace, service, true,
+                        ProjectWorkbenchPanel.this::rebuild).setVisible(true);
+            }
+        });
+
         if (pendingSelection != null) {
             for (int i = 0; i < model.getSize(); i++) {
                 if (model.getElementAt(i).getId().equals(pendingSelection)) {
