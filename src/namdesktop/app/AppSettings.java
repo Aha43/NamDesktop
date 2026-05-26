@@ -27,6 +27,7 @@ public final class AppSettings {
     private boolean showStatusColumn = false;
     private boolean startMaximized   = false;
     private boolean showToolbar      = true;
+    private boolean showNavPane      = true;
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
 
@@ -42,6 +43,8 @@ public final class AppSettings {
     public void    setStartMaximized(boolean v)      { this.startMaximized = v; }
     public boolean isShowToolbar()                   { return showToolbar; }
     public void    setShowToolbar(boolean v)         { this.showToolbar = v; }
+    public boolean isShowNavPane()                   { return showNavPane; }
+    public void    setShowNavPane(boolean v)         { this.showNavPane = v; }
     public String  getLastNavId()                    { return lastNavId; }
     public void    setLastNavId(String v)            { this.lastNavId = v; }
     public String  getLastProjectId()                { return lastProjectId; }
@@ -58,6 +61,7 @@ public final class AppSettings {
                 s.setShowStatusColumn(dto.showStatusColumn != null && dto.showStatusColumn);
                 s.setStartMaximized(dto.startMaximized != null && dto.startMaximized);
                 s.setShowToolbar(dto.showToolbar == null || dto.showToolbar);
+                s.setShowNavPane(dto.showNavPane == null || dto.showNavPane);
                 s.setLastNavId(dto.lastNavId);
                 s.setLastProjectId(dto.lastProjectId);
                 return s;
@@ -77,6 +81,7 @@ public final class AppSettings {
         dto.showStatusColumn = this.showStatusColumn;
         dto.startMaximized   = this.startMaximized;
         dto.showToolbar      = this.showToolbar;
+        dto.showNavPane      = this.showNavPane;
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
@@ -90,6 +95,7 @@ public final class AppSettings {
         public Boolean showStatusColumn;
         public Boolean startMaximized;
         public Boolean showToolbar;
+        public Boolean showNavPane;
         public String  lastNavId;
         public String  lastProjectId;
     }

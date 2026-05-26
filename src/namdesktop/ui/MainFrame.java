@@ -47,6 +47,8 @@ public final class MainFrame extends JFrame {
     private final SearchPanel      searchPanel;
     private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
+    private final JSplitPane            splitPane;
+    private       int                   lastNavDivider = 180;
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
     private       boolean               sessionRestored = false;
@@ -76,7 +78,7 @@ public final class MainFrame extends JFrame {
         this.demoStatusBar.setVisible(false);
 
         this.navPanel = new NavigationPanel(buildNavEntries(devMode), this::onNavSelected);
-        var splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
+        this.splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
         splitPane.setDividerLocation(180);
         splitPane.setResizeWeight(0.0);
         splitPane.setOneTouchExpandable(true);
@@ -169,8 +171,23 @@ public final class MainFrame extends JFrame {
             settings.setShowToolbar(show);
             saveSession();
         });
+        var navToggleItem = new JMenuItem(settings.isShowNavPane() ? "Hide Nav Pane" : "Show Nav Pane");
+        navToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        navToggleItem.addActionListener(e -> {
+            var show = splitPane.getDividerLocation() == 0;
+            if (!show) lastNavDivider = splitPane.getDividerLocation();
+            splitPane.setDividerLocation(show ? lastNavDivider : 0);
+        });
+        splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, e -> {
+            var shown = (int) e.getNewValue() > 0;
+            navToggleItem.setText(shown ? "Hide Nav Pane" : "Show Nav Pane");
+            settings.setShowNavPane(shown);
+            saveSession();
+        });
         var viewMenu = new JMenu("View");
         viewMenu.add(toolbarToggleItem);
+        viewMenu.add(navToggleItem);
 
         var menuBar = new JMenuBar();
         menuBar.add(fileMenu);
@@ -178,6 +195,7 @@ public final class MainFrame extends JFrame {
 
         setJMenuBar(menuBar);
         toolbar.setVisible(settings.isShowToolbar());
+        if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
         add(toolbar,        BorderLayout.NORTH);
         add(splitPane,      BorderLayout.CENTER);
         add(demoStatusBar,  BorderLayout.SOUTH);
