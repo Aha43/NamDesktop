@@ -39,7 +39,8 @@ classes:
 		-cp "$(LIB_DIR)/*" \
 		-d $(CLASSES_DIR) \
 		$(SOURCES)
-	@if [ -d $(SRC_DIR)/icons ]; then cp -r $(SRC_DIR)/icons $(CLASSES_DIR)/; fi
+	@if [ -d $(SRC_DIR)/icons ];     then cp -r $(SRC_DIR)/icons     $(CLASSES_DIR)/; fi
+	@if [ -d $(SRC_DIR)/resources ]; then cp -r $(SRC_DIR)/resources $(CLASSES_DIR)/; fi
 	@if [ -f $(SRC_DIR)/demo.json ]; then cp $(SRC_DIR)/demo.json $(CLASSES_DIR)/; fi
 	@if [ -f $(SRC_DIR)/e2e.json ];  then cp $(SRC_DIR)/e2e.json  $(CLASSES_DIR)/; fi
 

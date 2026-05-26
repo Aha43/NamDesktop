@@ -24,7 +24,9 @@ public final class MainFrame extends JFrame {
                 new NavigationEntry("next-actions", "Next Actions", "Concrete physical actions you can do right now"),
                 new NavigationEntry("context",      "Context",      "Filter your next actions by tag"),
                 new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time"),
-                new NavigationEntry("done",         "Done",         "Completed actions — review and clean up")
+                new NavigationEntry("done",         "Done",         "Completed actions — review and clean up"),
+                NavigationEntry.divider(),
+                new NavigationEntry("help",         "Help",         "Tutorials and concept reference")
         ));
         if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree", "Developer view: raw node tree"));
         return List.copyOf(entries);
@@ -45,6 +47,7 @@ public final class MainFrame extends JFrame {
     private final BacklogPanel     backlogPanel;
     private final DonePanel        donePanel;
     private final SearchPanel      searchPanel;
+    private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
@@ -65,6 +68,7 @@ public final class MainFrame extends JFrame {
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
+        this.helpPanel        = new HelpPanel();
 
         this.demoStatusBar = new JLabel(" ");
         this.demoStatusBar.setFont(demoStatusBar.getFont().deriveFont(Font.ITALIC));
@@ -227,6 +231,7 @@ public final class MainFrame extends JFrame {
             case "backlog"       -> { contentArea.setContent(backlogPanel);      backlogPanel.refresh(); }
             case "done"          -> { contentArea.setContent(donePanel);         donePanel.refresh(); }
             case "raw-tree"      -> contentArea.setContent(treePanel);
+            case "help"          -> contentArea.setContent(helpPanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
         }
     }
