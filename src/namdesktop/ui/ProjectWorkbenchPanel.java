@@ -318,6 +318,17 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 catch (IOException ex) { showError(ex.getMessage()); }
             });
 
+            var editActionButton = UiHelper.iconButton("Edit action…",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
+            editActionButton.setToolTipText("Edit selected action");
+            editActionButton.setEnabled(false);
+            editActionButton.addActionListener(e -> {
+                var node = actionList.getSelectedValue();
+                if (node == null) return;
+                new ActionDialog(parent, node.getId(), workspace, service, true,
+                        ProjectWorkbenchPanel.this::rebuild).setVisible(true);
+            });
+
             var editTagsButton = UiHelper.iconButton("Edit action tags",
                     new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/tag.svg")).derive(16, 16));
             editTagsButton.setToolTipText("Edit tags of selected action");
@@ -349,6 +360,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 var idx = actionList.getSelectedIndex();
                 var size = actionList.getModel().getSize();
                 renameActionButton.setEnabled(idx >= 0);
+                editActionButton.setEnabled(idx >= 0);
                 editTagsButton.setEnabled(idx >= 0);
                 upButton.setEnabled(idx > 0);
                 downButton.setEnabled(idx >= 0 && idx < size - 1);
@@ -356,6 +368,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
             var restoredIdx = actionList.getSelectedIndex();
             renameActionButton.setEnabled(restoredIdx >= 0);
+            editActionButton.setEnabled(restoredIdx >= 0);
             editTagsButton.setEnabled(restoredIdx >= 0);
             upButton.setEnabled(restoredIdx > 0);
             downButton.setEnabled(restoredIdx >= 0 && restoredIdx < actionList.getModel().getSize() - 1);
@@ -375,6 +388,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
             bar.add(renameActionButton);
             bar.add(editTagsButton);
+            bar.add(editActionButton);
             bar.add(upButton);
             bar.add(downButton);
         }
@@ -501,6 +515,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return header;
     }
 
+    private static final int BADGE_WIDTH = 28;
+
     private JList<NamNode> buildActionList(List<NamNode> actions, UUID targetProjectId) {
         var model = new DefaultListModel<NamNode>();
         for (var a : actions) model.addElement(a);
@@ -510,6 +526,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
             public String getToolTipText(MouseEvent e) {
                 var idx = locationToIndex(e.getPoint());
                 if (idx < 0) return null;
+                var bounds = getCellBounds(idx, idx);
+                if (bounds != null && e.getX() < bounds.x + BADGE_WIDTH) return "Set status";
                 var desc = model.getElementAt(idx).getDescription();
                 if (desc == null || desc.isBlank()) return null;
                 return desc.length() <= 100 ? desc : desc.substring(0, 100) + "…";
@@ -518,15 +536,47 @@ public final class ProjectWorkbenchPanel extends JPanel {
         list.setCellRenderer(new ActionCellRenderer());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+
+        final int[] lastSelected = {-1};
         list.addMouseListener(new MouseAdapter() {
             @Override
+            public void mousePressed(MouseEvent e) {
+                lastSelected[0] = list.getSelectedIndex();
+            }
+            @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() != 2) return;
                 var idx = list.locationToIndex(e.getPoint());
                 if (idx < 0) return;
+                var bounds = list.getCellBounds(idx, idx);
+                // Badge zone → status popup
+                if (bounds != null && e.getClickCount() == 1 && e.getX() < bounds.x + BADGE_WIDTH) {
+                    showStatusPopup(list, model.getElementAt(idx), e.getX(), e.getY());
+                    return;
+                }
+                // Double-click → open full dialog
+                if (e.getClickCount() == 2) {
+                    var node = model.getElementAt(idx);
+                    new ActionDialog(parent, node.getId(), workspace, service, true, ProjectWorkbenchPanel.this::rebuild)
+                            .setVisible(true);
+                    return;
+                }
+                // Single-click on already-selected title → inline rename
+                if (e.getClickCount() == 1 && idx == lastSelected[0] && bounds != null
+                        && e.getX() >= bounds.x + BADGE_WIDTH) {
+                    startInlineRename(list, model, idx);
+                }
+            }
+        });
+
+        list.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        list.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var idx = list.getSelectedIndex();
+                if (idx < 0) return;
                 var node = model.getElementAt(idx);
-                new ActionDialog(parent, node.getId(), workspace, service, true, ProjectWorkbenchPanel.this::rebuild)
-                        .setVisible(true);
+                new ActionDialog(parent, node.getId(), workspace, service, true,
+                        ProjectWorkbenchPanel.this::rebuild).setVisible(true);
             }
         });
 
@@ -587,6 +637,81 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (result != JOptionPane.OK_OPTION) return;
         try { service.updateDescription(projectId, area.getText().strip()); rebuild(); }
         catch (IOException ex) { showError(ex.getMessage()); }
+    }
+
+    private void startInlineRename(JList<NamNode> list, DefaultListModel<NamNode> model, int idx) {
+        var node   = model.getElementAt(idx);
+        var bounds = list.getCellBounds(idx, idx);
+        if (bounds == null) return;
+
+        var field = new JTextField(node.getTitle());
+        int fx = bounds.x + BADGE_WIDTH + 4;
+        field.setBounds(fx, bounds.y + 1, bounds.width - fx - 2, bounds.height - 2);
+        field.selectAll();
+        list.setLayout(null);
+        list.add(field);
+        list.revalidate();
+        field.requestFocusInWindow();
+
+        Runnable commit = () -> {
+            var text = field.getText().strip();
+            list.remove(field);
+            list.setLayout(null);
+            list.revalidate();
+            list.repaint();
+            if (!text.isBlank() && !text.equals(node.getTitle())) {
+                try { pendingSelection = node.getId(); service.renameNode(node.getId(), text); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            }
+        };
+        Runnable cancel = () -> {
+            list.remove(field);
+            list.setLayout(null);
+            list.revalidate();
+            list.repaint();
+        };
+
+        field.addActionListener(e -> commit.run());
+        field.addFocusListener(new java.awt.event.FocusAdapter() {
+            @Override public void focusLost(java.awt.event.FocusEvent e) { commit.run(); }
+        });
+        field.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyPressed(java.awt.event.KeyEvent e) {
+                if (e.getKeyCode() == java.awt.event.KeyEvent.VK_ESCAPE) cancel.run();
+            }
+        });
+    }
+
+    private void showStatusPopup(JComponent source, NamNode node, int x, int y) {
+        var current = node.getStatus();
+        var menu = new JPopupMenu();
+        for (var status : new NodeStatus[]{NodeStatus.NEXT, NodeStatus.BACKLOG, NodeStatus.DONE}) {
+            var label = switch (status) {
+                case NEXT    -> "Next";
+                case BACKLOG -> "Backlog";
+                case DONE    -> "Done";
+                default      -> status.name();
+            };
+            var item = new JMenuItem((current == status ? "✓ " : "   ") + label);
+            item.setEnabled(current != status);
+            final var s = status;
+            item.addActionListener(e -> setStatus(node, s));
+            menu.add(item);
+        }
+        menu.show(source, x, y);
+    }
+
+    private void setStatus(NamNode node, NodeStatus status) {
+        try {
+            switch (status) {
+                case NEXT    -> service.markNext(node.getId());
+                case BACKLOG -> service.markBacklog(node.getId());
+                case DONE    -> service.markDone(node.getId());
+                default      -> {}
+            }
+            pendingSelection = node.getId();
+            rebuild();
+        } catch (IOException ex) { showError(ex.getMessage()); }
     }
 
     private void showError(String message) {
@@ -707,15 +832,48 @@ public final class ProjectWorkbenchPanel extends JPanel {
         }
     }
 
-    private static final class ActionCellRenderer extends DefaultListCellRenderer {
+    private static final Color BADGE_NEXT    = new Color( 50, 150,  80);
+    private static final Color BADGE_BACKLOG = new Color(160, 120,  30);
+    private static final Color BADGE_DONE    = new Color(110, 110, 110);
+
+    private static final class ActionCellRenderer implements ListCellRenderer<NamNode> {
+        private final JPanel panel = new JPanel(new BorderLayout(6, 0));
+        private final JLabel badge = new JLabel("", SwingConstants.CENTER);
+        private final JLabel label = new JLabel();
+
+        ActionCellRenderer() {
+            badge.setOpaque(true);
+            badge.setForeground(Color.WHITE);
+            badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
+            badge.setPreferredSize(new Dimension(BADGE_WIDTH, 0));
+            badge.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
+            panel.add(badge, BorderLayout.WEST);
+            panel.add(label, BorderLayout.CENTER);
+            panel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
+        }
+
         @Override
         public Component getListCellRendererComponent(
-                JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-            var c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof NamNode node && node.getStatus() == NodeStatus.DONE && !isSelected) {
-                c.setForeground(Color.GRAY);
-            }
-            return c;
+                JList<? extends NamNode> list, NamNode node, int index, boolean isSelected, boolean cellHasFocus) {
+            var status = node.getStatus();
+            badge.setText(switch (status) {
+                case NEXT    -> "N";
+                case BACKLOG -> "B";
+                case DONE    -> "D";
+                default      -> "?";
+            });
+            var bg = isSelected ? list.getSelectionBackground() : list.getBackground();
+            panel.setBackground(bg);
+            badge.setBackground(bg);
+            badge.setForeground(isSelected ? list.getSelectionForeground() : switch (status) {
+                case NEXT    -> BADGE_NEXT;
+                case BACKLOG -> BADGE_BACKLOG;
+                default      -> BADGE_DONE;
+            });
+            label.setText(node.getTitle());
+            label.setForeground(isSelected ? list.getSelectionForeground()
+                                           : status == NodeStatus.DONE ? Color.GRAY : list.getForeground());
+            return panel;
         }
     }
 }

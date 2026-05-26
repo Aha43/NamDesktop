@@ -4,6 +4,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.DoneItemRow;
 import namdesktop.lens.DoneLens;
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -79,6 +80,10 @@ public final class DonePanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> NodeStatus.DONE));
+        var actionEditor = new DefaultCellEditor(new JTextField());
+        actionEditor.setClickCountToStart(99);
+        table.getColumn("Action").setCellEditor(actionEditor);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
@@ -92,18 +97,41 @@ public final class DonePanel extends JPanel {
             markBacklogButton.setEnabled(selected);
         });
 
+        final int[] lastRow = {-1};
         table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastRow[0] = table.getSelectedRow();
+            }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 var row = table.rowAtPoint(e.getPoint());
                 var col = table.columnAtPoint(e.getPoint());
                 if (row < 0) return;
                 var item = tableModel.getRow(row);
-                if (col == 1 && e.getClickCount() == 1 && item.parentId() != null) {
-                    onOpenProject.accept(item.parentId());
+                if (col == 1) {
+                    if (e.getClickCount() == 1 && item.parentId() != null)
+                        onOpenProject.accept(item.parentId());
                     return;
                 }
-                if (e.getClickCount() == 2 && col != 1) {
+                if (col == 0) {
+                    var cellRect = table.getCellRect(row, 0, false);
+                    if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
+                        if (e.getClickCount() == 1) showStatusPopup(row, e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                        if (table.editCellAt(row, 0)) {
+                            var ed = table.getEditorComponent();
+                            if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
+                        }
+                    } else if (e.getClickCount() == 2) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(DonePanel.this),
+                                item.id(), workspace, service, false, DonePanel.this::refresh).setVisible(true);
+                    }
+                    return;
+                }
+                if (e.getClickCount() == 2) {
                     new ActionDialog(SwingUtilities.getWindowAncestor(DonePanel.this),
                             item.id(), workspace, service, false, DonePanel.this::refresh).setVisible(true);
                 }
@@ -130,7 +158,42 @@ public final class DonePanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         }));
 
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(DonePanel.this),
+                        item.id(), workspace, service, false, DonePanel.this::refresh).setVisible(true);
+            }
+        });
+
         add(new JScrollPane(table), BorderLayout.CENTER);
+    }
+
+    private void showStatusPopup(int row, Component comp, int x, int y) {
+        var id   = tableModel.getRow(row).id();
+        var popup = new JPopupMenu();
+        for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
+            var label  = (String) entry[0];
+            var target = (NodeStatus) entry[1];
+            var mi     = new JMenuItem((target == NodeStatus.DONE ? "✓ " : "  ") + label);
+            mi.setEnabled(target != NodeStatus.DONE);
+            mi.addActionListener(e -> {
+                try {
+                    switch (target) {
+                        case NEXT    -> service.markNext(id);
+                        case BACKLOG -> service.markBacklog(id);
+                        default      -> {}
+                    }
+                    refreshKeepSelection();
+                } catch (java.io.IOException ex) { showError(ex.getMessage()); }
+            });
+            popup.add(mi);
+        }
+        popup.show(comp, x, y);
     }
 
     public void refresh() {
@@ -184,7 +247,7 @@ public final class DonePanel extends JPanel {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
-    private static final class DoneTableModel extends AbstractTableModel {
+    private final class DoneTableModel extends AbstractTableModel {
 
         private static final String[] COLUMNS = {"Action", "Project", "Tags"};
         private List<DoneItemRow> rows = List.of();
@@ -195,6 +258,21 @@ public final class DonePanel extends JPanel {
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != 0 || row >= rows.size()) return;
+            var newTitle = value.toString().strip();
+            var r = rows.get(row);
+            if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            try {
+                service.renameNode(r.id(), newTitle);
+                DonePanel.this.refresh();
+            } catch (java.io.IOException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
 
         @Override
         public Object getValueAt(int row, int col) {

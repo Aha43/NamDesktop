@@ -7,6 +7,7 @@ import namdesktop.lens.NextActionsLens;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import java.awt.Component;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -107,18 +108,41 @@ public final class NextActionsPanel extends JPanel {
             downButton.setEnabled(row >= 0 && row < size - 1);
         });
 
+        final int[] lastRow = {-1};
         table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                lastRow[0] = table.getSelectedRow();
+            }
+
             @Override
             public void mouseClicked(MouseEvent e) {
                 var row = table.rowAtPoint(e.getPoint());
                 var col = table.columnAtPoint(e.getPoint());
                 if (row < 0) return;
                 var item = tableModel.getRow(row);
-                if (col == 1 && e.getClickCount() == 1 && item.parentId() != null) {
-                    onOpenProject.accept(item.parentId());
+                if (col == 1) {
+                    if (e.getClickCount() == 1 && item.parentId() != null)
+                        onOpenProject.accept(item.parentId());
                     return;
                 }
-                if (e.getClickCount() == 2 && col != 1) {
+                if (col == 0) {
+                    var cellRect = table.getCellRect(row, 0, false);
+                    if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
+                        if (e.getClickCount() == 1) showStatusPopup(row, e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                        if (table.editCellAt(row, 0)) {
+                            var ed = table.getEditorComponent();
+                            if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
+                        }
+                    } else if (e.getClickCount() == 2) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                                item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
+                    }
+                    return;
+                }
+                if (e.getClickCount() == 2) {
                     new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
                             item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
                 }
@@ -140,6 +164,10 @@ public final class NextActionsPanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         });
 
+        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> tableModel.getRow(row).status()));
+        var actionEditor = new DefaultCellEditor(new JTextField());
+        actionEditor.setClickCountToStart(99);
+        table.getColumn("Action").setCellEditor(actionEditor);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         statusColumn = table.getColumnModel().getColumn(3);
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
@@ -148,6 +176,18 @@ public final class NextActionsPanel extends JPanel {
         table.getColumnModel().getColumn(3).setMaxWidth(70);
         UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
+
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                        item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
+            }
+        });
 
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
@@ -187,6 +227,32 @@ public final class NextActionsPanel extends JPanel {
                 }
             }
         }
+    }
+
+    private void showStatusPopup(int row, Component comp, int x, int y) {
+        var id      = tableModel.getRow(row).id();
+        var current = tableModel.getRow(row).status();
+        var popup   = new JPopupMenu();
+        for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
+            var label  = (String) entry[0];
+            var target = (NodeStatus) entry[1];
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            mi.setEnabled(current != target);
+            mi.addActionListener(e -> {
+                try {
+                    switch (target) {
+                        case NEXT    -> service.markNext(id);
+                        case BACKLOG -> service.markBacklog(id);
+                        case DONE    -> service.markDone(id);
+                        default      -> {}
+                    }
+                    pendingSelection = id;
+                    refresh();
+                } catch (java.io.IOException ex) { showError(ex.getMessage()); }
+            });
+            popup.add(mi);
+        }
+        popup.show(comp, x, y);
     }
 
     private void addAction() {
@@ -232,7 +298,7 @@ public final class NextActionsPanel extends JPanel {
         SwingUtilities.invokeLater(() -> deckWrapper.remove(old));
     }
 
-    private static final class NextActionsTableModel extends AbstractTableModel {
+    private final class NextActionsTableModel extends AbstractTableModel {
 
         private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status"};
         private List<NextActionItemRow> rows = List.of();
@@ -247,6 +313,22 @@ public final class NextActionsPanel extends JPanel {
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != 0 || row >= rows.size()) return;
+            var newTitle = value.toString().strip();
+            var r = rows.get(row);
+            if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            try {
+                pendingSelection = r.id();
+                service.renameNode(r.id(), newTitle);
+                refresh();
+            } catch (java.io.IOException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
 
         @Override
         public Object getValueAt(int row, int col) {

@@ -1,7 +1,6 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import namdesktop.ui.UiHelper;
 import namdesktop.lens.ContextItemRow;
 import namdesktop.lens.ContextLens;
 import namdesktop.model.NamWorkspace;
@@ -16,6 +15,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public final class ContextPanel extends JPanel {
@@ -71,7 +71,7 @@ public final class ContextPanel extends JPanel {
         tagSelectorPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 4));
         tagSelectorPanel.setBorder(BorderFactory.createTitledBorder("Filter by tags (AND)"));
 
-        JTable table = new JTable(tableModel) {
+        var table = new JTable(tableModel) {
             @Override
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
@@ -82,19 +82,60 @@ public final class ContextPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> tableModel.getRow(row).status()));
+        var actionEditor = new DefaultCellEditor(new JTextField());
+        actionEditor.setClickCountToStart(99);
+        table.getColumn("Action").setCellEditor(actionEditor);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
         UiHelper.fillTableColumn(table, 1);
+
+        table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
+                .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
+        table.getActionMap().put("openDialog", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent ev) {
+                var row = table.getSelectedRow();
+                if (row < 0) return;
+                var item = tableModel.getRow(row);
+                new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
+                        item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
+            }
+        });
+
+        final int[] lastRow = {-1};
         table.addMouseListener(new MouseAdapter() {
             @Override
+            public void mousePressed(MouseEvent e) {
+                lastRow[0] = table.getSelectedRow();
+            }
+
+            @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() != 2) return;
                 var row = table.rowAtPoint(e.getPoint());
+                var col = table.columnAtPoint(e.getPoint());
                 if (row < 0) return;
-                var selected = tableModel.getRow(row);
-                new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
-                        selected.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
+                var item = tableModel.getRow(row);
+                if (col == 0) {
+                    var cellRect = table.getCellRect(row, 0, false);
+                    if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
+                        if (e.getClickCount() == 1) showStatusPopup(row, item.id(), item.status(), e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                        if (table.editCellAt(row, 0)) {
+                            var ed = table.getEditorComponent();
+                            if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
+                        }
+                    } else if (e.getClickCount() == 2) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
+                                item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
+                    }
+                    return;
+                }
+                if (e.getClickCount() == 2) {
+                    new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
+                            item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
+                }
             }
         });
 
@@ -104,6 +145,31 @@ public final class ContextPanel extends JPanel {
 
         add(northPanel,               BorderLayout.NORTH);
         add(new JScrollPane(table),   BorderLayout.CENTER);
+    }
+
+    private void showStatusPopup(int row, UUID id, NodeStatus current, Component comp, int x, int y) {
+        var popup = new JPopupMenu();
+        for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
+            var label  = (String) entry[0];
+            var target = (NodeStatus) entry[1];
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            mi.setEnabled(current != target);
+            mi.addActionListener(e -> {
+                try {
+                    switch (target) {
+                        case NEXT    -> service.markNext(id);
+                        case BACKLOG -> service.markBacklog(id);
+                        case DONE    -> service.markDone(id);
+                        default      -> {}
+                    }
+                    refreshResults();
+                } catch (java.io.IOException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            popup.add(mi);
+        }
+        popup.show(comp, x, y);
     }
 
     public void refresh() {
@@ -190,7 +256,7 @@ public final class ContextPanel extends JPanel {
         }
     }
 
-    private static final class ContextTableModel extends AbstractTableModel {
+    private final class ContextTableModel extends AbstractTableModel {
 
         private static final String[] COLUMNS = {"Action", "Project", "Tags"};
         private List<ContextItemRow> rows = List.of();
@@ -205,6 +271,21 @@ public final class ContextPanel extends JPanel {
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != 0 || row >= rows.size()) return;
+            var newTitle = value.toString().strip();
+            var r = rows.get(row);
+            if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            try {
+                service.renameNode(r.id(), newTitle);
+                ContextPanel.this.refreshResults();
+            } catch (java.io.IOException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
 
         @Override
         public Object getValueAt(int row, int col) {

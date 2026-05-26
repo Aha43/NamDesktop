@@ -3,7 +3,7 @@
 > This document describes the current implementation state, not the final architecture.
 > Update it at the end of each sprint so design discussions stay grounded.
 
-Last updated: 2026-05-25 (after sprints through #201 — Mission Control, MCR view mode, project path columns, inbox cleanup, workbench alignment)
+Last updated: 2026-05-26 (after PR #204 — in-app help browser, View menu, Zen Mode, Help menu, About dialog)
 
 ---
 
@@ -132,7 +132,7 @@ Stateless, return immutable view-model records. Structural nodes always excluded
 
 ## UI (`namdesktop.ui`)
 
-**MainFrame** — left `NavigationPanel` + swappable `ContentArea` + toolbar + `JMenuBar`
+**MainFrame** — left `NavigationPanel` + swappable `ContentArea` + toolbar + `JMenuBar` (File · View · Help menus)
 
 Launch modes:
 - Normal: `SplashDialog` prompts dev/prod selection → loads workspace from disk
@@ -140,6 +140,10 @@ Launch modes:
 - E2E (`--e2e` flag): fresh in-memory workspace, runs `e2e.json`, exits 0/1
 
 Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · [Raw Tree — dev only] · [Saved Views section] · [Mission Controls section]
+
+**View menu** — Hide/Show Toolbar (`Cmd+Shift+T`), Hide/Show Nav Pane (`Cmd+Shift+N`), Zen Mode (`Cmd+Shift+Z`). All three states persisted in `AppSettings`. Nav pane label syncs with the JSplitPane one-touch arrows via `PropertyChangeListener` on `DIVIDER_LOCATION_PROPERTY`.
+
+**Help menu** — Help (F1, opens `HelpPanel`) · About NamDesktop… (opens `AboutDialog` showing version)
 
 **Panels** (each has `refresh()`):
 
@@ -154,6 +158,7 @@ Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · 
 | `DonePanel` | Title, Project, Tags; Delete / Mark as Next / Mark as Backlog toolbar (confirm dialogs); auto-selects first row on entry |
 | `MissionControlPanel` | Heat-map grid of `MissionControlStation` cards (red/amber/green border by done ratio); create/delete; clicking a card opens `ProjectWorkbenchPanel` with MC name in breadcrumb |
 | `ProjectWorkbenchPanel` | Breadcrumb nav (backLabel aware — shows MC name when entered from Mission Control); MCR view toggle (dashboard icon) shows sub-projects as station cards; clicking a card navigates in, back-breadcrumb restores MCR mode; sub-project sections with action lists; quick rename/description/edit/delete per sub-project; delete is recursive with blast-radius warning; "This project" header aligned with sub-project headers |
+| `HelpPanel` | Three-pane help browser: tutorial list sidebar (JList) · tutorial content (JEditorPane HTML) · concept article pane (slides in on `concept://slug` link click). Two tutorials, nine concept articles in `src/resources/help/`. |
 | `SearchPanel` | Full-text search across all nodes |
 | `TreePanel` | Raw node tree; context menu: add/rename/mark done/move/delete (recursive with count warning) — dev only |
 
@@ -175,6 +180,7 @@ Nav entries: Inbox · Projects · Next Actions · Context · Backlog · Done · 
 
 **Dialogs (additional):**
 - `MissionControlCreateDialog` — name field + `TagsField`; `isConfirmed()`, `getMcName()`, `getMcTags()`
+- `AboutDialog` — modal dialog showing app name and version from `AppInfo.version()`
 
 **Shared helpers:**
 - `UiHelper.iconButton` — label+icon button, goes icon-only in dense mode
@@ -214,7 +220,7 @@ Format version field present for future migrations.
 
 ## Settings (`namdesktop.app`)
 
-`AppSettings` — persisted to `~/.namdesktop/settings.json`: `theme`, `isDense`, `isShowStatusColumn`, `syncRepoUrl`
+`AppSettings` — persisted to `~/.namdesktop/settings.json`: `theme`, `isDense`, `isShowStatusColumn`, `syncRepoUrl`, `showToolbar`, `showNavPane`
 
 ---
 
@@ -242,6 +248,9 @@ Format version field present for future migrations.
 - Templates for creating project hierarchies
 - Demo script (narrative) and e2e script (regression) as separate concerns sharing the same `swingdemo` machinery
 - `make e2e` as the regression gate; e2e script updated alongside features
+- In-app help browser (`HelpPanel`) with HTML tutorials and concept articles; `concept://slug` URL scheme for cross-linking
+- View menu with toolbar/nav pane/zen mode toggles, all persisted
+- Help menu as the canonical entry point to help and About
 
 **Still open:**
 - Sub-project classification rules (#39)
