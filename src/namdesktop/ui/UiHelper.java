@@ -1,20 +1,28 @@
 package namdesktop.ui;
 
 import namdesktop.app.AppSettings;
+import namdesktop.model.NodeStatus;
 
 import javax.swing.*;
 import javax.swing.event.TableColumnModelEvent;
 import javax.swing.event.TableColumnModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.List;
+import java.util.function.IntFunction;
 
 public final class UiHelper {
 
     private static final String PROP_DENSEABLE = "namdesktop.denseable";
     private static final String PROP_LABEL     = "namdesktop.label";
+
+    public static final int ACTION_BADGE_W      = 24;
+    private static final Color BADGE_NEXT       = new Color(50, 150, 80);
+    private static final Color BADGE_BACKLOG    = new Color(160, 120, 30);
+    private static final Color BADGE_DONE_COLOR = new Color(110, 110, 110);
 
     private UiHelper() {}
 
@@ -33,6 +41,49 @@ public final class UiHelper {
         var btn = new JButton("", icon);
         btn.setToolTipText(label);
         return btn;
+    }
+
+    public static TableCellRenderer actionBadgeRenderer(IntFunction<NodeStatus> statusFn) {
+        return new TableCellRenderer() {
+            private final JPanel cell  = new JPanel(new BorderLayout(4, 0));
+            private final JLabel badge = new JLabel();
+            private final JLabel title = new JLabel();
+            {
+                cell.setOpaque(true);
+                badge.setOpaque(false);
+                title.setOpaque(false);
+                badge.setPreferredSize(new Dimension(ACTION_BADGE_W, 0));
+                badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
+                badge.setHorizontalAlignment(SwingConstants.CENTER);
+                cell.add(badge, BorderLayout.WEST);
+                cell.add(title, BorderLayout.CENTER);
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                var bg = isSelected ? table.getSelectionBackground() : table.getBackground();
+                var fg = isSelected ? table.getSelectionForeground() : table.getForeground();
+                cell.setBackground(bg);
+                var status = statusFn.apply(row);
+                if (status == null) status = NodeStatus.BACKLOG;
+                badge.setText(switch (status) {
+                    case NEXT      -> "N";
+                    case BACKLOG   -> "B";
+                    case DONE      -> "D";
+                    case CANCELLED -> "C";
+                    case ARCHIVED  -> "A";
+                });
+                badge.setForeground(isSelected ? table.getSelectionForeground() : switch (status) {
+                    case NEXT    -> BADGE_NEXT;
+                    case BACKLOG -> BADGE_BACKLOG;
+                    default      -> BADGE_DONE_COLOR;
+                });
+                title.setForeground(!isSelected && status == NodeStatus.DONE ? BADGE_DONE_COLOR : fg);
+                title.setText(value != null ? value.toString() : "");
+                return cell;
+            }
+        };
     }
 
     public static DefaultTableCellRenderer tagsRenderer() {

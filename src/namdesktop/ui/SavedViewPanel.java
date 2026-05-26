@@ -1,7 +1,6 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import namdesktop.ui.UiHelper;
 import namdesktop.lens.ContextItemRow;
 import namdesktop.lens.ContextLens;
 import namdesktop.model.NamWorkspace;
@@ -17,6 +16,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class SavedViewPanel extends JPanel {
@@ -95,19 +95,47 @@ public final class SavedViewPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> tableModel.getRow(row).status()));
+        var actionEditor = new DefaultCellEditor(new JTextField());
+        actionEditor.setClickCountToStart(99);
+        table.getColumn("Action").setCellEditor(actionEditor);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
         UiHelper.fillTableColumn(table, 1);
+        final int[] lastRow = {-1};
         table.addMouseListener(new MouseAdapter() {
             @Override
+            public void mousePressed(MouseEvent e) {
+                lastRow[0] = table.getSelectedRow();
+            }
+
+            @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() != 2) return;
                 var row = table.rowAtPoint(e.getPoint());
+                var col = table.columnAtPoint(e.getPoint());
                 if (row < 0) return;
-                new ActionDialog(SwingUtilities.getWindowAncestor(SavedViewPanel.this),
-                        tableModel.getRow(row).id(), workspace, service, true,
-                        SavedViewPanel.this::refresh).setVisible(true);
+                var item = tableModel.getRow(row);
+                if (col == 0) {
+                    var cellRect = table.getCellRect(row, 0, false);
+                    if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
+                        if (e.getClickCount() == 1) showStatusPopup(row, item.id(), item.status(), e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                        if (table.editCellAt(row, 0)) {
+                            var ed = table.getEditorComponent();
+                            if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
+                        }
+                    } else if (e.getClickCount() == 2) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(SavedViewPanel.this),
+                                item.id(), workspace, service, true, SavedViewPanel.this::refresh).setVisible(true);
+                    }
+                    return;
+                }
+                if (e.getClickCount() == 2) {
+                    new ActionDialog(SwingUtilities.getWindowAncestor(SavedViewPanel.this),
+                            item.id(), workspace, service, true, SavedViewPanel.this::refresh).setVisible(true);
+                }
             }
         });
 
@@ -120,6 +148,31 @@ public final class SavedViewPanel extends JPanel {
         add(deckWrapper, BorderLayout.CENTER);
 
         refresh();
+    }
+
+    private void showStatusPopup(int row, UUID id, NodeStatus current, Component comp, int x, int y) {
+        var popup = new JPopupMenu();
+        for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
+            var label  = (String) entry[0];
+            var target = (NodeStatus) entry[1];
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            mi.setEnabled(current != target);
+            mi.addActionListener(e -> {
+                try {
+                    switch (target) {
+                        case NEXT    -> service.markNext(id);
+                        case BACKLOG -> service.markBacklog(id);
+                        case DONE    -> service.markDone(id);
+                        default      -> {}
+                    }
+                    refresh();
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            });
+            popup.add(mi);
+        }
+        popup.show(comp, x, y);
     }
 
     public void refresh() {
@@ -195,7 +248,7 @@ public final class SavedViewPanel extends JPanel {
         }
     }
 
-    private static final class ViewTableModel extends AbstractTableModel {
+    private final class ViewTableModel extends AbstractTableModel {
         private static final String[] COLUMNS = {"Action", "Project", "Tags"};
         private List<ContextItemRow> rows = List.of();
 
@@ -205,6 +258,21 @@ public final class SavedViewPanel extends JPanel {
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != 0 || row >= rows.size()) return;
+            var newTitle = value.toString().strip();
+            var r = rows.get(row);
+            if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            try {
+                service.renameNode(r.id(), newTitle);
+                SavedViewPanel.this.refresh();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(null, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
 
         @Override
         public Object getValueAt(int row, int col) {
