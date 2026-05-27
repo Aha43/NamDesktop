@@ -24,6 +24,7 @@ public final class InboxPanel extends JPanel {
     private final InboxTableModel tableModel;
     private JTable table;
     private JButton processButton;
+    private JPanel tableCard;
 
     public InboxPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -78,12 +79,14 @@ public final class InboxPanel extends JPanel {
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
 
-        add(toolbar, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "Nothing captured yet. Use + to add something.");
+        add(toolbar,    BorderLayout.NORTH);
+        add(tableCard,  BorderLayout.CENTER);
     }
 
     public void refresh() {
         tableModel.setRows(new InboxLens().items(workspace));
+        UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
     }
 
     private void showMenu(MouseEvent e) {

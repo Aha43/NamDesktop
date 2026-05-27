@@ -103,6 +103,23 @@ public final class UiHelper {
         };
     }
 
+    public static JLabel emptyStateLabel(String message) {
+        var label = new JLabel("<html><center>" + message + "</center></html>", SwingConstants.CENTER);
+        label.setForeground(UIManager.getColor("Label.disabledForeground"));
+        return label;
+    }
+
+    public static JPanel tableCard(JScrollPane scroll, String emptyMessage) {
+        var panel = new JPanel(new CardLayout());
+        panel.add(scroll,                      "table");
+        panel.add(emptyStateLabel(emptyMessage), "empty");
+        return panel;
+    }
+
+    public static void setTableEmpty(JPanel card, boolean empty) {
+        ((CardLayout) card.getLayout()).show(card, empty ? "empty" : "table");
+    }
+
     public static DefaultTableCellRenderer tagsRenderer() {
         return new DefaultTableCellRenderer() {
             @Override

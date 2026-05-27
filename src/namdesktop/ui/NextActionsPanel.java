@@ -232,7 +232,8 @@ public final class NextActionsPanel extends JPanel {
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
         deckWrapper = new JPanel(deckCards);
-        deckWrapper.add(scrollPane, "table");
+        deckWrapper.add(scrollPane,                                                         "table");
+        deckWrapper.add(UiHelper.emptyStateLabel("No next actions. Open the Inbox to process items, or add one directly."), "empty");
         add(deckWrapper, BorderLayout.CENTER);
     }
 
@@ -260,6 +261,8 @@ public final class NextActionsPanel extends JPanel {
                 ? currentOrder
                 : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
+        if (moonCardPanel == null)
+            deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
 
         if (pendingSelection != null) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -339,7 +342,6 @@ public final class NextActionsPanel extends JPanel {
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
-        deckCards.show(deckWrapper, "table");
         toolbar.setVisible(true);
         refresh();
         var old = moonCardPanel;

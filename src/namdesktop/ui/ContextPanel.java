@@ -24,6 +24,7 @@ public final class ContextPanel extends JPanel {
     private final NamWorkspaceService service;
     private final Runnable onViewCreated;
     private final ContextTableModel tableModel;
+    private JPanel tableCard;
     private final JPanel tagSelectorPanel;
     private final List<JCheckBox> tagBoxes = new ArrayList<>();
     private JLabel matchLabel;
@@ -158,8 +159,9 @@ public final class ContextPanel extends JPanel {
         northPanel.add(selectorHeader,  BorderLayout.NORTH);
         northPanel.add(tagSelectorPanel, BorderLayout.CENTER);
 
-        add(northPanel,               BorderLayout.NORTH);
-        add(new JScrollPane(table),   BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "No actions match the current filter.");
+        add(northPanel,  BorderLayout.NORTH);
+        add(tableCard,   BorderLayout.CENTER);
     }
 
     private void showStatusPopup(int row, UUID id, NodeStatus current, Component comp, int x, int y) {
@@ -224,6 +226,7 @@ public final class ContextPanel extends JPanel {
                 .toList();
         var rows = new ContextLens().items(workspace, selected);
         tableModel.setRows(rows);
+        UiHelper.setTableEmpty(tableCard, rows.isEmpty());
         matchLabel.setText(rows.size() + (rows.size() == 1 ? " match" : " matches"));
         var hasFilter = !selected.isEmpty();
         addActionButton.setEnabled(hasFilter);

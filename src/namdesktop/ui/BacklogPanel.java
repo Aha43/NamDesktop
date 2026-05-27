@@ -230,7 +230,8 @@ public final class BacklogPanel extends JPanel {
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
         deckWrapper = new JPanel(deckCards);
-        deckWrapper.add(scrollPane, "table");
+        deckWrapper.add(scrollPane,                                                                          "table");
+        deckWrapper.add(UiHelper.emptyStateLabel("Nothing deferred. Items you park for later will appear here."), "empty");
         add(deckWrapper, BorderLayout.CENTER);
     }
 
@@ -258,6 +259,8 @@ public final class BacklogPanel extends JPanel {
                 ? currentOrder
                 : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
+        if (moonCardPanel == null)
+            deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
 
         if (pendingSelection != null) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -337,7 +340,6 @@ public final class BacklogPanel extends JPanel {
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
-        deckCards.show(deckWrapper, "table");
         toolbar.setVisible(true);
         refresh();
         var old = moonCardPanel;

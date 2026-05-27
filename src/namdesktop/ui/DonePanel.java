@@ -27,6 +27,7 @@ public final class DonePanel extends JPanel {
     private final JButton deleteButton;
     private final JButton markNextButton;
     private final JButton markBacklogButton;
+    private JPanel tableCard;
 
     public DonePanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -180,7 +181,8 @@ public final class DonePanel extends JPanel {
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "No completed actions yet.");
+        add(tableCard, BorderLayout.CENTER);
     }
 
     private void showStatusPopup(int row, Component comp, int x, int y) {
@@ -209,6 +211,7 @@ public final class DonePanel extends JPanel {
 
     public void refresh() {
         tableModel.setRows(new DoneLens().items(workspace));
+        UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
         if (tableModel.getRowCount() > 0 && table.getSelectedRow() < 0)
             table.setRowSelectionInterval(0, 0);
         var row = table.getSelectedRow();
