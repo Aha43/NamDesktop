@@ -38,7 +38,7 @@ public final class MoonCardPanel extends JPanel {
 
         var exitButton = UiHelper.iconButton("Exit  [Esc]",
                 new FlatSVGIcon(MoonCardPanel.class.getResource("/icons/logout.svg")).derive(16, 16));
-        exitButton.setToolTipText("Exit Moon Cards (Esc)");
+        exitButton.setToolTipText("Exit focus mode (Esc)");
         exitButton.addActionListener(e -> onExit.run());
 
         var topBar = new JPanel(new BorderLayout());

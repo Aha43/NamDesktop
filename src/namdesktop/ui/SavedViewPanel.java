@@ -59,9 +59,9 @@ public final class SavedViewPanel extends JPanel {
         deleteButton.setToolTipText("Delete this filter");
         deleteButton.addActionListener(e -> deleteView());
 
-        var moonButton = UiHelper.iconButton("Moon Cards",
+        var moonButton = UiHelper.iconButton("Focus mode",
                 new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
-        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.setToolTipText("Work through this list one action at a time");
         moonButton.addActionListener(e -> enterDeckMode());
 
         var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
@@ -217,7 +217,7 @@ public final class SavedViewPanel extends JPanel {
             rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
         }
         if (rows.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);

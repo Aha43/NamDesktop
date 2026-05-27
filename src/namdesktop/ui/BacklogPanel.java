@@ -62,9 +62,9 @@ public final class BacklogPanel extends JPanel {
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
 
-        var moonButton = UiHelper.iconButton("Moon Cards",
+        var moonButton = UiHelper.iconButton("Focus mode",
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
-        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.setToolTipText("Work through this list one action at a time");
         moonButton.addActionListener(e -> enterDeckMode());
 
         var lockIcon     = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
@@ -325,7 +325,7 @@ public final class BacklogPanel extends JPanel {
             cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
         }
         if (cards.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
