@@ -117,6 +117,14 @@ public final class MainFrame extends JFrame {
         helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
         toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
+        var settingsButton = UiHelper.iconButton("Settings…",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/settings.svg")).derive(16, 16));
+        settingsButton.setToolTipText("Settings");
+        settingsButton.addActionListener(e -> new SettingsDialog(this, settings, () -> {
+            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+        }).setVisible(true));
+        toolbar.add(settingsButton);
         var exitButton = UiHelper.iconButton("Exit",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
         exitButton.setToolTipText("Exit NamDesktop");
@@ -129,6 +137,8 @@ public final class MainFrame extends JFrame {
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
+        settingsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         settingsItem.addActionListener(e -> new SettingsDialog(this, settings, () -> {
             nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
             backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
@@ -242,6 +252,8 @@ public final class MainFrame extends JFrame {
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
+
+
         toolbar.setVisible(settings.isShowToolbar());
         if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
         add(toolbar,        BorderLayout.NORTH);

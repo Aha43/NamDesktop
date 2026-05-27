@@ -36,6 +36,7 @@ ICONS=(
   help
   lock
   lock-open
+  settings
 )
 
 mkdir -p "$ICONS_DIR"
