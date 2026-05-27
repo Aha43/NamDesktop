@@ -81,7 +81,7 @@ public final class NamDesktopMain {
         }
         var runner = new ScriptRunner(new ObjectMapper(), frame::refreshAll);
         new NamDemoWiring(workspace, service).configure(runner);
-        new NamAssertWiring(workspace).configure(runner);
+        new NamAssertWiring(workspace, service).configure(runner);
         runner
             .setOnStep(step -> {
                 if (!step.description().isEmpty())

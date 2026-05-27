@@ -36,8 +36,10 @@ public final class NamDemoWiring {
             .register("markDone",        this::markDone)
             .register("markBacklog",     this::markBacklog)
             .register("addTag",          this::addTag)
-            .register("createSavedView", this::createSavedView)
-            .register("deleteProject",   this::deleteProject);
+            .register("createSavedView",    this::createSavedView)
+            .register("deleteProject",      this::deleteProject)
+            .register("addPrerequisite",    this::addPrerequisite)
+            .register("removePrerequisite", this::removePrerequisite);
     }
 
     private void addProject(Map<String, Object> args) throws Exception {
@@ -90,6 +92,18 @@ public final class NamDemoWiring {
 
     private void deleteProject(Map<String, Object> args) throws Exception {
         service.deleteRecursive(findByTitle(str(args, "title")).getId());
+    }
+
+    private void addPrerequisite(Map<String, Object> args) throws Exception {
+        var blocked = findByTitle(str(args, "blocked"));
+        var prereq  = findByTitle(str(args, "prereq"));
+        service.addPrerequisite(blocked.getId(), prereq.getId());
+    }
+
+    private void removePrerequisite(Map<String, Object> args) throws Exception {
+        var blocked = findByTitle(str(args, "blocked"));
+        var prereq  = findByTitle(str(args, "prereq"));
+        service.removePrerequisite(blocked.getId(), prereq.getId());
     }
 
     private NamNode findByTitle(String title) {

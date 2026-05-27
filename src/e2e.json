@@ -47,5 +47,21 @@
   {"action":"assertNodeNotExists",   "args":{"title":"Home"},                                 "delayMs":20, "description":"Checking recursive delete removed Home"},
   {"action":"assertNodeNotExists",   "args":{"title":"Kitchen"},                              "delayMs":20},
   {"action":"assertNodeNotExists",   "args":{"title":"Get quotes"},                           "delayMs":20},
-  {"action":"assertNodeCount",       "args":{"count":5},                                      "delayMs":20, "description":"Checking node count after recursive delete"}
+  {"action":"assertNodeCount",       "args":{"count":5},                                      "delayMs":20, "description":"Checking node count after recursive delete"},
+
+  {"action":"addPrerequisite",  "args":{"blocked":"Book hotel",   "prereq":"Book flights"},   "delayMs":50, "description":"Book hotel is blocked by Book flights"},
+  {"action":"assertIsBlocked",  "args":{"title":"Book hotel"},                                "delayMs":20, "description":"Book hotel should now be blocked"},
+  {"action":"assertNotBlocked", "args":{"title":"Book flights"},                              "delayMs":20, "description":"Book flights itself is not blocked"},
+  {"action":"markDone",         "args":{"title":"Book flights"},                              "delayMs":50, "description":"Completing the prerequisite"},
+  {"action":"assertNodeStatus", "args":{"title":"Book flights",   "status":"DONE"},           "delayMs":20},
+  {"action":"assertNotBlocked", "args":{"title":"Book hotel"},                                "delayMs":20, "description":"Book hotel should now be unblocked"},
+
+  {"action":"addNextAction",    "args":{"title":"Buy sunscreen"},                             "delayMs":50, "description":"Setup for sweep-on-delete test"},
+  {"action":"addNextAction",    "args":{"title":"Pack suitcase"},                             "delayMs":50},
+  {"action":"addPrerequisite",  "args":{"blocked":"Pack suitcase","prereq":"Buy sunscreen"},  "delayMs":50, "description":"Pack suitcase blocked by Buy sunscreen"},
+  {"action":"assertIsBlocked",  "args":{"title":"Pack suitcase"},                             "delayMs":20},
+  {"action":"deleteProject",    "args":{"title":"Buy sunscreen"},                             "delayMs":50, "description":"Delete the prereq — blockedBy reference should be swept"},
+  {"action":"assertNodeNotExists","args":{"title":"Buy sunscreen"},                           "delayMs":20},
+  {"action":"assertNotBlocked", "args":{"title":"Pack suitcase"},                             "delayMs":20, "description":"After prereq deleted, Pack suitcase should be unblocked"},
+  {"action":"assertNodeCount",  "args":{"count":6},                                           "delayMs":20, "description":"Trip to Rome (Book flights + Book hotel) + Call dentist + Research options + Pack suitcase"}
 ]

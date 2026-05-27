@@ -40,6 +40,7 @@ public final class NextActionsPanel extends JPanel {
     private TableColumn statusColumn;
     private boolean statusColumnVisible = true;
     private MoonCardPanel moonCardPanel;
+    private boolean showBlocked = false;
 
     public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -66,12 +67,26 @@ public final class NextActionsPanel extends JPanel {
         moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
         moonButton.addActionListener(e -> enterDeckMode());
 
+        var lockIcon     = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
+        var lockOpenIcon = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/lock-open.svg")).derive(16, 16);
+        var showBlockedBtn = new JToggleButton(lockIcon);
+        showBlockedBtn.setToolTipText("Blocked actions hidden — click to show");
+        showBlockedBtn.addActionListener(e -> {
+            showBlocked = showBlockedBtn.isSelected();
+            showBlockedBtn.setIcon(showBlocked ? lockOpenIcon : lockIcon);
+            showBlockedBtn.setToolTipText(showBlocked
+                    ? "Blocked actions visible — click to hide"
+                    : "Blocked actions hidden — click to show");
+            refresh();
+        });
+
         toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(addButton);
         toolbar.add(upButton);
         toolbar.add(downButton);
         toolbar.add(Box.createHorizontalGlue());
+        toolbar.add(showBlockedBtn);
         toolbar.add(moonButton);
         add(toolbar, BorderLayout.NORTH);
 
@@ -80,7 +95,8 @@ public final class NextActionsPanel extends JPanel {
             public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
                 var c = super.prepareRenderer(renderer, row, column);
                 var item = tableModel.getRow(row);
-                c.setForeground(item.status() == NodeStatus.DONE ? Color.GRAY : getForeground());
+                var blocked = showBlocked && service.isBlocked(item.id());
+                c.setForeground(item.status() == NodeStatus.DONE || blocked ? Color.GRAY : getForeground());
                 if (column == 1 && item.isSubProject()) {
                     c.setFont(c.getFont().deriveFont(Font.ITALIC));
                 } else {
@@ -98,6 +114,18 @@ public final class NextActionsPanel extends JPanel {
                     var r = getCellRect(row, 0, false);
                     if (e.getX() >= r.x + r.width - UiHelper.ACTION_PENCIL_W)
                         return "Edit: " + tableModel.getRow(row).title();
+                    if (showBlocked && service.isBlocked(tableModel.getRow(row).id())) {
+                        return workspace.getNode(tableModel.getRow(row).id())
+                                .map(n -> n.getBlockedBy().stream()
+                                        .map(workspace::getNode)
+                                        .flatMap(java.util.Optional::stream)
+                                        .filter(p -> p.getStatus() != NodeStatus.DONE)
+                                        .map(NamNode::getTitle)
+                                        .collect(Collectors.joining(", ")))
+                                .filter(s -> !s.isEmpty())
+                                .map(s -> "Blocked by: " + s)
+                                .orElse(null);
+                    }
                 }
                 if (col != 1) return null;
                 return tableModel.getRow(row).projectPath();
@@ -174,7 +202,9 @@ public final class NextActionsPanel extends JPanel {
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
         });
 
-        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> tableModel.getRow(row).status()));
+        table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(
+                row -> tableModel.getRow(row).status(),
+                row -> showBlocked && service.isBlocked(tableModel.getRow(row).id())));
         var actionEditor = new DefaultCellEditor(new JTextField());
         actionEditor.setClickCountToStart(99);
         table.getColumn("Action").setCellEditor(actionEditor);
@@ -224,9 +254,12 @@ public final class NextActionsPanel extends JPanel {
                 .map(r -> workspace.getNode(r.id()).orElseThrow())
                 .toList();
         var ordered    = service.getViewOrder(NamWorkspaceService.VIEW_NEXT_ACTIONS, liveNodes);
-        currentOrder   = ordered.stream().map(NamNode::getId).toList();
-        var rowById    = liveRows.stream().collect(Collectors.toMap(NextActionItemRow::id, r -> r));
-        tableModel.setRows(currentOrder.stream().map(rowById::get).toList());
+        currentOrder  = ordered.stream().map(NamNode::getId).toList();
+        var rowById   = liveRows.stream().collect(Collectors.toMap(NextActionItemRow::id, r -> r));
+        var displayIds = showBlocked
+                ? currentOrder
+                : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
+        tableModel.setRows(displayIds.stream().map(rowById::get).toList());
 
         if (pendingSelection != null) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -248,7 +281,7 @@ public final class NextActionsPanel extends JPanel {
             var target = (NodeStatus) entry[1];
             var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
-            mi.setEnabled(current != target);
+            mi.setEnabled(current != target && !(target == NodeStatus.DONE && service.isBlocked(id)));
             mi.addActionListener(e -> {
                 try {
                     switch (target) {
@@ -256,6 +289,11 @@ public final class NextActionsPanel extends JPanel {
                         case BACKLOG -> service.markBacklog(id);
                         case DONE    -> service.markDone(id);
                         default      -> {}
+                    }
+                    if (target == NodeStatus.DONE) {
+                        var unblocked = service.newlyUnblockedNames(id);
+                        if (!unblocked.isEmpty())
+                            MainFrame.showNudge("Unblocked: " + String.join(", ", unblocked));
                     }
                     pendingSelection = id;
                     refresh();

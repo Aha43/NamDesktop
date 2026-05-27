@@ -14,6 +14,7 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.function.IntPredicate;
 
 public final class UiHelper {
 
@@ -50,6 +51,10 @@ public final class UiHelper {
     }
 
     public static TableCellRenderer actionBadgeRenderer(IntFunction<NodeStatus> statusFn) {
+        return actionBadgeRenderer(statusFn, row -> false);
+    }
+
+    public static TableCellRenderer actionBadgeRenderer(IntFunction<NodeStatus> statusFn, IntPredicate isBlockedFn) {
         return new TableCellRenderer() {
             private final JPanel cell   = new JPanel(new BorderLayout(4, 0));
             private final JLabel badge  = new JLabel();
@@ -90,7 +95,8 @@ public final class UiHelper {
                     case BACKLOG -> BADGE_BACKLOG;
                     default      -> BADGE_DONE_COLOR;
                 });
-                title.setForeground(!isSelected && status == NodeStatus.DONE ? BADGE_DONE_COLOR : fg);
+                var dim = !isSelected && (status == NodeStatus.DONE || isBlockedFn.test(row));
+                title.setForeground(dim ? BADGE_DONE_COLOR : fg);
                 title.setText(value != null ? value.toString() : "");
                 return cell;
             }
