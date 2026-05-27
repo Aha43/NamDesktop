@@ -23,6 +23,7 @@ public final class InboxPanel extends JPanel {
     private final NamWorkspaceService service;
     private final InboxTableModel tableModel;
     private JTable table;
+    private JButton processButton;
 
     public InboxPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -44,10 +45,33 @@ public final class InboxPanel extends JPanel {
         table.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    var row = table.rowAtPoint(e.getPoint());
+                    if (row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE)
+                        process(tableModel.getRow(row));
+                }
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(ev -> {
+            if (ev.getValueIsAdjusting()) return;
+            var row = table.getSelectedRow();
+            processButton.setEnabled(row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
         });
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
+        processButton = UiHelper.iconButton("Process…",
+                new FlatSVGIcon(InboxPanel.class.getResource("/icons/arrow-right.svg")).derive(16, 16));
+        processButton.setToolTipText("Decide what this item is and where it belongs");
+        processButton.setEnabled(false);
+        processButton.addActionListener(e -> {
+            var row = table.getSelectedRow();
+            if (row >= 0) process(tableModel.getRow(row));
+        });
+        toolbar.add(processButton);
+        toolbar.addSeparator();
         var addButton = UiHelper.iconButton("Add item",
                 new FlatSVGIcon(InboxPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.setToolTipText("Add new inbox item");
