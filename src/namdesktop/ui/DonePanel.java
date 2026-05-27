@@ -37,9 +37,9 @@ public final class DonePanel extends JPanel {
 
         deleteButton      = UiHelper.iconButton("Delete",
                 new FlatSVGIcon(DonePanel.class.getResource("/icons/trash.svg")).derive(16, 16));
-        markNextButton    = UiHelper.iconButton("Mark as Next",
+        markNextButton    = UiHelper.iconButton("Restore to Next",
                 new FlatSVGIcon(DonePanel.class.getResource("/icons/arrow-right.svg")).derive(16, 16));
-        markBacklogButton = UiHelper.iconButton("Mark as Backlog",
+        markBacklogButton = UiHelper.iconButton("Move to Backlog",
                 new FlatSVGIcon(DonePanel.class.getResource("/icons/archive.svg")).derive(16, 16));
 
         deleteButton.setToolTipText("Permanently delete selected action");

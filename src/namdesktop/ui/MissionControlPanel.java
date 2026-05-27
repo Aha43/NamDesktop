@@ -101,18 +101,22 @@ public final class MissionControlPanel extends JPanel {
 
         card.add(title, BorderLayout.NORTH);
         card.add(stats, BorderLayout.CENTER);
-        addClickHandler(card, () -> onOpenProject.accept(s.id()));
+        var pct     = (int) Math.round(s.doneRatio() * 100);
+        var tooltip = "<html><b>" + pct + "% of actions done</b>"
+                + "<br>Green ≥ 67% · Amber ≥ 33% · Red &lt; 33%"
+                + "<br><i>Click to open workbench</i></html>";
+        addClickHandler(card, () -> onOpenProject.accept(s.id()), tooltip);
         return card;
     }
 
-    private void addClickHandler(java.awt.Component c, Runnable onClick) {
+    private void addClickHandler(java.awt.Component c, Runnable onClick, String tooltip) {
         c.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        if (c instanceof JComponent jc) jc.setToolTipText("Open project workbench");
+        if (c instanceof JComponent jc) jc.setToolTipText(tooltip);
         c.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override public void mouseClicked(java.awt.event.MouseEvent e) { onClick.run(); }
         });
         if (c instanceof Container container) {
-            for (var child : container.getComponents()) addClickHandler(child, onClick);
+            for (var child : container.getComponents()) addClickHandler(child, onClick, tooltip);
         }
     }
 

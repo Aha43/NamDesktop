@@ -21,7 +21,7 @@ public final class UiHelper {
     private static final String PROP_DENSEABLE = "namdesktop.denseable";
     private static final String PROP_LABEL     = "namdesktop.label";
 
-    public static final int ACTION_BADGE_W      = 24;
+    public static final int ACTION_BADGE_W      = 36;
     public static final int ACTION_PENCIL_W     = 18;
 
     private static final Icon PENCIL_ICON = new FlatSVGIcon(
@@ -84,11 +84,11 @@ public final class UiHelper {
                 var status = statusFn.apply(row);
                 if (status == null) status = NodeStatus.BACKLOG;
                 badge.setText(switch (status) {
-                    case NEXT      -> "N";
-                    case BACKLOG   -> "B";
-                    case DONE      -> "D";
-                    case CANCELLED -> "C";
-                    case ARCHIVED  -> "A";
+                    case NEXT      -> "Next";
+                    case BACKLOG   -> "Back";
+                    case DONE      -> "Done";
+                    case CANCELLED -> "Cncl";
+                    case ARCHIVED  -> "Arch";
                 });
                 badge.setForeground(isSelected ? table.getSelectionForeground() : switch (status) {
                     case NEXT    -> BADGE_NEXT;
