@@ -34,6 +34,8 @@ ICONS=(
   stack-2
   layout-dashboard
   help
+  lock
+  lock-open
 )
 
 mkdir -p "$ICONS_DIR"
