@@ -183,7 +183,8 @@ public final class SavedViewPanel extends JPanel {
         for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
             var label  = (String) entry[0];
             var target = (NodeStatus) entry[1];
-            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target);
             mi.addActionListener(e -> {
                 try {

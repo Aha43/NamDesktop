@@ -695,13 +695,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var current = node.getStatus();
         var menu = new JPopupMenu();
         for (var status : new NodeStatus[]{NodeStatus.NEXT, NodeStatus.BACKLOG, NodeStatus.DONE}) {
-            var label = switch (status) {
-                case NEXT    -> "Next";
-                case BACKLOG -> "Backlog";
-                case DONE    -> "Done";
-                default      -> status.name();
-            };
-            var item = new JMenuItem((current == status ? "✓ " : "   ") + label);
+            var label  = switch (status) { case NEXT -> "Next"; case BACKLOG -> "Backlog"; default -> "Done"; };
+            var letter = switch (status) { case NEXT -> "N";    case BACKLOG -> "B";       default -> "D";    };
+            var item   = new JMenuItem((current == status ? "✓ " : "  ") + letter + "  " + label);
             item.setEnabled(current != status);
             final var s = status;
             item.addActionListener(e -> setStatus(node, s));

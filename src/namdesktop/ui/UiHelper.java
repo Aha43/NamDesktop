@@ -31,6 +31,7 @@ public final class UiHelper {
 
     private UiHelper() {}
 
+
     public static JButton iconButton(String label, Icon icon) {
         var settings = AppSettings.getInstance();
         var dense    = settings != null && settings.isDense();

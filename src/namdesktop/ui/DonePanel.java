@@ -189,7 +189,8 @@ public final class DonePanel extends JPanel {
         for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
             var label  = (String) entry[0];
             var target = (NodeStatus) entry[1];
-            var mi     = new JMenuItem((target == NodeStatus.DONE ? "✓ " : "  ") + label);
+            var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
+            var mi     = new JMenuItem((target == NodeStatus.DONE ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(target != NodeStatus.DONE);
             mi.addActionListener(e -> {
                 try {
