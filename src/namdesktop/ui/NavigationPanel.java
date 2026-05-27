@@ -50,7 +50,7 @@ public final class NavigationPanel extends JPanel {
     public void rebuildDynamicSections(List<SavedView> savedViews, List<MissionControl> missionControls) {
         while (model.size() > staticEntries.size()) model.removeElementAt(model.size() - 1);
         if (!savedViews.isEmpty()) {
-            model.addElement(NavigationEntry.sectionHeader("Saved Views"));
+            model.addElement(NavigationEntry.sectionHeader("Saved Filters"));
             savedViews.forEach(sv -> {
                 var tooltip = sv.tags().isEmpty()
                         ? "No tag filter"

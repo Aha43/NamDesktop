@@ -165,7 +165,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var mcrButton = new JToggleButton(mcrIcon);
         mcrButton.setSelected(mcrMode);
         mcrButton.setEnabled(hasSubProjects);
-        mcrButton.setToolTipText(mcrMode ? "MCR view — click to return to workbench" : "Open sub-projects in MCR view");
+        mcrButton.setToolTipText(mcrMode ? "Readiness view — click to return to workbench" : "Open sub-projects in readiness view");
         mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); rebuild(); });
 
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));

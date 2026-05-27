@@ -51,12 +51,12 @@ public final class SavedViewPanel extends JPanel {
         addActionButton = UiHelper.iconButton("Add action", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addActionButton.addActionListener(e -> addTaggedAction());
 
-        renameButton = UiHelper.iconButton("Rename view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
-        renameButton.setToolTipText("Rename this view");
+        renameButton = UiHelper.iconButton("Rename filter", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
+        renameButton.setToolTipText("Rename this filter");
         renameButton.addActionListener(e -> renameView());
 
-        deleteButton = UiHelper.iconButton("Delete view", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
-        deleteButton.setToolTipText("Delete this view");
+        deleteButton = UiHelper.iconButton("Delete filter", new FlatSVGIcon(SavedViewPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+        deleteButton.setToolTipText("Delete this filter");
         deleteButton.addActionListener(e -> deleteView());
 
         var moonButton = UiHelper.iconButton("Moon Cards",
@@ -254,7 +254,7 @@ public final class SavedViewPanel extends JPanel {
 
     private void renameView() {
         var newName = (String) JOptionPane.showInputDialog(this,
-                "New name:", "Rename view", JOptionPane.PLAIN_MESSAGE, null, null, view.name());
+                "New name:", "Rename filter", JOptionPane.PLAIN_MESSAGE, null, null, view.name());
         if (newName == null || newName.isBlank() || newName.strip().equals(view.name())) return;
         try {
             service.renameSavedView(view.name(), newName.strip());
@@ -266,8 +266,8 @@ public final class SavedViewPanel extends JPanel {
 
     private void deleteView() {
         var confirm = JOptionPane.showConfirmDialog(this,
-                "Delete saved view \"" + view.name() + "\"?",
-                "Delete view", JOptionPane.OK_CANCEL_OPTION);
+                "Delete saved filter \"" + view.name() + "\"?",
+                "Delete filter", JOptionPane.OK_CANCEL_OPTION);
         if (confirm != JOptionPane.OK_OPTION) return;
         try {
             service.deleteSavedView(view.name());
