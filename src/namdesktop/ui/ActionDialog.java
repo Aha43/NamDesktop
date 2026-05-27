@@ -115,6 +115,13 @@ public final class ActionDialog extends NodeDialog {
                 .stream().filter(id -> id != null).collect(Collectors.toSet());
     }
 
+    @Override
+    protected void onMarkedDone(UUID nodeId, NamWorkspaceService service) {
+        var unblocked = service.newlyUnblockedNames(nodeId);
+        if (!unblocked.isEmpty())
+            MainFrame.showNudge("Unblocked: " + String.join(", ", unblocked));
+    }
+
     private JComponent buildBlockedBySection(UUID nodeId, NamWorkspace workspace,
                                                NamWorkspaceService service, Runnable[] rebuild) {
         var panel = new JPanel(new BorderLayout(0, 2));

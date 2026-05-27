@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Completion nudge: marking an action Done shows a brief "Unblocked: …" message in the status bar listing actions that are now actionable. Fires from the inline status badge popup (Next Actions, Backlog) and the ActionDialog Done button. Auto-hides after 4 seconds. Closes #209.
 - Next Actions and Backlog: blocked actions are hidden by default. A padlock toggle button (lock icon) in each panel's toolbar reveals them; when visible, blocked rows are grayed out and hovering the action column shows a "Blocked by: …" tooltip listing the unmet prerequisites. Closes #208.
 - Action prerequisites UI in ActionDialog: a "Blocked by" section with an autocomplete search field lets the user link prerequisite actions (cycle-causing candidates are excluded from results). Each linked prerequisite shows a × button for removal. A read-only "Would unblock" section lists actions blocked by this one, each as a clickable link that navigates to that action's dialog. Closes #207.
 - Action prerequisites (blocked-by): `NamNode` gains a `blockedBy: List<UUID>` field. New service methods: `addPrerequisite` (with cycle detection), `removePrerequisite`, `isBlocked`, `unblocks`, `canAddPrerequisite`. Deleting a node auto-sweeps its ID from all `blockedBy` lists. Closes #206.

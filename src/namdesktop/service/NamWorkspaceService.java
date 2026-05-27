@@ -242,6 +242,13 @@ public final class NamWorkspaceService {
                 .toList();
     }
 
+    public List<String> newlyUnblockedNames(UUID completedId) {
+        return unblocks(completedId).stream()
+                .filter(id -> !isBlocked(id))
+                .map(id -> workspace.getNode(id).map(NamNode::getTitle).orElse("?"))
+                .toList();
+    }
+
     public boolean canAddPrerequisite(UUID actionId, UUID prereqId) {
         if (actionId.equals(prereqId)) return false;
         if (workspace.getNode(actionId).isEmpty() || workspace.getNode(prereqId).isEmpty()) return false;

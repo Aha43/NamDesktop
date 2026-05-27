@@ -137,7 +137,7 @@ public class NodeDialog extends JDialog {
             switch (status) {
                 case BACKLOG -> service.markBacklog(nodeId);
                 case NEXT    -> service.markNext(nodeId);
-                case DONE    -> service.markDone(nodeId);
+                case DONE    -> { service.markDone(nodeId); onMarkedDone(nodeId, service); }
             }
             currentStatus = status;
             syncStatusButtons();
@@ -148,6 +148,8 @@ public class NodeDialog extends JDialog {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    protected void onMarkedDone(UUID nodeId, NamWorkspaceService service) {}
 
     private void delete(String title) {
         var choice = JOptionPane.showConfirmDialog(this,

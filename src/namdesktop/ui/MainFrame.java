@@ -47,6 +47,8 @@ public final class MainFrame extends JFrame {
     private final SearchPanel      searchPanel;
     private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
+    private       Timer            nudgeTimer;
+    private static java.util.function.Consumer<String> nudgeCallback = msg -> {};
     private final JSplitPane            splitPane;
     private       int                   lastNavDivider = 180;
     private       ProjectWorkbenchPanel cachedWorkbench;
@@ -76,6 +78,7 @@ public final class MainFrame extends JFrame {
                 BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Separator.foreground")),
                 BorderFactory.createEmptyBorder(3, 8, 3, 8)));
         this.demoStatusBar.setVisible(false);
+        nudgeCallback = this::displayNudge;
 
         this.navPanel = new NavigationPanel(buildNavEntries(devMode), this::onNavSelected);
         this.splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, navPanel, contentArea);
@@ -245,6 +248,17 @@ public final class MainFrame extends JFrame {
         setSize(900, 600);
 
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
+    }
+
+    public static void showNudge(String message) { nudgeCallback.accept(message); }
+
+    private void displayNudge(String message) {
+        if (nudgeTimer != null) nudgeTimer.stop();
+        demoStatusBar.setText(message);
+        demoStatusBar.setVisible(true);
+        nudgeTimer = new Timer(4000, e -> demoStatusBar.setVisible(false));
+        nudgeTimer.setRepeats(false);
+        nudgeTimer.start();
     }
 
     private void saveSession() {

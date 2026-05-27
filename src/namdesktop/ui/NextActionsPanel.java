@@ -290,6 +290,11 @@ public final class NextActionsPanel extends JPanel {
                         case DONE    -> service.markDone(id);
                         default      -> {}
                     }
+                    if (target == NodeStatus.DONE) {
+                        var unblocked = service.newlyUnblockedNames(id);
+                        if (!unblocked.isEmpty())
+                            MainFrame.showNudge("Unblocked: " + String.join(", ", unblocked));
+                    }
                     pendingSelection = id;
                     refresh();
                 } catch (java.io.IOException ex) { showError(ex.getMessage()); }
