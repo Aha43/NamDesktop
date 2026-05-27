@@ -2,6 +2,7 @@ package namdesktop.demo;
 
 import namdesktop.model.NodeStatus;
 import namdesktop.model.NamWorkspace;
+import namdesktop.service.NamWorkspaceService;
 import swingdemo.ScriptRunner;
 
 import java.util.Map;
@@ -15,10 +16,12 @@ import java.util.Map;
  */
 public final class NamAssertWiring {
 
-    private final NamWorkspace workspace;
+    private final NamWorkspace        workspace;
+    private final NamWorkspaceService service;
 
-    public NamAssertWiring(NamWorkspace workspace) {
+    public NamAssertWiring(NamWorkspace workspace, NamWorkspaceService service) {
         this.workspace = workspace;
+        this.service   = service;
     }
 
     public void configure(ScriptRunner runner) {
@@ -29,7 +32,9 @@ public final class NamAssertWiring {
             .register("assertTagOnNode",       this::assertTagOnNode)
             .register("assertProjectExists",   this::assertProjectExists)
             .register("assertSavedViewExists", this::assertSavedViewExists)
-            .register("assertNodeCount",       this::assertNodeCount);
+            .register("assertNodeCount",       this::assertNodeCount)
+            .register("assertIsBlocked",       this::assertIsBlocked)
+            .register("assertNotBlocked",      this::assertNotBlocked);
     }
 
     private void assertNodeExists(Map<String, Object> args) {
@@ -93,6 +98,26 @@ public final class NamAssertWiring {
         if (actual != expected) {
             throw new IllegalStateException("Expected " + expected + " non-structural nodes but found " + actual);
         }
+    }
+
+    private void assertIsBlocked(Map<String, Object> args) {
+        var title = str(args, "title");
+        var node  = workspace.getNodes().values().stream()
+                .filter(n -> title.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
+        if (!service.isBlocked(node.getId()))
+            throw new IllegalStateException("Expected \"" + title + "\" to be blocked but it is not");
+    }
+
+    private void assertNotBlocked(Map<String, Object> args) {
+        var title = str(args, "title");
+        var node  = workspace.getNodes().values().stream()
+                .filter(n -> title.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
+        if (service.isBlocked(node.getId()))
+            throw new IllegalStateException("Expected \"" + title + "\" to be unblocked but it is blocked");
     }
 
     private static String str(Map<String, Object> args, String key) {
