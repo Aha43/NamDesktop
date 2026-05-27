@@ -61,7 +61,7 @@ public final class ActionDialog extends NodeDialog {
         Runnable[] rebuild = {null};
         rebuild[0] = () -> {
             prereqWrapper.removeAll();
-            prereqWrapper.add(buildBlockedBySection(nodeId, workspace, service, rebuild));
+            prereqWrapper.add(buildBlockedBySection(parent, nodeId, workspace, service, rebuild));
             prereqWrapper.revalidate();
             prereqWrapper.repaint();
             setDoneButtonEnabled(!actionService.isBlocked(nodeId));
@@ -125,7 +125,7 @@ public final class ActionDialog extends NodeDialog {
             MainFrame.showNudge("Unblocked: " + String.join(", ", unblocked));
     }
 
-    private JComponent buildBlockedBySection(UUID nodeId, NamWorkspace workspace,
+    private JComponent buildBlockedBySection(Window parent, UUID nodeId, NamWorkspace workspace,
                                                NamWorkspaceService service, Runnable[] rebuild) {
         var panel = new JPanel(new BorderLayout(0, 2));
         panel.setBorder(BorderFactory.createCompoundBorder(
@@ -166,7 +166,17 @@ public final class ActionDialog extends NodeDialog {
                 workspace.getNode(prereqId).ifPresent(prereq -> {
                     var row = new JPanel(new BorderLayout(4, 0));
                     row.setBorder(BorderFactory.createEmptyBorder(2, 0, 2, 0));
-                    row.add(new JLabel(prereq.getTitle()), BorderLayout.CENTER);
+                    var link = new JButton("<html><u>" + prereq.getTitle() + "</u></html>");
+                    link.setBorderPainted(false);
+                    link.setContentAreaFilled(false);
+                    link.setFocusPainted(false);
+                    link.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                    link.setToolTipText("Open action: " + prereq.getTitle());
+                    link.addActionListener(e -> {
+                        dispose();
+                        new ActionDialog(parent, prereq.getId(), workspace, service, true, changeCallback).setVisible(true);
+                    });
+                    row.add(link, BorderLayout.CENTER);
                     var removeBtn = new JButton("×");
                     removeBtn.setFont(removeBtn.getFont().deriveFont(Font.BOLD));
                     removeBtn.setMargin(new Insets(0, 5, 0, 5));
