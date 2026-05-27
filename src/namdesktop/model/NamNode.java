@@ -11,8 +11,9 @@ public final class NamNode {
     private String description;
     private NodeStatus status = NodeStatus.BACKLOG;
     private boolean project = false;
-    private List<UUID> childIds = new ArrayList<>();
-    private List<String> tags = new ArrayList<>();
+    private List<UUID> childIds  = new ArrayList<>();
+    private List<String> tags    = new ArrayList<>();
+    private List<UUID> blockedBy = new ArrayList<>();
 
     public NamNode() {}
 
@@ -41,6 +42,9 @@ public final class NamNode {
 
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags != null ? tags : new ArrayList<>(); }
+
+    public List<UUID> getBlockedBy() { return blockedBy; }
+    public void setBlockedBy(List<UUID> blockedBy) { this.blockedBy = blockedBy != null ? blockedBy : new ArrayList<>(); }
 
     @Override
     public String toString() { return title; }

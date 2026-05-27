@@ -132,6 +132,7 @@ public final class NamWorkspaceService {
             parent.getChildIds().remove(nodeId);
         }
         workspace.getNodes().remove(nodeId);
+        sweepBlockedBy(nodeId);
         repository.save(path, workspace);
     }
 
@@ -143,8 +144,15 @@ public final class NamWorkspaceService {
         for (var id : toDelete) {
             workspace.getNodes().remove(id);
             workspace.getViewOrders().values().forEach(order -> order.remove(id));
+            sweepBlockedBy(id);
         }
         repository.save(path, workspace);
+    }
+
+    private void sweepBlockedBy(UUID deletedId) {
+        for (var node : workspace.getNodes().values()) {
+            node.getBlockedBy().remove(deletedId);
+        }
     }
 
     public UUID addInboxItem(String title) throws IOException {
@@ -200,6 +208,52 @@ public final class NamWorkspaceService {
     public void updateTags(UUID nodeId, List<String> tags) throws IOException {
         require(nodeId).setTags(new java.util.ArrayList<>(tags));
         repository.save(path, workspace);
+    }
+
+    public boolean addPrerequisite(UUID actionId, UUID prereqId) throws IOException {
+        require(actionId);
+        require(prereqId);
+        if (actionId.equals(prereqId)) return false;
+        if (wouldCreateCycle(actionId, prereqId)) return false;
+        var node = require(actionId);
+        if (!node.getBlockedBy().contains(prereqId)) {
+            node.getBlockedBy().add(prereqId);
+            repository.save(path, workspace);
+        }
+        return true;
+    }
+
+    public void removePrerequisite(UUID actionId, UUID prereqId) throws IOException {
+        require(actionId).getBlockedBy().remove(prereqId);
+        repository.save(path, workspace);
+    }
+
+    public boolean isBlocked(UUID actionId) {
+        return require(actionId).getBlockedBy().stream()
+                .map(workspace::getNode)
+                .flatMap(java.util.Optional::stream)
+                .anyMatch(n -> n.getStatus() != NodeStatus.DONE);
+    }
+
+    public List<UUID> unblocks(UUID prereqId) {
+        return workspace.getNodes().values().stream()
+                .filter(n -> n.getBlockedBy().contains(prereqId))
+                .map(NamNode::getId)
+                .toList();
+    }
+
+    private boolean wouldCreateCycle(UUID actionId, UUID prereqId) {
+        // DFS from prereqId following blockedBy links — if we reach actionId it's a cycle
+        var visited = new java.util.HashSet<UUID>();
+        var stack   = new java.util.ArrayDeque<UUID>();
+        stack.push(prereqId);
+        while (!stack.isEmpty()) {
+            var current = stack.pop();
+            if (current.equals(actionId)) return true;
+            if (!visited.add(current)) continue;
+            workspace.getNode(current).ifPresent(n -> n.getBlockedBy().forEach(stack::push));
+        }
+        return false;
     }
 
     public void createMissionControl(String name, List<String> tags) throws IOException {

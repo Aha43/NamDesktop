@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Action prerequisites (blocked-by): `NamNode` gains a `blockedBy: List<UUID>` field. New service methods: `addPrerequisite` (with cycle detection), `removePrerequisite`, `isBlocked`, `unblocks`. Deleting a node auto-sweeps its ID from all `blockedBy` lists. Closes #206.
+
 - Inline status badge (N / B / D colored letter) in the Action column of all action panels (Next Actions, Backlog, Done, Context, Saved Views, Project Workbench). Clicking the badge opens a Next / Backlog / Done popup for instant status changes without opening the full dialog.
 - Inline rename across all action panels and the Projects panel: clicking an already-selected title overlays a text field for editing in place. Enter or focus-lost commits; Escape cancels.
 - Enter key opens the edit dialog on the selected row everywhere a double-click does: Next Actions, Backlog, Done, Context, Saved Views, Project Workbench action list, and Projects panel.
