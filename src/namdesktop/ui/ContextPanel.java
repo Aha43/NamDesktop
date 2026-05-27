@@ -79,6 +79,17 @@ public final class ContextPanel extends JPanel {
                 c.setForeground(status == NodeStatus.DONE ? Color.GRAY : getForeground());
                 return c;
             }
+
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                var row = rowAtPoint(e.getPoint());
+                var col = columnAtPoint(e.getPoint());
+                if (row < 0 || col != 0) return null;
+                var r = getCellRect(row, 0, false);
+                if (e.getX() >= r.x + r.width - UiHelper.ACTION_PENCIL_W)
+                    return "Edit: " + tableModel.getRow(row).title();
+                return null;
+            }
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
@@ -120,6 +131,10 @@ public final class ContextPanel extends JPanel {
                     var cellRect = table.getCellRect(row, 0, false);
                     if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
                         if (e.getClickCount() == 1) showStatusPopup(row, item.id(), item.status(), e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getX() >= cellRect.x + cellRect.width - UiHelper.ACTION_PENCIL_W) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
+                                item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
                     } else if (e.getClickCount() == 1 && row == lastRow[0]) {
                         if (table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
@@ -152,7 +167,8 @@ public final class ContextPanel extends JPanel {
         for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
             var label  = (String) entry[0];
             var target = (NodeStatus) entry[1];
-            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target);
             mi.addActionListener(e -> {
                 try {

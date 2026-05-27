@@ -8,6 +8,7 @@ import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -30,9 +31,44 @@ public final class ProjectsPanel extends JPanel {
         this.onOpenProject = onOpenProject;
         this.tableModel    = new ProjectsTableModel();
 
-        var table = new JTable(tableModel);
+        var pencilIcon = new FlatSVGIcon(ProjectsPanel.class.getResource("/icons/pencil.svg")).derive(12, 12);
+        var table = new JTable(tableModel) {
+            @Override
+            public String getToolTipText(MouseEvent e) {
+                var row = rowAtPoint(e.getPoint());
+                var col = columnAtPoint(e.getPoint());
+                if (row < 0 || col != 0) return null;
+                var r = getCellRect(row, 0, false);
+                if (e.getX() >= r.x + r.width - UiHelper.ACTION_PENCIL_W)
+                    return "Open: " + tableModel.getRow(row).title();
+                return null;
+            }
+        };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+
+        table.getColumn("Project").setCellRenderer(new TableCellRenderer() {
+            private final JPanel cell   = new JPanel(new BorderLayout(4, 0));
+            private final JLabel title  = new JLabel();
+            private final JLabel pencil = new JLabel(pencilIcon);
+            {
+                cell.setOpaque(true);
+                title.setOpaque(false);
+                pencil.setOpaque(false);
+                pencil.setPreferredSize(new Dimension(UiHelper.ACTION_PENCIL_W, 0));
+                pencil.setHorizontalAlignment(SwingConstants.CENTER);
+                cell.add(title,  BorderLayout.CENTER);
+                cell.add(pencil, BorderLayout.EAST);
+            }
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int col) {
+                cell.setBackground(isSelected ? t.getSelectionBackground() : t.getBackground());
+                title.setForeground(isSelected ? t.getSelectionForeground() : t.getForeground());
+                title.setText(value != null ? value.toString() : "");
+                return cell;
+            }
+        });
 
         var projectEditor = new DefaultCellEditor(new JTextField());
         projectEditor.setClickCountToStart(99);
@@ -48,8 +84,13 @@ public final class ProjectsPanel extends JPanel {
             @Override
             public void mouseClicked(MouseEvent e) {
                 var row = table.rowAtPoint(e.getPoint());
-                if (row < 0) return;
-                if (e.getClickCount() == 2) {
+                var col = table.columnAtPoint(e.getPoint());
+                if (row < 0 || col != 0) return;
+                var cellRect = table.getCellRect(row, 0, false);
+                if (e.getX() >= cellRect.x + cellRect.width - UiHelper.ACTION_PENCIL_W) {
+                    if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                    onOpenProject.accept(tableModel.getRow(row).id());
+                } else if (e.getClickCount() == 2) {
                     if (table.isEditing()) table.getCellEditor().cancelCellEditing();
                     onOpenProject.accept(tableModel.getRow(row).id());
                 } else if (e.getClickCount() == 1 && row == lastRow[0]) {

@@ -24,6 +24,7 @@ public final class ProjectDialog extends NodeDialog {
         super(parent, nodeId, workspace, service, onChanged);
         this.nodeId  = nodeId;
         this.service = service;
+        setTitle("Project: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
         hideStatusButton();
 
         var convertButton = UiHelper.iconButton("Convert to action",

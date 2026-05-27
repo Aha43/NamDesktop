@@ -93,7 +93,13 @@ public final class NextActionsPanel extends JPanel {
             public String getToolTipText(MouseEvent e) {
                 var row = rowAtPoint(e.getPoint());
                 var col = columnAtPoint(e.getPoint());
-                if (row < 0 || col != 1) return null;
+                if (row < 0) return null;
+                if (col == 0) {
+                    var r = getCellRect(row, 0, false);
+                    if (e.getX() >= r.x + r.width - UiHelper.ACTION_PENCIL_W)
+                        return "Edit: " + tableModel.getRow(row).title();
+                }
+                if (col != 1) return null;
                 return tableModel.getRow(row).projectPath();
             }
         };
@@ -130,6 +136,10 @@ public final class NextActionsPanel extends JPanel {
                     var cellRect = table.getCellRect(row, 0, false);
                     if (e.getX() < cellRect.x + UiHelper.ACTION_BADGE_W) {
                         if (e.getClickCount() == 1) showStatusPopup(row, e.getComponent(), e.getX(), e.getY());
+                    } else if (e.getX() >= cellRect.x + cellRect.width - UiHelper.ACTION_PENCIL_W) {
+                        if (table.isEditing()) table.getCellEditor().cancelCellEditing();
+                        new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
+                                item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
                     } else if (e.getClickCount() == 1 && row == lastRow[0]) {
                         if (table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
@@ -236,7 +246,8 @@ public final class NextActionsPanel extends JPanel {
         for (var entry : new Object[][]{ {"Next", NodeStatus.NEXT}, {"Backlog", NodeStatus.BACKLOG}, {"Done", NodeStatus.DONE} }) {
             var label  = (String) entry[0];
             var target = (NodeStatus) entry[1];
-            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + label);
+            var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
+            var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target);
             mi.addActionListener(e -> {
                 try {

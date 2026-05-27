@@ -528,6 +528,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 if (idx < 0) return null;
                 var bounds = getCellBounds(idx, idx);
                 if (bounds != null && e.getX() < bounds.x + BADGE_WIDTH) return "Set status";
+                if (bounds != null && e.getX() >= bounds.x + bounds.width - PENCIL_WIDTH)
+                    return "Edit: " + model.getElementAt(idx).getTitle();
                 var desc = model.getElementAt(idx).getDescription();
                 if (desc == null || desc.isBlank()) return null;
                 return desc.length() <= 100 ? desc : desc.substring(0, 100) + "…";
@@ -551,6 +553,13 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 // Badge zone → status popup
                 if (bounds != null && e.getClickCount() == 1 && e.getX() < bounds.x + BADGE_WIDTH) {
                     showStatusPopup(list, model.getElementAt(idx), e.getX(), e.getY());
+                    return;
+                }
+                // Pencil zone → open full dialog (single click, no prior selection required)
+                if (bounds != null && e.getX() >= bounds.x + bounds.width - PENCIL_WIDTH) {
+                    var node = model.getElementAt(idx);
+                    new ActionDialog(parent, node.getId(), workspace, service, true, ProjectWorkbenchPanel.this::rebuild)
+                            .setVisible(true);
                     return;
                 }
                 // Double-click → open full dialog
@@ -686,13 +695,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var current = node.getStatus();
         var menu = new JPopupMenu();
         for (var status : new NodeStatus[]{NodeStatus.NEXT, NodeStatus.BACKLOG, NodeStatus.DONE}) {
-            var label = switch (status) {
-                case NEXT    -> "Next";
-                case BACKLOG -> "Backlog";
-                case DONE    -> "Done";
-                default      -> status.name();
-            };
-            var item = new JMenuItem((current == status ? "✓ " : "   ") + label);
+            var label  = switch (status) { case NEXT -> "Next"; case BACKLOG -> "Backlog"; default -> "Done"; };
+            var letter = switch (status) { case NEXT -> "N";    case BACKLOG -> "B";       default -> "D";    };
+            var item   = new JMenuItem((current == status ? "✓ " : "  ") + letter + "  " + label);
             item.setEnabled(current != status);
             final var s = status;
             item.addActionListener(e -> setStatus(node, s));
@@ -836,10 +841,15 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private static final Color BADGE_BACKLOG = new Color(160, 120,  30);
     private static final Color BADGE_DONE    = new Color(110, 110, 110);
 
+    private static final Icon WB_PENCIL_ICON = new FlatSVGIcon(
+            ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(12, 12);
+    private static final int PENCIL_WIDTH = UiHelper.ACTION_PENCIL_W;
+
     private static final class ActionCellRenderer implements ListCellRenderer<NamNode> {
-        private final JPanel panel = new JPanel(new BorderLayout(6, 0));
-        private final JLabel badge = new JLabel("", SwingConstants.CENTER);
-        private final JLabel label = new JLabel();
+        private final JPanel panel  = new JPanel(new BorderLayout(6, 0));
+        private final JLabel badge  = new JLabel("", SwingConstants.CENTER);
+        private final JLabel label  = new JLabel();
+        private final JLabel pencil = new JLabel(WB_PENCIL_ICON);
 
         ActionCellRenderer() {
             badge.setOpaque(true);
@@ -847,8 +857,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
             badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
             badge.setPreferredSize(new Dimension(BADGE_WIDTH, 0));
             badge.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
-            panel.add(badge, BorderLayout.WEST);
-            panel.add(label, BorderLayout.CENTER);
+            pencil.setOpaque(false);
+            pencil.setPreferredSize(new Dimension(PENCIL_WIDTH, 0));
+            pencil.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(badge,  BorderLayout.WEST);
+            panel.add(label,  BorderLayout.CENTER);
+            panel.add(pencil, BorderLayout.EAST);
             panel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
         }
 
