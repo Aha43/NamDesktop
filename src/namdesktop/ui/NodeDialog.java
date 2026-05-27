@@ -210,6 +210,8 @@ public class NodeDialog extends JDialog {
         toolbar.add(button);
     }
 
+    protected void setDoneButtonEnabled(boolean enabled) { doneBtn.setEnabled(enabled); }
+
     protected void addBelowDescription(JComponent component) {
         centre.add(component, BorderLayout.SOUTH);
     }

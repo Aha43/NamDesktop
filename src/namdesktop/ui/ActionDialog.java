@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public final class ActionDialog extends NodeDialog {
 
     private final Runnable changeCallback;
+    private final NamWorkspaceService actionService;
 
     public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
         this(parent, nodeId, workspace, service, true, () -> {});
@@ -27,7 +28,8 @@ public final class ActionDialog extends NodeDialog {
 
     public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, boolean showMakeProject, Runnable onChanged) {
         super(parent, nodeId, workspace, service, onChanged);
-        this.changeCallback = onChanged;
+        this.changeCallback  = onChanged;
+        this.actionService   = service;
         setTitle("Action: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
 
         if (showMakeProject) {
@@ -62,6 +64,7 @@ public final class ActionDialog extends NodeDialog {
             prereqWrapper.add(buildBlockedBySection(nodeId, workspace, service, rebuild));
             prereqWrapper.revalidate();
             prereqWrapper.repaint();
+            setDoneButtonEnabled(!actionService.isBlocked(nodeId));
         };
         rebuild[0].run();
         southPanel.add(prereqWrapper);

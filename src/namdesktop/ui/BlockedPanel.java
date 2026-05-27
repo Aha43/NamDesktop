@@ -159,7 +159,7 @@ public final class BlockedPanel extends JPanel {
             var target = (NodeStatus) entry[1];
             var letter = switch (target) { case NEXT -> "N"; case BACKLOG -> "B"; default -> "D"; };
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
-            mi.setEnabled(current != target);
+            mi.setEnabled(current != target && target != NodeStatus.DONE);
             mi.addActionListener(e -> {
                 try {
                     switch (target) {
