@@ -8,7 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
-- Action prerequisites (blocked-by): `NamNode` gains a `blockedBy: List<UUID>` field. New service methods: `addPrerequisite` (with cycle detection), `removePrerequisite`, `isBlocked`, `unblocks`. Deleting a node auto-sweeps its ID from all `blockedBy` lists. Closes #206.
+- Action prerequisites UI in ActionDialog: a "Blocked by" section with an autocomplete search field lets the user link prerequisite actions (cycle-causing candidates are excluded from results). Each linked prerequisite shows a × button for removal. A read-only "Would unblock" section lists actions blocked by this one, each as a clickable link that navigates to that action's dialog. Closes #207.
+- Action prerequisites (blocked-by): `NamNode` gains a `blockedBy: List<UUID>` field. New service methods: `addPrerequisite` (with cycle detection), `removePrerequisite`, `isBlocked`, `unblocks`, `canAddPrerequisite`. Deleting a node auto-sweeps its ID from all `blockedBy` lists. Closes #206.
 
 - Inline status badge (N / B / D colored letter) in the Action column of all action panels (Next Actions, Backlog, Done, Context, Saved Views, Project Workbench). Clicking the badge opens a Next / Backlog / Done popup for instant status changes without opening the full dialog.
 - Inline rename across all action panels and the Projects panel: clicking an already-selected title overlays a text field for editing in place. Enter or focus-lost commits; Escape cancels.

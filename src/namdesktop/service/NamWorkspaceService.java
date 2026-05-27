@@ -242,6 +242,12 @@ public final class NamWorkspaceService {
                 .toList();
     }
 
+    public boolean canAddPrerequisite(UUID actionId, UUID prereqId) {
+        if (actionId.equals(prereqId)) return false;
+        if (workspace.getNode(actionId).isEmpty() || workspace.getNode(prereqId).isEmpty()) return false;
+        return !wouldCreateCycle(actionId, prereqId);
+    }
+
     private boolean wouldCreateCycle(UUID actionId, UUID prereqId) {
         // DFS from prereqId following blockedBy links — if we reach actionId it's a cycle
         var visited = new java.util.HashSet<UUID>();
