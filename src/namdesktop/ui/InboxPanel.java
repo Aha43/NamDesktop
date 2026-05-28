@@ -163,11 +163,45 @@ public final class InboxPanel extends JPanel {
     }
 
     private void addItem() {
-        var title = JOptionPane.showInputDialog(
-                parent(), "Enter item title:", "Add Item", JOptionPane.PLAIN_MESSAGE);
-        if (title == null || title.isBlank()) return;
+        var area = new JTextArea(4, 32);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.setToolTipText("One item per line · Ctrl+Enter to confirm");
+
+        var confirmBtn = new JButton("Add");
+        var cancelBtn  = new JButton("Cancel");
+
+        area.getInputMap().put(
+                KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER,
+                        java.awt.event.InputEvent.CTRL_DOWN_MASK), "confirm");
+        area.getActionMap().put("confirm", new AbstractAction() {
+            @Override public void actionPerformed(java.awt.event.ActionEvent e) { confirmBtn.doClick(); }
+        });
+
+        var panel = new JPanel(new BorderLayout(0, 4));
+        panel.add(new JLabel("One item per line:"), BorderLayout.NORTH);
+        panel.add(new JScrollPane(area),            BorderLayout.CENTER);
+
+        var dialog = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE,
+                JOptionPane.OK_CANCEL_OPTION, null,
+                new Object[]{confirmBtn, cancelBtn});
+        var window = dialog.createDialog(parent(), "Add to Inbox");
+
+        boolean[] confirmed = {false};
+        confirmBtn.addActionListener(e -> { confirmed[0] = true; window.dispose(); });
+        cancelBtn.addActionListener(e  -> window.dispose());
+
+        SwingUtilities.invokeLater(area::requestFocusInWindow);
+        window.setVisible(true);
+
+        if (!confirmed[0]) return;
+        var lines = area.getText().lines()
+                .map(String::strip)
+                .filter(s -> !s.isEmpty())
+                .toList();
+        if (lines.isEmpty()) return;
         try {
-            service.addInboxItem(title.strip());
+            for (var line : lines) service.addInboxItem(line);
             refresh();
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());
