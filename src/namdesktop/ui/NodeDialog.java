@@ -18,8 +18,8 @@ import java.util.UUID;
 
 public class NodeDialog extends JDialog {
 
-    private final UUID nodeId;
-    private final NamWorkspaceService service;
+    protected final UUID nodeId;
+    protected final NamWorkspaceService service;
     private final String originalTitle;
     private final JTextField titleField;
     private final JTextArea descriptionArea;
@@ -153,9 +153,17 @@ public class NodeDialog extends JDialog {
 
     private void delete(String title) {
         var choice = JOptionPane.showConfirmDialog(this,
-                "Are you sure you want to delete \"" + title + "\"? This cannot be undone.",
+                deleteConfirmMessage(title),
                 "Delete", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (choice != JOptionPane.YES_OPTION) return;
+        doDelete();
+    }
+
+    protected String deleteConfirmMessage(String title) {
+        return "Are you sure you want to delete \"" + title + "\"? This cannot be undone.";
+    }
+
+    protected void doDelete() {
         try {
             service.deleteLeaf(nodeId);
             notifyChanged();

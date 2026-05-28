@@ -12,6 +12,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
 
+- Project Workbench affordance reduction: section headers now show only the pencil (full edit) button; action toolbars show only Add, Edit, and move up/down. Rename, description, tags, and delete shortcuts removed from inline toolbars — all accessible via the edit dialog. Delete in ProjectDialog now uses recursive delete with a count-aware confirmation. Closes #227.
+
 - Goal Board: renamed "Mission Control" to "Goal Board" throughout the UI, nav section, toolbar, menus, and help content. Creation dialog redesigned with tags-first flow and live project preview. Closes #230.
 
 - Inbox processing flow: replaced the flat "Next action / Project" option dialog with a two-step `ProcessInboxDialog` — step 1 chooses action vs. project, step 2 (action path) chooses "Do it next" or "Park for later" (Backlog). Each path shows a status bar nudge after completion. Closes #228.
