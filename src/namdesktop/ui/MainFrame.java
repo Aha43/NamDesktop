@@ -153,11 +153,9 @@ public final class MainFrame extends JFrame {
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
         fileMenu.add(newMcItem);
-        if (devMode) {
-            var runDemoItem = new JMenuItem("Run Demo…");
-            runDemoItem.addActionListener(e -> runDemo());
-            fileMenu.add(runDemoItem);
-        }
+        var runDemoItem = new JMenuItem("Run Demo…");
+        runDemoItem.addActionListener(e -> runDemo());
+        fileMenu.add(runDemoItem);
         fileMenu.addSeparator();
 
         if (!devMode && syncService.isConfigured()) {
@@ -403,6 +401,13 @@ public final class MainFrame extends JFrame {
         if (script == null) {
             JOptionPane.showMessageDialog(this, "demo.json not found in JAR.", "Demo", JOptionPane.ERROR_MESSAGE);
             return;
+        }
+        if (workspace.getNodes().size() > 4) {
+            var choice = JOptionPane.showConfirmDialog(this,
+                    "Running the demo will replace your current workspace with sample data.\n"
+                    + "Any items you have added will be lost.\n\nContinue?",
+                    "Run Demo", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.OK_OPTION) return;
         }
         try {
             service.resetWorkspaceToDefault();
