@@ -13,16 +13,21 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class ProjectsPanel extends JPanel {
 
-    private final NamWorkspace      workspace;
+    private final NamWorkspace       workspace;
     private final NamWorkspaceService service;
-    private final Consumer<UUID>    onOpenProject;
+    private final Consumer<UUID>     onOpenProject;
     private final ProjectsTableModel tableModel;
+    private final List<JCheckBox>    tagBoxes    = new ArrayList<>();
+    private       JPanel             filterPanel;
+    private       JLabel             matchLabel;
+    private       JButton            clearButton;
     private JPanel tableCard;
 
     public ProjectsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
@@ -121,13 +126,86 @@ public final class ProjectsPanel extends JPanel {
         addButton.addActionListener(e -> addProject());
         toolbar.add(addButton);
 
+        matchLabel  = new JLabel("0 matches");
+        clearButton = UiHelper.iconButton("Clear",
+                new FlatSVGIcon(ProjectsPanel.class.getResource("/icons/eraser.svg")).derive(16, 16));
+        clearButton.setToolTipText("Clear tag filter");
+        clearButton.setEnabled(false);
+        clearButton.addActionListener(e -> {
+            tagBoxes.forEach(b -> b.setSelected(false));
+            refreshResults();
+        });
+
+        filterPanel = new JPanel(new BorderLayout(0, 2));
+        filterPanel.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+
+        var north = new JPanel(new BorderLayout());
+        north.add(toolbar,     BorderLayout.NORTH);
+        north.add(filterPanel, BorderLayout.CENTER);
+
         tableCard = UiHelper.tableCard(new JScrollPane(table), "No projects yet. Use + to add one.");
-        add(toolbar,    BorderLayout.NORTH);
-        add(tableCard,  BorderLayout.CENTER);
+        add(north,    BorderLayout.NORTH);
+        add(tableCard, BorderLayout.CENTER);
     }
 
     public void refresh() {
-        tableModel.setRows(new ProjectsLens().items(workspace));
+        rebuildFilterPanel();
+        refreshResults();
+    }
+
+    private void rebuildFilterPanel() {
+        var allTags = workspace.allTags();
+        var selected = tagBoxes.stream()
+                .filter(JCheckBox::isSelected)
+                .map(JCheckBox::getText)
+                .toList();
+        tagBoxes.clear();
+        filterPanel.removeAll();
+
+        if (allTags.isEmpty()) {
+            filterPanel.setVisible(false);
+            return;
+        }
+        filterPanel.setVisible(true);
+
+        var checkboxRow = new JPanel(new WrapLayout(FlowLayout.LEFT, 6, 2));
+        for (var tag : allTags) {
+            var box = new JCheckBox(tag, selected.contains(tag));
+            box.setOpaque(false);
+            box.addActionListener(e -> refreshResults());
+            tagBoxes.add(box);
+            checkboxRow.add(box);
+        }
+
+        var header = new JPanel(new BorderLayout());
+        var headerLabel = new JLabel("Filter by tag");
+        headerLabel.setBorder(BorderFactory.createEmptyBorder(0, 2, 0, 8));
+        headerLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        headerLabel.setFont(headerLabel.getFont().deriveFont(Font.ITALIC, 11f));
+        var clearWrap = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        clearWrap.add(matchLabel);
+        clearWrap.add(clearButton);
+        header.add(headerLabel, BorderLayout.WEST);
+        header.add(clearWrap,   BorderLayout.EAST);
+
+        filterPanel.add(header,      BorderLayout.NORTH);
+        filterPanel.add(checkboxRow, BorderLayout.CENTER);
+        filterPanel.revalidate();
+    }
+
+    private void refreshResults() {
+        var active = tagBoxes.stream()
+                .filter(JCheckBox::isSelected)
+                .map(JCheckBox::getText)
+                .toList();
+        clearButton.setEnabled(!active.isEmpty());
+        var rows = new ProjectsLens().items(workspace, active);
+        tableModel.setRows(rows);
+        if (active.isEmpty()) {
+            matchLabel.setText("");
+        } else {
+            matchLabel.setText(rows.size() + (rows.size() == 1 ? " project" : " projects"));
+        }
         UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
     }
 
@@ -141,6 +219,37 @@ public final class ProjectsPanel extends JPanel {
         } catch (IOException e) {
             JOptionPane.showMessageDialog(SwingUtilities.getWindowAncestor(this),
                     "Failed to save: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static final class WrapLayout extends FlowLayout {
+        WrapLayout(int align, int hgap, int vgap) { super(align, hgap, vgap); }
+        @Override public Dimension preferredLayoutSize(Container t) { return layoutSize(t, true); }
+        @Override public Dimension minimumLayoutSize(Container t)   { return layoutSize(t, false); }
+        private Dimension layoutSize(Container target, boolean preferred) {
+            synchronized (target.getTreeLock()) {
+                var w = target.getSize().width;
+                if (w == 0) w = Integer.MAX_VALUE;
+                var ins = target.getInsets();
+                var maxW = w - ins.left - ins.right - getHgap() * 2;
+                var dim = new Dimension(0, 0);
+                int rowW = 0, rowH = 0;
+                for (int i = 0; i < target.getComponentCount(); i++) {
+                    var c = target.getComponent(i);
+                    if (!c.isVisible()) continue;
+                    var d = preferred ? c.getPreferredSize() : c.getMinimumSize();
+                    if (rowW + d.width > maxW && rowW > 0) {
+                        dim.width  = Math.max(dim.width, rowW);
+                        dim.height += rowH + getVgap();
+                        rowW = 0; rowH = 0;
+                    }
+                    rowW += d.width + getHgap();
+                    rowH  = Math.max(rowH, d.height);
+                }
+                dim.width  = Math.max(dim.width, rowW);
+                dim.height += rowH + getVgap() * 2 + ins.top + ins.bottom;
+                return dim;
+            }
         }
     }
 

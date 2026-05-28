@@ -104,11 +104,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
             if (i < breadcrumb.size() - 1) {
                 final var id = node.getId();
                 crumbs.add(breadcrumbLink(node.getTitle(), () -> navigateTo(id)));
-                var ancestorEdit = UiHelper.iconOnlyButton("Edit project: " + node.getTitle(),
-                        new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(14, 14));
-                ancestorEdit.addActionListener(e ->
-                        new ProjectDialog(parent, id, workspace, service, this::rebuild).setVisible(true));
-                crumbs.add(ancestorEdit);
             } else {
                 crumbs.add(new JLabel(node.getTitle()));
             }
@@ -304,20 +299,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
         bar.add(addActionButton);
 
         if (actionList != null) {
-            var renameActionButton = UiHelper.iconButton("Rename action",
-                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
-            renameActionButton.setToolTipText("Rename selected action");
-            renameActionButton.setEnabled(false);
-            renameActionButton.addActionListener(e -> {
-                var node = actionList.getSelectedValue();
-                if (node == null) return;
-                var input = (String) JOptionPane.showInputDialog(parent, "Action name:", "Rename action",
-                        JOptionPane.PLAIN_MESSAGE, null, null, node.getTitle());
-                if (input == null || input.isBlank()) return;
-                try { pendingSelection = node.getId(); service.renameNode(node.getId(), input.strip()); rebuild(); }
-                catch (IOException ex) { showError(ex.getMessage()); }
-            });
-
             var editActionButton = UiHelper.iconButton("Edit action…",
                     new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
             editActionButton.setToolTipText("Edit selected action");
@@ -327,23 +308,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 if (node == null) return;
                 new ActionDialog(parent, node.getId(), workspace, service, true,
                         ProjectWorkbenchPanel.this::rebuild).setVisible(true);
-            });
-
-            var editTagsButton = UiHelper.iconButton("Edit action tags",
-                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/tag.svg")).derive(16, 16));
-            editTagsButton.setToolTipText("Edit tags of selected action");
-            editTagsButton.setEnabled(false);
-            editTagsButton.addActionListener(e -> {
-                var node = actionList.getSelectedValue();
-                if (node == null) return;
-                var current = String.join(", ", node.getTags());
-                var input = (String) JOptionPane.showInputDialog(parent, "Tags (comma-separated):", "Edit action tags",
-                        JOptionPane.PLAIN_MESSAGE, null, null, current);
-                if (input == null) return;
-                var tags = java.util.Arrays.stream(input.split(","))
-                        .map(String::strip).filter(s -> !s.isEmpty()).toList();
-                try { pendingSelection = node.getId(); service.updateTags(node.getId(), tags); rebuild(); }
-                catch (IOException ex) { showError(ex.getMessage()); }
             });
 
             var upButton   = UiHelper.iconButton("Move up",
@@ -359,17 +323,13 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 if (e.getValueIsAdjusting()) return;
                 var idx = actionList.getSelectedIndex();
                 var size = actionList.getModel().getSize();
-                renameActionButton.setEnabled(idx >= 0);
                 editActionButton.setEnabled(idx >= 0);
-                editTagsButton.setEnabled(idx >= 0);
                 upButton.setEnabled(idx > 0);
                 downButton.setEnabled(idx >= 0 && idx < size - 1);
             });
 
             var restoredIdx = actionList.getSelectedIndex();
-            renameActionButton.setEnabled(restoredIdx >= 0);
             editActionButton.setEnabled(restoredIdx >= 0);
-            editTagsButton.setEnabled(restoredIdx >= 0);
             upButton.setEnabled(restoredIdx > 0);
             downButton.setEnabled(restoredIdx >= 0 && restoredIdx < actionList.getModel().getSize() - 1);
 
@@ -386,8 +346,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 catch (IOException ex) { showError(ex.getMessage()); }
             });
 
-            bar.add(renameActionButton);
-            bar.add(editTagsButton);
             bar.add(editActionButton);
             bar.add(upButton);
             bar.add(downButton);
@@ -404,51 +362,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
         // LEFT: project operation buttons
         var projectName = workspace.getNode(navigateToId).map(n -> n.getTitle()).orElse("project");
 
-        var renameBtn = UiHelper.iconButton("Rename project",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/cursor-text.svg")).derive(16, 16));
-        renameBtn.setToolTipText("Rename project: " + projectName);
-        renameBtn.addActionListener(e -> {
-            var current = workspace.getNode(navigateToId).map(n -> n.getTitle()).orElse("");
-            var input = (String) JOptionPane.showInputDialog(parent, "Project name:", "Rename project",
-                    JOptionPane.PLAIN_MESSAGE, null, null, current);
-            if (input == null || input.isBlank()) return;
-            try { service.renameNode(navigateToId, input.strip()); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-
-        var descBtn = UiHelper.iconButton("Edit description",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/notes.svg")).derive(16, 16));
-        descBtn.setToolTipText("Edit description: " + projectName);
-        descBtn.addActionListener(e -> showDescriptionDialog(navigateToId, projectName));
-
-        var deleteBtn = UiHelper.iconButton("Delete project",
-                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
-        deleteBtn.setToolTipText("Delete project: " + projectName);
-        deleteBtn.addActionListener(e -> {
-            var subtree  = workspace.collectSubtree(navigateToId);
-            var projects = (int) subtree.stream().skip(1)
-                    .map(workspace::getNode).flatMap(java.util.Optional::stream)
-                    .filter(n -> n.isProject()).count();
-            var actions  = (int) subtree.stream().skip(1)
-                    .map(workspace::getNode).flatMap(java.util.Optional::stream)
-                    .filter(n -> !n.isProject()).count();
-            String msg;
-            if (projects == 0 && actions == 0) {
-                msg = "Delete \"" + projectName + "\"? This cannot be undone.";
-            } else {
-                var parts = new java.util.ArrayList<String>();
-                if (projects > 0) parts.add(projects + " sub-project" + (projects > 1 ? "s" : ""));
-                if (actions  > 0) parts.add(actions  + " action"      + (actions  > 1 ? "s" : ""));
-                msg = "Delete \"" + projectName + "\"? This will also permanently remove "
-                        + String.join(" and ", parts) + ".";
-            }
-            var confirm = JOptionPane.showConfirmDialog(parent, msg,
-                    "Delete project", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
-            if (confirm != JOptionPane.YES_OPTION) return;
-            try { service.deleteRecursive(navigateToId); rebuild(); }
-            catch (IOException ex) { showError(ex.getMessage()); }
-        });
-
         var pencilBtn = UiHelper.iconButton("Edit project…",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(16, 16));
         pencilBtn.setToolTipText("Edit project: " + projectName);
@@ -456,9 +369,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 new ProjectDialog(parent, navigateToId, workspace, service, this::rebuild).setVisible(true));
 
         var projectButtons = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
-        projectButtons.add(renameBtn);
-        projectButtons.add(descBtn);
-        projectButtons.add(deleteBtn);
         projectButtons.add(pencilBtn);
 
         // RIGHT: toggle + section-move buttons — always same set so CENTER stays aligned
@@ -633,19 +543,6 @@ public final class ProjectWorkbenchPanel extends JPanel {
             JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void showDescriptionDialog(UUID projectId, String projectName) {
-        var current = workspace.getNode(projectId).map(n -> n.getDescription()).orElse("");
-        var area = new JTextArea(current != null ? current : "", 6, 40);
-        area.setLineWrap(true);
-        area.setWrapStyleWord(true);
-        var scroll = new JScrollPane(area);
-        var result = JOptionPane.showConfirmDialog(parent, scroll,
-                "Description: " + projectName, JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
-        if (result != JOptionPane.OK_OPTION) return;
-        try { service.updateDescription(projectId, area.getText().strip()); rebuild(); }
-        catch (IOException ex) { showError(ex.getMessage()); }
     }
 
     private void startInlineRename(JList<NamNode> list, DefaultListModel<NamNode> model, int idx) {

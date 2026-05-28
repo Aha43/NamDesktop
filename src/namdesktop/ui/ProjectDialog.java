@@ -13,8 +13,7 @@ import static javax.swing.JOptionPane.*;
 
 public final class ProjectDialog extends NodeDialog {
 
-    private final UUID nodeId;
-    private final NamWorkspaceService service;
+    private final NamWorkspace workspace;
 
     public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
         this(parent, nodeId, workspace, service, () -> {});
@@ -22,8 +21,7 @@ public final class ProjectDialog extends NodeDialog {
 
     public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
         super(parent, nodeId, workspace, service, onChanged);
-        this.nodeId  = nodeId;
-        this.service = service;
+        this.workspace = workspace;
         setTitle("Project: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
         hideStatusButton();
 
@@ -53,6 +51,35 @@ public final class ProjectDialog extends NodeDialog {
             JOptionPane.showMessageDialog(this, e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to save: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    @Override
+    protected String deleteConfirmMessage(String title) {
+        var subtree  = workspace.collectSubtree(nodeId);
+        var projects = (int) subtree.stream().skip(1)
+                .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                .filter(n -> n.isProject()).count();
+        var actions  = (int) subtree.stream().skip(1)
+                .map(workspace::getNode).flatMap(java.util.Optional::stream)
+                .filter(n -> !n.isProject()).count();
+        if (projects == 0 && actions == 0)
+            return "Delete \"" + title + "\"? This cannot be undone.";
+        var parts = new java.util.ArrayList<String>();
+        if (projects > 0) parts.add(projects + " sub-project" + (projects > 1 ? "s" : ""));
+        if (actions  > 0) parts.add(actions  + " action"      + (actions  > 1 ? "s" : ""));
+        return "Delete \"" + title + "\"? This will also permanently remove "
+                + String.join(" and ", parts) + ".";
+    }
+
+    @Override
+    protected void doDelete() {
+        try {
+            service.deleteRecursive(nodeId);
+            notifyChanged();
+            dispose();
+        } catch (IOException e) {
+            showMessageDialog(this, "Failed to delete: " + e.getMessage(), "Error", ERROR_MESSAGE);
         }
     }
 

@@ -37,6 +37,7 @@ ICONS=(
   lock
   lock-open
   settings
+  inbox
 )
 
 mkdir -p "$ICONS_DIR"

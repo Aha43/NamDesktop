@@ -12,6 +12,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
 
+- Global inbox capture shortcut: Cmd+I (Ctrl+I on Windows/Linux) opens the capture dialog from anywhere in the app via a menu item and a toolbar button. The shortcut is shown in the + button tooltip in the Inbox panel. Closes #238.
+
+- Inbox bulk capture: the Add dialog now uses a multiline text area — each non-empty line becomes a separate inbox item on confirm. Ctrl+Enter confirms; Enter adds a new line. Single-line behaviour unchanged. Closes #237.
+
+- Projects panel tag filter: a tag filter strip appears above the project list when the workspace has tags. Selecting tags narrows the list to matching projects (OR logic); clearing restores all. Session-only state. Closes #236.
+
+- Project Workbench affordance reduction: section headers now show only the pencil (full edit) button; action toolbars show only Add, Edit, and move up/down. Rename, description, tags, and delete shortcuts removed from inline toolbars — all accessible via the edit dialog. Delete in ProjectDialog now uses recursive delete with a count-aware confirmation. Closes #227.
+
 - Goal Board: renamed "Mission Control" to "Goal Board" throughout the UI, nav section, toolbar, menus, and help content. Creation dialog redesigned with tags-first flow and live project preview. Closes #230.
 
 - Inbox processing flow: replaced the flat "Next action / Project" option dialog with a two-step `ProcessInboxDialog` — step 1 chooses action vs. project, step 2 (action path) chooses "Do it next" or "Park for later" (Backlog). Each path shows a status bar nudge after completion. Closes #228.
