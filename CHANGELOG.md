@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- First-run welcome screen: new users see a `WelcomePanel` with two choices — "Explore demo workspace" (loads sample data) or "Start fresh" (opens Inbox). The screen is shown once and dismissed by either choice; state is persisted in `settings.json`. Closes #232.
+
 - Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
 
 - Goal Board: renamed "Mission Control" to "Goal Board" throughout the UI, nav section, toolbar, menus, and help content. Creation dialog redesigned with tags-first flow and live project preview. Closes #230.

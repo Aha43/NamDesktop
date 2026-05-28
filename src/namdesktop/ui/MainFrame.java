@@ -440,6 +440,14 @@ public final class MainFrame extends JFrame {
     }
 
     public void restoreSession() {
+        if (!settings.isWelcomed()) {
+            contentArea.setContent(new WelcomePanel(
+                    () -> { markWelcomed(); runDemo(); },
+                    () -> { markWelcomed(); navPanel.selectById("inbox"); }));
+            sessionRestored = true;
+            return;
+        }
+
         var navId     = settings.getLastNavId();
         var projectId = settings.getLastProjectId();
 
@@ -453,6 +461,12 @@ public final class MainFrame extends JFrame {
         }
 
         sessionRestored = true;
+    }
+
+    private void markWelcomed() {
+        settings.setWelcomed(true);
+        sessionRestored = true;
+        saveSession();
     }
 
     public void refreshAll() {
