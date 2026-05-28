@@ -7,5 +7,4 @@ import java.util.UUID;
 
 public record BacklogItemRow(UUID id, String title, NodeStatus status,
                              String parentTitle, UUID parentId, boolean isSubProject,
-                             String projectPath, List<String> tags, List<String> inheritedTags,
-                             boolean isInboxItem) {}
+                             String projectPath, List<String> tags, List<String> inheritedTags) {}

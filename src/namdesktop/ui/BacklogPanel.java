@@ -97,7 +97,7 @@ public final class BacklogPanel extends JPanel {
                 var item = tableModel.getRow(row);
                 var blocked = showBlocked && service.isBlocked(item.id());
                 c.setForeground(item.status() == NodeStatus.DONE || blocked ? Color.GRAY : getForeground());
-                int style = (item.isInboxItem() || (column == 1 && item.isSubProject()))
+                int style = (column == 1 && item.isSubProject())
                         ? Font.ITALIC : Font.PLAIN;
                 c.setFont(c.getFont().deriveFont(style));
                 return c;
