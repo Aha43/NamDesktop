@@ -22,7 +22,7 @@ public final class MainFrame extends JFrame {
                 new NavigationEntry("inbox",        "Inbox",        "Capture everything — process and clarify later"),
                 new NavigationEntry("projects",     "Projects",     "Multi-step outcomes that require more than one action"),
                 new NavigationEntry("next-actions", "Next Actions", "Concrete physical actions you can do right now"),
-                new NavigationEntry("context",      "Context",      "Filter your next actions by tag"),
+                new NavigationEntry("context",      "Tag filter",   "Filter your actions by tag"),
                 new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time"),
                 new NavigationEntry("blocked",      "Blocked",      "Actions waiting on a prerequisite to be done"),
                 new NavigationEntry("done",         "Done",         "Completed actions — review and clean up")
