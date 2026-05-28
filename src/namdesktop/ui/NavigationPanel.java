@@ -60,7 +60,7 @@ public final class NavigationPanel extends JPanel {
             });
         }
         if (!missionControls.isEmpty()) {
-            model.addElement(NavigationEntry.sectionHeader("Mission Controls"));
+            model.addElement(NavigationEntry.sectionHeader("Goal Boards"));
             missionControls.forEach(mc -> {
                 var tooltip = mc.tags().isEmpty()
                         ? "No tags"

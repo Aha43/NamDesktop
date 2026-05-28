@@ -98,10 +98,10 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
-        var newMcButton = UiHelper.iconButton("New Mission Control…",
+        var newMcButton = UiHelper.iconButton("New Goal Board…",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16));
-        newMcButton.setToolTipText("New Mission Control…");
-        newMcButton.addActionListener(e -> createMissionControl());
+        newMcButton.setToolTipText("New Goal Board…");
+        newMcButton.addActionListener(e -> createGoalBoard());
         toolbar.add(newMcButton);
         if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
@@ -145,8 +145,8 @@ public final class MainFrame extends JFrame {
         }).setVisible(true));
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
-        var newMcItem = new JMenuItem("New Mission Control…");
-        newMcItem.addActionListener(e -> createMissionControl());
+        var newMcItem = new JMenuItem("New Goal Board…");
+        newMcItem.addActionListener(e -> createGoalBoard());
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
@@ -467,12 +467,12 @@ public final class MainFrame extends JFrame {
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
     }
 
-    private void createMissionControl() {
-        var dialog = new MissionControlCreateDialog(this, workspace);
+    private void createGoalBoard() {
+        var dialog = new GoalBoardCreateDialog(this, workspace);
         dialog.setVisible(true);
         if (!dialog.isConfirmed()) return;
-        var name = dialog.getMcName();
-        var tags = dialog.getMcTags();
+        var name = dialog.getGoalBoardName();
+        var tags = dialog.getGoalBoardTags();
         if (name.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Name must not be blank.", "Error", JOptionPane.ERROR_MESSAGE);
             return;

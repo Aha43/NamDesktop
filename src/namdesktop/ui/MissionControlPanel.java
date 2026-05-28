@@ -36,9 +36,9 @@ public final class MissionControlPanel extends JPanel {
         this.onOpenProject = onOpenProject;
         this.onDeleted     = onDeleted;
 
-        var deleteButton = UiHelper.iconButton("Delete Mission Control",
+        var deleteButton = UiHelper.iconButton("Delete Goal Board",
                 new FlatSVGIcon(MissionControlPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
-        deleteButton.setToolTipText("Delete this Mission Control");
+        deleteButton.setToolTipText("Delete this Goal Board");
         deleteButton.addActionListener(e -> deleteSelf());
 
         var toolbar = new JToolBar();
@@ -135,7 +135,7 @@ public final class MissionControlPanel extends JPanel {
 
     private void deleteSelf() {
         var confirm = JOptionPane.showConfirmDialog(this,
-                "Delete Mission Control \"" + mc.name() + "\"?",
+                "Delete Goal Board \"" + mc.name() + "\"?",
                 "Delete", JOptionPane.OK_CANCEL_OPTION);
         if (confirm != JOptionPane.OK_OPTION) return;
         try {

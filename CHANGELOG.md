@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Goal Board: renamed "Mission Control" to "Goal Board" throughout the UI, nav section, toolbar, menus, and help content. Creation dialog redesigned with tags-first flow and live project preview. Closes #230.
+
 - Inbox processing flow: replaced the flat "Next action / Project" option dialog with a two-step `ProcessInboxDialog` — step 1 chooses action vs. project, step 2 (action path) chooses "Do it next" or "Park for later" (Backlog). Each path shows a status bar nudge after completion. Closes #228.
 
 - Blocked lens: a "Blocked" nav entry (between Backlog and Done) shows all actions with unmet prerequisites, grouped by blocker. Bold header rows open the blocker's dialog; action rows have the full status badge, pencil, and project path. Closes #210.
