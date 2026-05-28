@@ -30,6 +30,7 @@ public final class BlockedPanel extends JPanel {
     private final Consumer<UUID> onOpenProject;
     private final BlockedTableModel tableModel;
     private final JTable table;
+    private JPanel tableCard;
 
     public BlockedPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -142,7 +143,8 @@ public final class BlockedPanel extends JPanel {
             }
         });
 
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "No actions are blocked right now.");
+        add(tableCard, BorderLayout.CENTER);
     }
 
     private void openDialog(UUID nodeId) {
@@ -197,6 +199,7 @@ public final class BlockedPanel extends JPanel {
             }
         }
         tableModel.setRows(rows);
+        UiHelper.setTableEmpty(tableCard, rows.isEmpty());
     }
 
     private String buildProjectPath(UUID projectId, Set<UUID> structural) {

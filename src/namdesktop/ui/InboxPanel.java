@@ -23,6 +23,8 @@ public final class InboxPanel extends JPanel {
     private final NamWorkspaceService service;
     private final InboxTableModel tableModel;
     private JTable table;
+    private JButton processButton;
+    private JPanel tableCard;
 
     public InboxPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -44,22 +46,47 @@ public final class InboxPanel extends JPanel {
         table.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    var row = table.rowAtPoint(e.getPoint());
+                    if (row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE)
+                        process(tableModel.getRow(row));
+                }
+            }
+        });
+
+        table.getSelectionModel().addListSelectionListener(ev -> {
+            if (ev.getValueIsAdjusting()) return;
+            var row = table.getSelectedRow();
+            processButton.setEnabled(row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
         });
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
+        processButton = UiHelper.iconButton("Process…",
+                new FlatSVGIcon(InboxPanel.class.getResource("/icons/arrow-right.svg")).derive(16, 16));
+        processButton.setToolTipText("Decide what this item is and where it belongs");
+        processButton.setEnabled(false);
+        processButton.addActionListener(e -> {
+            var row = table.getSelectedRow();
+            if (row >= 0) process(tableModel.getRow(row));
+        });
+        toolbar.add(processButton);
+        toolbar.addSeparator();
         var addButton = UiHelper.iconButton("Add item",
                 new FlatSVGIcon(InboxPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.setToolTipText("Add new inbox item");
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
 
-        add(toolbar, BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "Nothing captured yet. Use + to add something.");
+        add(toolbar,    BorderLayout.NORTH);
+        add(tableCard,  BorderLayout.CENTER);
     }
 
     public void refresh() {
         tableModel.setRows(new InboxLens().items(workspace));
+        UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
     }
 
     private void showMenu(MouseEvent e) {
@@ -92,24 +119,29 @@ public final class InboxPanel extends JPanel {
     }
 
     private void process(InboxItemRow row) {
-        var options = new String[]{"Next action", "Project"};
-        var choice = JOptionPane.showOptionDialog(
-                parent(),
-                "What is \"" + row.title() + "\"?",
-                "Process inbox item",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
-        if (choice < 0) return;
+        var result = ProcessInboxDialog.show(parent(), row.title());
         try {
-            if (choice == 0) {
-                service.convertInboxItemToNextAction(row.id());
-                refresh();
-            } else {
-                service.convertInboxItemToProject(row.id());
-                var template = pickTemplate();
-                if (template != null) service.applyTemplate(row.id(), template);
-                refresh();
-                new ProjectDialog(parent(), row.id(), workspace, service, this::refresh).setVisible(true);
+            switch (result) {
+                case NEXT_ACTION -> {
+                    service.convertInboxItemToNextAction(row.id());
+                    refresh();
+                    MainFrame.showNudge("Added to Next Actions");
+                }
+                case PARK_FOR_LATER -> {
+                    service.convertInboxItemToNextAction(row.id());
+                    service.markBacklog(row.id());
+                    refresh();
+                    MainFrame.showNudge("Parked for later");
+                }
+                case PROJECT -> {
+                    service.convertInboxItemToProject(row.id());
+                    var template = pickTemplate();
+                    if (template != null) service.applyTemplate(row.id(), template);
+                    refresh();
+                    MainFrame.showNudge("Created project “" + row.title() + "”");
+                    new ProjectDialog(parent(), row.id(), workspace, service, this::refresh).setVisible(true);
+                }
+                case CANCELLED -> {}
             }
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());

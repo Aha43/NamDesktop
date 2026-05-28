@@ -165,7 +165,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var mcrButton = new JToggleButton(mcrIcon);
         mcrButton.setSelected(mcrMode);
         mcrButton.setEnabled(hasSubProjects);
-        mcrButton.setToolTipText(mcrMode ? "MCR view — click to return to workbench" : "Open sub-projects in MCR view");
+        mcrButton.setToolTipText(mcrMode ? "Readiness view — click to return to workbench" : "Open sub-projects in readiness view");
         mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); rebuild(); });
 
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
@@ -515,7 +515,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return header;
     }
 
-    private static final int BADGE_WIDTH = 28;
+    private static final int BADGE_WIDTH = 36;
 
     private JList<NamNode> buildActionList(List<NamNode> actions, UUID targetProjectId) {
         var model = new DefaultListModel<NamNode>();
@@ -695,9 +695,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var current = node.getStatus();
         var menu = new JPopupMenu();
         for (var status : new NodeStatus[]{NodeStatus.NEXT, NodeStatus.BACKLOG, NodeStatus.DONE}) {
-            var label  = switch (status) { case NEXT -> "Next"; case BACKLOG -> "Backlog"; default -> "Done"; };
-            var letter = switch (status) { case NEXT -> "N";    case BACKLOG -> "B";       default -> "D";    };
-            var item   = new JMenuItem((current == status ? "✓ " : "  ") + letter + "  " + label);
+            var label = switch (status) { case NEXT -> "Next"; case BACKLOG -> "Backlog"; default -> "Done"; };
+            var item  = new JMenuItem((current == status ? "✓ " : "  ") + label);
             item.setEnabled(current != status);
             final var s = status;
             item.addActionListener(e -> setStatus(node, s));
@@ -871,9 +870,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 JList<? extends NamNode> list, NamNode node, int index, boolean isSelected, boolean cellHasFocus) {
             var status = node.getStatus();
             badge.setText(switch (status) {
-                case NEXT    -> "N";
-                case BACKLOG -> "B";
-                case DONE    -> "D";
+                case NEXT    -> "Next";
+                case BACKLOG -> "Back";
+                case DONE    -> "Done";
                 default      -> "?";
             });
             var bg = isSelected ? list.getSelectionBackground() : list.getBackground();

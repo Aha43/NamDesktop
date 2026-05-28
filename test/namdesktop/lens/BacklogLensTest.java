@@ -104,26 +104,25 @@ class BacklogLensTest {
     }
 
     @Test
-    void items_inboxItem_isMarkedAsInboxItem() {
+    void items_inboxItem_isExcludedFromBacklog() {
         var node = new NamNode(UUID.randomUUID(), "Unprocessed capture");
         node.setStatus(NodeStatus.BACKLOG);
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(workspace.getInboxNodeId()).orElseThrow().getChildIds().add(node.getId());
 
         var rows = lens.items(workspace);
-        assertEquals(1, rows.size());
-        assertTrue(rows.get(0).isInboxItem());
+        assertTrue(rows.isEmpty(), "Inbox items must not appear in Backlog (Option A)");
     }
 
     @Test
-    void items_regularAction_isNotMarkedAsInboxItem() {
+    void items_regularAction_appearsInBacklog() {
         var node = new NamNode(UUID.randomUUID(), "Regular action");
         node.setStatus(NodeStatus.BACKLOG);
         workspace.getNodes().put(node.getId(), node);
 
         var rows = lens.items(workspace);
         assertEquals(1, rows.size());
-        assertFalse(rows.get(0).isInboxItem());
+        assertEquals("Regular action", rows.get(0).title());
     }
 
     @Test

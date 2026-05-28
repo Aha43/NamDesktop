@@ -16,10 +16,17 @@ import java.util.List;
 
 public final class SearchPanel extends JPanel {
 
+    private static final String CARD_HINT    = "hint";
+    private static final String CARD_RESULTS = "results";
+    private static final String CARD_EMPTY   = "empty";
+
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
     private final SearchTableModel tableModel;
     private final JTextField searchField;
+    private final CardLayout cardLayout;
+    private final JPanel cardPanel;
+    private final JLabel emptyLabel;
 
     public SearchPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
@@ -34,10 +41,16 @@ public final class SearchPanel extends JPanel {
             public void changedUpdate(DocumentEvent e) { runSearch(); }
         });
 
+        var scopeLabel = new JLabel("Searches titles across all items");
+        scopeLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        scopeLabel.setFont(scopeLabel.getFont().deriveFont(Font.ITALIC, 11f));
+        scopeLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+
         var north = new JPanel(new BorderLayout(6, 0));
-        north.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        north.setBorder(BorderFactory.createEmptyBorder(6, 6, 4, 6));
         north.add(new JLabel("Search:"), BorderLayout.WEST);
         north.add(searchField,           BorderLayout.CENTER);
+        north.add(scopeLabel,            BorderLayout.SOUTH);
 
         JTable table = new JTable(tableModel);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -52,8 +65,17 @@ public final class SearchPanel extends JPanel {
             }
         });
 
-        add(north,                  BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        var hintLabel = centeredLabel("Type to search.");
+        emptyLabel    = centeredLabel("");
+
+        cardLayout = new CardLayout();
+        cardPanel  = new JPanel(cardLayout);
+        cardPanel.add(hintLabel,               CARD_HINT);
+        cardPanel.add(new JScrollPane(table),  CARD_RESULTS);
+        cardPanel.add(emptyLabel,              CARD_EMPTY);
+
+        add(north,     BorderLayout.NORTH);
+        add(cardPanel, BorderLayout.CENTER);
     }
 
     public void refresh() {
@@ -62,7 +84,19 @@ public final class SearchPanel extends JPanel {
     }
 
     private void runSearch() {
-        tableModel.setRows(new SearchLens().search(workspace, searchField.getText()));
+        var query = searchField.getText();
+        if (query.isBlank()) {
+            cardLayout.show(cardPanel, CARD_HINT);
+            return;
+        }
+        var results = new SearchLens().search(workspace, query);
+        if (results.isEmpty()) {
+            emptyLabel.setText("No results for “" + query.trim() + "”.");
+            cardLayout.show(cardPanel, CARD_EMPTY);
+        } else {
+            tableModel.setRows(results);
+            cardLayout.show(cardPanel, CARD_RESULTS);
+        }
     }
 
     private void openDialog(SearchResultRow row) {
@@ -72,6 +106,12 @@ public final class SearchPanel extends JPanel {
         } else {
             new ActionDialog(owner, row.id(), workspace, service, false, this::runSearch).setVisible(true);
         }
+    }
+
+    private static JLabel centeredLabel(String text) {
+        var label = new JLabel(text, SwingConstants.CENTER);
+        label.setForeground(UIManager.getColor("Label.disabledForeground"));
+        return label;
     }
 
     private static final class SearchTableModel extends AbstractTableModel {

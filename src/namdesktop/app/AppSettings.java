@@ -30,6 +30,7 @@ public final class AppSettings {
     private boolean showNavPane      = true;
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
+    private boolean welcomed         = false;
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -49,6 +50,8 @@ public final class AppSettings {
     public void    setLastNavId(String v)            { this.lastNavId = v; }
     public String  getLastProjectId()                { return lastProjectId; }
     public void    setLastProjectId(String v)        { this.lastProjectId = v; }
+    public boolean isWelcomed()                      { return welcomed; }
+    public void    setWelcomed(boolean v)            { this.welcomed = v; }
 
     public static AppSettings load() {
         try {
@@ -64,6 +67,7 @@ public final class AppSettings {
                 s.setShowNavPane(dto.showNavPane == null || dto.showNavPane);
                 s.setLastNavId(dto.lastNavId);
                 s.setLastProjectId(dto.lastProjectId);
+                s.setWelcomed(dto.welcomed != null && dto.welcomed);
                 return s;
             }
         } catch (Exception e) {
@@ -84,6 +88,7 @@ public final class AppSettings {
         dto.showNavPane      = this.showNavPane;
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
+        dto.welcomed         = this.welcomed;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -98,5 +103,6 @@ public final class AppSettings {
         public Boolean showNavPane;
         public String  lastNavId;
         public String  lastProjectId;
+        public Boolean welcomed;
     }
 }

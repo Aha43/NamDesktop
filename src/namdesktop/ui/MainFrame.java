@@ -22,7 +22,7 @@ public final class MainFrame extends JFrame {
                 new NavigationEntry("inbox",        "Inbox",        "Capture everything — process and clarify later"),
                 new NavigationEntry("projects",     "Projects",     "Multi-step outcomes that require more than one action"),
                 new NavigationEntry("next-actions", "Next Actions", "Concrete physical actions you can do right now"),
-                new NavigationEntry("context",      "Context",      "Filter your next actions by tag"),
+                new NavigationEntry("context",      "Tag filter",   "Filter your actions by tag"),
                 new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time"),
                 new NavigationEntry("blocked",      "Blocked",      "Actions waiting on a prerequisite to be done"),
                 new NavigationEntry("done",         "Done",         "Completed actions — review and clean up")
@@ -98,10 +98,10 @@ public final class MainFrame extends JFrame {
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
-        var newMcButton = UiHelper.iconButton("New Mission Control…",
+        var newMcButton = UiHelper.iconButton("New Goal Board…",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16));
-        newMcButton.setToolTipText("New Mission Control…");
-        newMcButton.addActionListener(e -> createMissionControl());
+        newMcButton.setToolTipText("New Goal Board…");
+        newMcButton.addActionListener(e -> createGoalBoard());
         toolbar.add(newMcButton);
         if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
@@ -117,6 +117,14 @@ public final class MainFrame extends JFrame {
         helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
         toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
+        var settingsButton = UiHelper.iconButton("Settings…",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/settings.svg")).derive(16, 16));
+        settingsButton.setToolTipText("Settings");
+        settingsButton.addActionListener(e -> new SettingsDialog(this, settings, () -> {
+            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+        }).setVisible(true));
+        toolbar.add(settingsButton);
         var exitButton = UiHelper.iconButton("Exit",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
         exitButton.setToolTipText("Exit NamDesktop");
@@ -129,25 +137,25 @@ public final class MainFrame extends JFrame {
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
+        settingsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         settingsItem.addActionListener(e -> new SettingsDialog(this, settings, () -> {
             nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
             backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
         }).setVisible(true));
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
-        var newMcItem = new JMenuItem("New Mission Control…");
-        newMcItem.addActionListener(e -> createMissionControl());
+        var newMcItem = new JMenuItem("New Goal Board…");
+        newMcItem.addActionListener(e -> createGoalBoard());
 
         var fileMenu = new JMenu("File");
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
         fileMenu.add(newMcItem);
-        if (devMode) {
-            var runDemoItem = new JMenuItem("Run Demo…");
-            runDemoItem.addActionListener(e -> runDemo());
-            fileMenu.add(runDemoItem);
-        }
+        var runDemoItem = new JMenuItem("Run Demo…");
+        runDemoItem.addActionListener(e -> runDemo());
+        fileMenu.add(runDemoItem);
         fileMenu.addSeparator();
 
         if (!devMode && syncService.isConfigured()) {
@@ -242,6 +250,8 @@ public final class MainFrame extends JFrame {
         menuBar.add(helpMenu);
 
         setJMenuBar(menuBar);
+
+
         toolbar.setVisible(settings.isShowToolbar());
         if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
         add(toolbar,        BorderLayout.NORTH);
@@ -392,6 +402,13 @@ public final class MainFrame extends JFrame {
             JOptionPane.showMessageDialog(this, "demo.json not found in JAR.", "Demo", JOptionPane.ERROR_MESSAGE);
             return;
         }
+        if (workspace.getNodes().size() > 4) {
+            var choice = JOptionPane.showConfirmDialog(this,
+                    "Running the demo will replace your current workspace with sample data.\n"
+                    + "Any items you have added will be lost.\n\nContinue?",
+                    "Run Demo", JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.OK_OPTION) return;
+        }
         try {
             service.resetWorkspaceToDefault();
             refreshAll();
@@ -423,6 +440,14 @@ public final class MainFrame extends JFrame {
     }
 
     public void restoreSession() {
+        if (!settings.isWelcomed()) {
+            contentArea.setContent(new WelcomePanel(
+                    () -> { markWelcomed(); runDemo(); },
+                    () -> { markWelcomed(); navPanel.selectById("inbox"); }));
+            sessionRestored = true;
+            return;
+        }
+
         var navId     = settings.getLastNavId();
         var projectId = settings.getLastProjectId();
 
@@ -436,6 +461,12 @@ public final class MainFrame extends JFrame {
         }
 
         sessionRestored = true;
+    }
+
+    private void markWelcomed() {
+        settings.setWelcomed(true);
+        sessionRestored = true;
+        saveSession();
     }
 
     public void refreshAll() {
@@ -455,12 +486,12 @@ public final class MainFrame extends JFrame {
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
     }
 
-    private void createMissionControl() {
-        var dialog = new MissionControlCreateDialog(this, workspace);
+    private void createGoalBoard() {
+        var dialog = new GoalBoardCreateDialog(this, workspace);
         dialog.setVisible(true);
         if (!dialog.isConfirmed()) return;
-        var name = dialog.getMcName();
-        var tags = dialog.getMcTags();
+        var name = dialog.getGoalBoardName();
+        var tags = dialog.getGoalBoardTags();
         if (name.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Name must not be blank.", "Error", JOptionPane.ERROR_MESSAGE);
             return;

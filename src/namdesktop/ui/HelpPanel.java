@@ -16,7 +16,7 @@ public final class HelpPanel extends JPanel {
 
     private static final List<Tutorial> TUTORIALS = List.of(
             new Tutorial("Getting started",           "/resources/help/tutorials/getting-started.html"),
-            new Tutorial("Planning a goal with MCR",  "/resources/help/tutorials/planning-a-goal-with-mcr.html")
+            new Tutorial("Planning a goal with a Goal Board",  "/resources/help/tutorials/planning-a-goal-with-mcr.html")
     );
 
     private final JEditorPane tutorialPane;

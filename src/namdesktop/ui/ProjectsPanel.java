@@ -23,6 +23,7 @@ public final class ProjectsPanel extends JPanel {
     private final NamWorkspaceService service;
     private final Consumer<UUID>    onOpenProject;
     private final ProjectsTableModel tableModel;
+    private JPanel tableCard;
 
     public ProjectsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -120,12 +121,14 @@ public final class ProjectsPanel extends JPanel {
         addButton.addActionListener(e -> addProject());
         toolbar.add(addButton);
 
-        add(toolbar,               BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
+        tableCard = UiHelper.tableCard(new JScrollPane(table), "No projects yet. Use + to add one.");
+        add(toolbar,    BorderLayout.NORTH);
+        add(tableCard,  BorderLayout.CENTER);
     }
 
     public void refresh() {
         tableModel.setRows(new ProjectsLens().items(workspace));
+        UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
     }
 
     private void addProject() {

@@ -62,9 +62,9 @@ public final class BacklogPanel extends JPanel {
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
 
-        var moonButton = UiHelper.iconButton("Moon Cards",
+        var moonButton = UiHelper.iconButton("Focus mode",
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
-        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.setToolTipText("Work through this list one action at a time");
         moonButton.addActionListener(e -> enterDeckMode());
 
         var lockIcon     = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
@@ -97,7 +97,7 @@ public final class BacklogPanel extends JPanel {
                 var item = tableModel.getRow(row);
                 var blocked = showBlocked && service.isBlocked(item.id());
                 c.setForeground(item.status() == NodeStatus.DONE || blocked ? Color.GRAY : getForeground());
-                int style = (item.isInboxItem() || (column == 1 && item.isSubProject()))
+                int style = (column == 1 && item.isSubProject())
                         ? Font.ITALIC : Font.PLAIN;
                 c.setFont(c.getFont().deriveFont(style));
                 return c;
@@ -230,7 +230,8 @@ public final class BacklogPanel extends JPanel {
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
         deckWrapper = new JPanel(deckCards);
-        deckWrapper.add(scrollPane, "table");
+        deckWrapper.add(scrollPane,                                                                          "table");
+        deckWrapper.add(UiHelper.emptyStateLabel("Nothing deferred. Items you park for later will appear here."), "empty");
         add(deckWrapper, BorderLayout.CENTER);
     }
 
@@ -258,6 +259,8 @@ public final class BacklogPanel extends JPanel {
                 ? currentOrder
                 : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
+        if (moonCardPanel == null)
+            deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
 
         if (pendingSelection != null) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -325,7 +328,7 @@ public final class BacklogPanel extends JPanel {
             cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
         }
         if (cards.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
@@ -337,7 +340,6 @@ public final class BacklogPanel extends JPanel {
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
-        deckCards.show(deckWrapper, "table");
         toolbar.setVisible(true);
         refresh();
         var old = moonCardPanel;

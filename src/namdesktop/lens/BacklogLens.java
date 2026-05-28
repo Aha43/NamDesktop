@@ -18,9 +18,11 @@ public final class BacklogLens {
                 .filter(n -> !structural.contains(n.getId()))
                 .filter(n -> !n.isProject())
                 .filter(n -> n.getStatus() == NodeStatus.BACKLOG)
+                .filter(n -> workspace.getParent(n.getId())
+                        .map(p -> !p.getId().equals(workspace.getInboxNodeId()))
+                        .orElse(true))
                 .map(n -> {
                     var parent = workspace.getParent(n.getId()).orElse(null);
-                    var isInboxItem = parent != null && parent.getId().equals(workspace.getInboxNodeId());
                     var displayParent = parent != null && !structural.contains(parent.getId()) ? parent : null;
                     var isSubProject = displayParent != null && workspace.getParent(displayParent.getId())
                             .map(gp -> !gp.getId().equals(workspace.getProjectsNodeId()))
@@ -32,7 +34,7 @@ public final class BacklogLens {
                     return new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             displayParent != null ? displayParent.getTitle() : null,
                             displayParent != null ? displayParent.getId() : null,
-                            isSubProject, projectPath, List.copyOf(ownTags), inherited, isInboxItem);
+                            isSubProject, projectPath, List.copyOf(ownTags), inherited);
                 })
                 .toList();
     }

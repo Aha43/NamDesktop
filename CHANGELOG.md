@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- First-run welcome screen: new users see a `WelcomePanel` with two choices — "Explore demo workspace" (loads sample data) or "Start fresh" (opens Inbox). The screen is shown once and dismissed by either choice; state is persisted in `settings.json`. Closes #232.
+
+- Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
+
+- Goal Board: renamed "Mission Control" to "Goal Board" throughout the UI, nav section, toolbar, menus, and help content. Creation dialog redesigned with tags-first flow and live project preview. Closes #230.
+
+- Inbox processing flow: replaced the flat "Next action / Project" option dialog with a two-step `ProcessInboxDialog` — step 1 chooses action vs. project, step 2 (action path) chooses "Do it next" or "Park for later" (Backlog). Each path shows a status bar nudge after completion. Closes #228.
+
 - Blocked lens: a "Blocked" nav entry (between Backlog and Done) shows all actions with unmet prerequisites, grouped by blocker. Bold header rows open the blocker's dialog; action rows have the full status badge, pencil, and project path. Closes #210.
 - Completion nudge: marking an action Done shows a brief "Unblocked: …" message in the status bar listing actions that are now actionable. Fires from the inline status badge popup (Next Actions, Backlog) and the ActionDialog Done button. Auto-hides after 4 seconds. Closes #209.
 - Next Actions and Backlog: blocked actions are hidden by default. A padlock toggle button (lock icon) in each panel's toolbar reveals them; when visible, blocked rows are grayed out and hovering the action column shows a "Blocked by: …" tooltip listing the unmet prerequisites. Closes #208.

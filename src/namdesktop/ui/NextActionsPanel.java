@@ -62,9 +62,9 @@ public final class NextActionsPanel extends JPanel {
                 new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
         addButton.addActionListener(e -> addAction());
 
-        var moonButton = UiHelper.iconButton("Moon Cards",
+        var moonButton = UiHelper.iconButton("Focus mode",
                 new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
-        moonButton.setToolTipText("Browse actions as cards (Moon Cards)");
+        moonButton.setToolTipText("Work through this list one action at a time");
         moonButton.addActionListener(e -> enterDeckMode());
 
         var lockIcon     = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
@@ -232,7 +232,8 @@ public final class NextActionsPanel extends JPanel {
         scrollPane  = new JScrollPane(table);
         deckCards   = new CardLayout();
         deckWrapper = new JPanel(deckCards);
-        deckWrapper.add(scrollPane, "table");
+        deckWrapper.add(scrollPane,                                                         "table");
+        deckWrapper.add(UiHelper.emptyStateLabel("No next actions. Open the Inbox to process items, or add one directly."), "empty");
         add(deckWrapper, BorderLayout.CENTER);
     }
 
@@ -260,6 +261,8 @@ public final class NextActionsPanel extends JPanel {
                 ? currentOrder
                 : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
+        if (moonCardPanel == null)
+            deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
 
         if (pendingSelection != null) {
             for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -327,7 +330,7 @@ public final class NextActionsPanel extends JPanel {
             cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
         }
         if (cards.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "No actions to show.", "Moon Cards", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
@@ -339,7 +342,6 @@ public final class NextActionsPanel extends JPanel {
 
     private void exitDeckMode() {
         if (moonCardPanel == null) return;
-        deckCards.show(deckWrapper, "table");
         toolbar.setVisible(true);
         refresh();
         var old = moonCardPanel;
