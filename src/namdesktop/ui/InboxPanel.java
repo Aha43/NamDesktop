@@ -75,7 +75,9 @@ public final class InboxPanel extends JPanel {
         toolbar.addSeparator();
         var addButton = UiHelper.iconButton("Add item",
                 new FlatSVGIcon(InboxPanel.class.getResource("/icons/plus.svg")).derive(16, 16));
-        addButton.setToolTipText("Add new inbox item");
+        var modifier = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()
+                == java.awt.event.InputEvent.META_DOWN_MASK ? "⌘" : "Ctrl";
+        addButton.setToolTipText("Add new inbox item (" + modifier + "+I)");
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
 
@@ -83,6 +85,8 @@ public final class InboxPanel extends JPanel {
         add(toolbar,    BorderLayout.NORTH);
         add(tableCard,  BorderLayout.CENTER);
     }
+
+    public void triggerAdd() { addItem(); }
 
     public void refresh() {
         tableModel.setRows(new InboxLens().items(workspace));

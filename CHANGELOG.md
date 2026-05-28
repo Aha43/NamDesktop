@@ -12,6 +12,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
 
+- Global inbox capture shortcut: Cmd+I (Ctrl+I on Windows/Linux) opens the capture dialog from anywhere in the app via a menu item and a toolbar button. The shortcut is shown in the + button tooltip in the Inbox panel. Closes #238.
+
 - Inbox bulk capture: the Add dialog now uses a multiline text area — each non-empty line becomes a separate inbox item on confirm. Ctrl+Enter confirms; Enter adds a new line. Single-line behaviour unchanged. Closes #237.
 
 - Projects panel tag filter: a tag filter strip appears above the project list when the workspace has tags. Selecting tags narrows the list to matching projects (OR logic); clearing restores all. Session-only state. Closes #236.

@@ -95,6 +95,13 @@ public final class MainFrame extends JFrame {
         manageTagsButton.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         toolbar.add(manageTagsButton);
+        var captureButton = UiHelper.iconButton("Capture to Inbox",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/inbox.svg")).derive(16, 16));
+        captureButton.setToolTipText("Capture to Inbox (" +
+                (java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() == java.awt.event.InputEvent.META_DOWN_MASK ? "⌘" : "Ctrl") +
+                "+I)");
+        captureButton.addActionListener(e -> inboxPanel.triggerAdd());
+        toolbar.add(captureButton);
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
@@ -148,7 +155,14 @@ public final class MainFrame extends JFrame {
         var newMcItem = new JMenuItem("New Goal Board…");
         newMcItem.addActionListener(e -> createGoalBoard());
 
+        var captureItem = new JMenuItem("Capture to Inbox");
+        captureItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        captureItem.addActionListener(e -> inboxPanel.triggerAdd());
+
         var fileMenu = new JMenu("File");
+        fileMenu.add(captureItem);
+        fileMenu.addSeparator();
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
         fileMenu.add(templatesItem);
