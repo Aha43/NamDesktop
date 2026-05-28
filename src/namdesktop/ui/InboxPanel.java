@@ -119,24 +119,29 @@ public final class InboxPanel extends JPanel {
     }
 
     private void process(InboxItemRow row) {
-        var options = new String[]{"Next action", "Project"};
-        var choice = JOptionPane.showOptionDialog(
-                parent(),
-                "What is \"" + row.title() + "\"?",
-                "Process inbox item",
-                JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
-        if (choice < 0) return;
+        var result = ProcessInboxDialog.show(parent(), row.title());
         try {
-            if (choice == 0) {
-                service.convertInboxItemToNextAction(row.id());
-                refresh();
-            } else {
-                service.convertInboxItemToProject(row.id());
-                var template = pickTemplate();
-                if (template != null) service.applyTemplate(row.id(), template);
-                refresh();
-                new ProjectDialog(parent(), row.id(), workspace, service, this::refresh).setVisible(true);
+            switch (result) {
+                case NEXT_ACTION -> {
+                    service.convertInboxItemToNextAction(row.id());
+                    refresh();
+                    MainFrame.showNudge("Added to Next Actions");
+                }
+                case PARK_FOR_LATER -> {
+                    service.convertInboxItemToNextAction(row.id());
+                    service.markBacklog(row.id());
+                    refresh();
+                    MainFrame.showNudge("Parked for later");
+                }
+                case PROJECT -> {
+                    service.convertInboxItemToProject(row.id());
+                    var template = pickTemplate();
+                    if (template != null) service.applyTemplate(row.id(), template);
+                    refresh();
+                    MainFrame.showNudge("Created project “" + row.title() + "”");
+                    new ProjectDialog(parent(), row.id(), workspace, service, this::refresh).setVisible(true);
+                }
+                case CANCELLED -> {}
             }
         } catch (IOException e) {
             showError("Failed to save: " + e.getMessage());

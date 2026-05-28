@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Inbox processing flow: replaced the flat "Next action / Project" option dialog with a two-step `ProcessInboxDialog` — step 1 chooses action vs. project, step 2 (action path) chooses "Do it next" or "Park for later" (Backlog). Each path shows a status bar nudge after completion. Closes #228.
+
 - Blocked lens: a "Blocked" nav entry (between Backlog and Done) shows all actions with unmet prerequisites, grouped by blocker. Bold header rows open the blocker's dialog; action rows have the full status badge, pencil, and project path. Closes #210.
 - Completion nudge: marking an action Done shows a brief "Unblocked: …" message in the status bar listing actions that are now actionable. Fires from the inline status badge popup (Next Actions, Backlog) and the ActionDialog Done button. Auto-hides after 4 seconds. Closes #209.
 - Next Actions and Backlog: blocked actions are hidden by default. A padlock toggle button (lock icon) in each panel's toolbar reveals them; when visible, blocked rows are grayed out and hovering the action column shows a "Blocked by: …" tooltip listing the unmet prerequisites. Closes #208.
