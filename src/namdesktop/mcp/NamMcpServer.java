@@ -143,6 +143,9 @@ public final class NamMcpServer {
         tools.add(tool("list_saved_views",
                 "List the saved views (user-defined tag filters) defined in the workspace.",
                 MAPPER.createObjectNode()));
+        tools.add(tool("list_project_children",
+                "List the direct children of a project node. Use to verify structure before writing.",
+                schema(Map.of("project_id", prop("string", "UUID of the project")), List.of("project_id"))));
         tools.add(tool("find_node",
                 "Find nodes by title (case-insensitive substring match). Returns id, title, status, project flag, tags.",
                 schema(Map.of("title", prop("string", "Substring to search for")), List.of("title"))));
@@ -251,6 +254,7 @@ public final class NamMcpServer {
             case "list_done"             -> toolListDone();
             case "list_projects"         -> toolListProjects();
             case "list_saved_views"      -> toolListSavedViews();
+            case "list_project_children" -> toolListProjectChildren(args);
             case "find_node"             -> toolFindNode(args);
             case "get_monitoring_status" -> toolMonitoringStatus();
             case "add_inbox_item"        -> toolAddInboxItem(args);
@@ -372,6 +376,32 @@ public final class NamMcpServer {
             v.tags().forEach(tags::add);
         }
         return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(views), false);
+    }
+
+    private ObjectNode toolListProjectChildren(JsonNode args) throws IOException {
+        var idStr = args.path("project_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: project_id is required.", true);
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid project_id UUID.", true); }
+
+        var ws   = repo.load(workspacePath);
+        var node = ws.getNode(id).orElse(null);
+        if (node == null) return textResult("Error: no node found with id " + idStr, true);
+
+        var children = MAPPER.createArrayNode();
+        for (var childId : node.getChildIds()) {
+            ws.getNode(childId).ifPresent(child -> {
+                var o = children.addObject();
+                o.put("id",      child.getId().toString());
+                o.put("title",   child.getTitle());
+                o.put("status",  child.getStatus().name());
+                o.put("project", child.isProject());
+                var tags = o.putArray("tags");
+                child.getTags().forEach(tags::add);
+            });
+        }
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(children), false);
     }
 
     private ObjectNode toolFindNode(JsonNode args) throws IOException {
