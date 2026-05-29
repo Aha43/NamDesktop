@@ -111,6 +111,9 @@ public final class MainFrame extends JFrame {
         captureButton.addActionListener(e -> inboxPanel.triggerAdd());
         toolbar.add(captureButton);
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
+        searchButton.setToolTipText("Search (" +
+                (java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() == java.awt.event.InputEvent.META_DOWN_MASK ? "⌘" : "Ctrl") +
+                "+F)");
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
         var newMcButton = UiHelper.iconButton("New Goal Board…",
@@ -170,6 +173,8 @@ public final class MainFrame extends JFrame {
         manageTagsItem.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         var searchItem = new JMenuItem("Search…");
+        searchItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
         settingsItem.addActionListener(e -> openSettings());
