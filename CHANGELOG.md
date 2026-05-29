@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Dev mode badge: an amber `● Dev` label appears in the toolbar (left of Settings) whenever NamDesktop is launched in dev mode — mirrors the `● Monitoring` indicator style so mode awareness is always visible in full screen. Closes #270.
+
 - Checkpoint: while in monitoring mode, a Checkpoint button (✔) appears in the toolbar and `File › Checkpoint` (Cmd+Shift+S) is enabled. Checkpoint shows the same accept/reject summary dialog, then flushes accepted changes into the main workspace and resets the external baseline — Claude can keep writing without another toggle. Rejecting discards the external changes but stays in monitoring. Closes #269.
 
 - Monitoring mode toolbar indicator: an amber `● Monitoring` label appears in the toolbar when monitoring mode is active — visible even in macOS full-screen mode where the title bar is hidden. Closes #268.

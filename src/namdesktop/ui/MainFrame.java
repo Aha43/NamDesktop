@@ -56,6 +56,7 @@ public final class MainFrame extends JFrame {
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
     private       boolean               sessionRestored  = false;
+    private final boolean               devMode;
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
@@ -69,6 +70,7 @@ public final class MainFrame extends JFrame {
         this.settings         = settings;
         this.syncService      = syncService;
         this.workspacePath    = workspacePath;
+        this.devMode          = devMode;
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service, this::refreshAll);
         this.inboxPanel       = new InboxPanel(workspace, service);
@@ -147,6 +149,12 @@ public final class MainFrame extends JFrame {
         helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
         toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
+        if (devMode) {
+            var devIndicator = new JLabel("● Dev");
+            devIndicator.setForeground(new Color(0xE6, 0x8A, 0x00));
+            devIndicator.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+            toolbar.add(devIndicator);
+        }
         var settingsButton = UiHelper.iconButton("Settings…",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/settings.svg")).derive(16, 16));
         settingsButton.setToolTipText("Settings");
