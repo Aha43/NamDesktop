@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Keyboard shortcuts reference dialog: `Help › Keyboard Shortcuts…` (`Cmd+/`) opens a sectioned two-column dialog listing all shortcuts with badge-styled keys. Works on macOS (`⌘⇧`) and Windows (`Ctrl+Shift+`). Closes #272.
+
 - Keyboard shortcuts: `Cmd+1…5` jump directly to Inbox, Next Actions, Backlog, Projects, and Done from anywhere in the app. Wired as View menu accelerators. Closes #245.
 
 - Keyboard shortcut: `Cmd+F` opens the Search panel and focuses the search field. Closes #242.

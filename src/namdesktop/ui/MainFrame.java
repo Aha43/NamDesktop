@@ -317,10 +317,15 @@ public final class MainFrame extends JFrame {
         var helpMenuItem = new JMenuItem("Help");
         helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         helpMenuItem.addActionListener(e -> contentArea.setContent(helpPanel));
+        var shortcutsItem = new JMenuItem("Keyboard Shortcuts…");
+        shortcutsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        shortcutsItem.addActionListener(e -> ShortcutsDialog.show(this));
         var aboutItem = new JMenuItem("About " + namdesktop.app.AppInfo.NAME + "…");
         aboutItem.addActionListener(e -> new AboutDialog(this).setVisible(true));
         var helpMenu = new JMenu("Help");
         helpMenu.add(helpMenuItem);
+        helpMenu.add(shortcutsItem);
         helpMenu.addSeparator();
         helpMenu.add(aboutItem);
 
