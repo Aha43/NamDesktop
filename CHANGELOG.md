@@ -10,6 +10,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Accept/reject dialog on app exit during monitoring mode: closing NamDesktop via the window button, Exit menu item, or Cmd+Q while monitoring mode is active now triggers the same accept/reject summary flow instead of silently discarding changes. Closes #264.
 
+- MCP server: `create_project(title, description?, tags?, parent_id?)` write tool creates a project node. Omitting `parent_id` creates a top-level project; providing it nests the project under an existing node. Returns the new node's id for chaining. Requires monitoring mode. Closes #265.
+
+- MCP server: `add_action(title, project_id, description?, tags?, status?, blocked_by?)` write tool adds an action as a child of a specific project. Status defaults to BACKLOG. Returns the new node's id. Requires monitoring mode. Closes #266.
+
 - MCP server: `delete_node(node_id)` write tool removes a node from the workspace. Rejects nodes that have children (use the app for recursive deletes). Requires monitoring mode. Closes #263.
 
 - MCP server: `list_done` read tool returns all actions with `status: DONE`. Closes #262.

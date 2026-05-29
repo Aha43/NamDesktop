@@ -149,6 +149,24 @@ public final class NamMcpServer {
         tools.add(tool("get_monitoring_status",
                 "Check whether NamDesktop is in monitoring mode (ready to receive writes).",
                 MAPPER.createObjectNode()));
+        tools.add(tool("create_project",
+                "Create a new project. Optionally nest it under a parent project via parent_id. Requires monitoring mode.",
+                schema(Map.of(
+                        "title",       prop("string", "Title of the project"),
+                        "description", prop("string", "Optional description"),
+                        "tags",        tagsArrayProp(),
+                        "parent_id",   prop("string", "Optional UUID of parent project; omit for top-level")
+                ), List.of("title"))));
+        tools.add(tool("add_action",
+                "Add an action as a child of a specific project. Requires monitoring mode.",
+                schema(Map.of(
+                        "title",       prop("string", "Title of the action"),
+                        "project_id",  prop("string", "UUID of the parent project"),
+                        "description", prop("string", "Optional description"),
+                        "tags",        tagsArrayProp(),
+                        "status",      prop("string", "BACKLOG (default), NEXT, or DONE"),
+                        "blocked_by",  uuidArrayProp("Optional list of node UUIDs this action is blocked by")
+                ), List.of("title", "project_id"))));
         tools.add(tool("add_inbox_item",
                 "Add an item to the Inbox. Requires monitoring mode to be active.",
                 schema(Map.of(
@@ -237,6 +255,8 @@ public final class NamMcpServer {
             case "get_monitoring_status" -> toolMonitoringStatus();
             case "add_inbox_item"        -> toolAddInboxItem(args);
             case "add_next_action"       -> toolAddNextAction(args);
+            case "create_project"        -> toolCreateProject(args);
+            case "add_action"            -> toolAddAction(args);
             case "delete_node"           -> toolDeleteNode(args);
             case "mark_next"             -> toolSetStatus(args, NodeStatus.NEXT);
             case "mark_done"             -> toolSetStatus(args, NodeStatus.DONE);
@@ -430,6 +450,79 @@ public final class NamMcpServer {
         return textResult("Added \"" + title + "\" to Next Actions.", false);
     }
 
+    private ObjectNode toolCreateProject(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var title = args.path("title").asText("").strip();
+        if (title.isEmpty()) return textResult("Error: title is required.", true);
+
+        var parentIdStr = args.path("parent_id").asText("").strip();
+        var newId = UUID.randomUUID();
+
+        var result = atomicWriteWithResult(ws -> {
+            UUID parentId;
+            if (parentIdStr.isEmpty()) {
+                parentId = ws.getProjectsNodeId();
+            } else {
+                try { parentId = UUID.fromString(parentIdStr); }
+                catch (IllegalArgumentException e) { return "Error: invalid parent_id UUID."; }
+                if (ws.getNode(parentId).isEmpty()) return "Error: no node found with parent_id " + parentIdStr;
+            }
+            var node = new NamNode(newId, title);
+            node.setProject(true);
+            node.setStatus(NodeStatus.BACKLOG);
+            if (args.hasNonNull("description")) node.setDescription(args.path("description").asText());
+            if (args.hasNonNull("tags")) {
+                var tagList = new ArrayList<String>();
+                args.path("tags").forEach(t -> tagList.add(t.asText()));
+                node.setTags(tagList);
+            }
+            ws.getNodes().put(newId, node);
+            ws.getNode(parentId).ifPresent(p -> p.getChildIds().add(newId));
+            return null;
+        });
+        if (result != null) return textResult(result, true);
+        return textResult("Created project \"" + title + "\" with id " + newId + ".", false);
+    }
+
+    private ObjectNode toolAddAction(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var title = args.path("title").asText("").strip();
+        if (title.isEmpty()) return textResult("Error: title is required.", true);
+        var projectIdStr = args.path("project_id").asText("").strip();
+        if (projectIdStr.isEmpty()) return textResult("Error: project_id is required.", true);
+
+        UUID projectId;
+        try { projectId = UUID.fromString(projectIdStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid project_id UUID.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        if (ws.getNode(projectId).isEmpty()) return textResult("Error: no node found with project_id " + projectIdStr, true);
+
+        var statusStr = args.path("status").asText("BACKLOG").strip().toUpperCase();
+        NodeStatus status;
+        try { status = NodeStatus.valueOf(statusStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid status \"" + statusStr + "\". Use BACKLOG, NEXT, or DONE.", true); }
+
+        var newId = UUID.randomUUID();
+        final UUID finalProjectId = projectId;
+        final NodeStatus finalStatus = status;
+        atomicWrite(w -> {
+            var node = new NamNode(newId, title);
+            node.setProject(false);
+            node.setStatus(finalStatus);
+            if (args.hasNonNull("description")) node.setDescription(args.path("description").asText());
+            if (args.hasNonNull("tags")) {
+                var tagList = new ArrayList<String>();
+                args.path("tags").forEach(t -> tagList.add(t.asText()));
+                node.setTags(tagList);
+            }
+            if (args.hasNonNull("blocked_by")) node.setBlockedBy(parseUuids(args.path("blocked_by"), w));
+            w.getNodes().put(newId, node);
+            w.getNode(finalProjectId).ifPresent(p -> p.getChildIds().add(newId));
+        });
+        return textResult("Added action \"" + title + "\" with id " + newId + " to project.", false);
+    }
+
     private ObjectNode toolDeleteNode(JsonNode args) throws IOException {
         if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
@@ -492,6 +585,21 @@ public final class NamMcpServer {
     // -------------------------------------------------------------------------
     // Atomic write helper
     // -------------------------------------------------------------------------
+
+    private String atomicWriteWithResult(java.util.function.Function<NamWorkspace, String> mutate) throws IOException {
+        var extPath = MonitoringMode.externalPath(workspacePath);
+        var tmpPath = workspacePath.resolveSibling("workspace.external.tmp");
+        var ws      = repo.load(extPath);
+        var error   = mutate.apply(ws);
+        if (error != null) return error;
+        repo.save(tmpPath, ws);
+        try {
+            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+        return null;
+    }
 
     private void atomicWrite(java.util.function.Consumer<NamWorkspace> mutate) throws IOException {
         var extPath = MonitoringMode.externalPath(workspacePath);
