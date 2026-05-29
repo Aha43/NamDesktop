@@ -127,10 +127,7 @@ public final class MainFrame extends JFrame {
         var settingsButton = UiHelper.iconButton("Settings…",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/settings.svg")).derive(16, 16));
         settingsButton.setToolTipText("Settings");
-        settingsButton.addActionListener(e -> new SettingsDialog(this, settings, () -> {
-            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
-            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
-        }).setVisible(true));
+        settingsButton.addActionListener(e -> openSettings());
         toolbar.add(settingsButton);
         var exitButton = UiHelper.iconButton("Exit",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
@@ -144,12 +141,7 @@ public final class MainFrame extends JFrame {
         var searchItem = new JMenuItem("Search…");
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
-        settingsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_COMMA,
-                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        settingsItem.addActionListener(e -> new SettingsDialog(this, settings, () -> {
-            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
-            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
-        }).setVisible(true));
+        settingsItem.addActionListener(e -> openSettings());
         var templatesItem = new JMenuItem("Templates…");
         templatesItem.addActionListener(e -> new TemplatesDialog(this, workspace, service).setVisible(true));
         var newMcItem = new JMenuItem("New Goal Board…");
@@ -265,6 +257,11 @@ public final class MainFrame extends JFrame {
 
         setJMenuBar(menuBar);
 
+        if (Desktop.isDesktopSupported()) {
+            try {
+                Desktop.getDesktop().setPreferencesHandler(e -> openSettings());
+            } catch (UnsupportedOperationException ignored) {}
+        }
 
         toolbar.setVisible(settings.isShowToolbar());
         if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
@@ -278,6 +275,13 @@ public final class MainFrame extends JFrame {
     }
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }
+
+    private void openSettings() {
+        new SettingsDialog(this, settings, () -> {
+            nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+        }).setVisible(true);
+    }
 
     private void displayNudge(String message) {
         if (nudgeTimer != null) nudgeTimer.stop();
