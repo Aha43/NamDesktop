@@ -199,8 +199,8 @@ public class NodeDialog extends JDialog {
     private static List<String> parseTags(String text) {
         var result = new ArrayList<String>();
         for (var part : text.split(",")) {
-            var tag = part.strip().toLowerCase();
-            if (!tag.isEmpty()) result.add(tag);
+            var tag = part.strip().toLowerCase().replaceAll("^@+", "");
+            if (!tag.isEmpty()) result.add("@" + tag);
         }
         return result;
     }

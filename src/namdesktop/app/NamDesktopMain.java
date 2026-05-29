@@ -27,6 +27,8 @@ public final class NamDesktopMain {
             System.getProperty("user.home"), ".namdesktop", "sync");
 
     public static void main(String[] args) {
+        System.setProperty("apple.laf.useScreenMenuBar", "true");
+        System.setProperty("apple.awt.application.name", AppInfo.NAME);
         SwingUtilities.invokeLater(() -> start(args));
     }
 
@@ -37,8 +39,6 @@ public final class NamDesktopMain {
         var settings = AppSettings.load();
         AppSettings.setInstance(settings);
         if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
-        System.setProperty("apple.laf.useScreenMenuBar", "true");
-        System.setProperty("apple.awt.application.name", AppInfo.NAME);
 
         var splash = new SplashDialog(settings);
         splash.setVisible(true);
