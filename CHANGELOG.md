@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCP server: `delete_node(node_id)` write tool removes a node from the workspace. Rejects nodes that have children (use the app for recursive deletes). Requires monitoring mode. Closes #263.
+
 - MCP server: `list_done` read tool returns all actions with `status: DONE`. Closes #262.
 
 - MCP server: `find_node(title)` read tool finds nodes by case-insensitive substring match against all node titles. Returns id, title, status, project flag, and tags for each match. Enables agents to look up node IDs by name without reading the workspace file directly. Closes #261.

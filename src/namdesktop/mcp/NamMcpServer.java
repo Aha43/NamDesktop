@@ -165,6 +165,9 @@ public final class NamMcpServer {
                         "tags",        tagsArrayProp(),
                         "blocked_by",  uuidArrayProp("Optional list of node UUIDs this action is blocked by")
                 ), List.of("title"))));
+        tools.add(tool("delete_node",
+                "Delete a node by id. Node must have no children. Requires monitoring mode.",
+                schema(Map.of("node_id", prop("string", "UUID of the node to delete")), List.of("node_id"))));
         tools.add(tool("mark_next",
                 "Set a node's status to NEXT. Requires monitoring mode.",
                 schema(Map.of("node_id", prop("string", "UUID of the node")), List.of("node_id"))));
@@ -234,6 +237,7 @@ public final class NamMcpServer {
             case "get_monitoring_status" -> toolMonitoringStatus();
             case "add_inbox_item"        -> toolAddInboxItem(args);
             case "add_next_action"       -> toolAddNextAction(args);
+            case "delete_node"           -> toolDeleteNode(args);
             case "mark_next"             -> toolSetStatus(args, NodeStatus.NEXT);
             case "mark_done"             -> toolSetStatus(args, NodeStatus.DONE);
             case "mark_backlog"          -> toolSetStatus(args, NodeStatus.BACKLOG);
@@ -424,6 +428,30 @@ public final class NamMcpServer {
             ws.getNode(ws.getNextActionsNodeId()).ifPresent(next -> next.getChildIds().add(node.getId()));
         });
         return textResult("Added \"" + title + "\" to Next Actions.", false);
+    }
+
+    private ObjectNode toolDeleteNode(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var idStr = args.path("node_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
+
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        var ws   = repo.load(MonitoringMode.externalPath(workspacePath));
+        var node = ws.getNode(id).orElse(null);
+        if (node == null) return textResult("Error: no node found with id " + idStr, true);
+        if (!node.getChildIds().isEmpty())
+            return textResult("Error: \"" + node.getTitle() + "\" has children — clear them first or use the app.", true);
+
+        var title = node.getTitle();
+        final UUID finalId = id;
+        atomicWrite(w -> {
+            w.getNodes().remove(finalId);
+            w.getNodes().values().forEach(n -> n.getChildIds().remove(finalId));
+        });
+        return textResult("Deleted \"" + title + "\".", false);
     }
 
     private ObjectNode toolSetStatus(JsonNode args, NodeStatus status) throws IOException {
