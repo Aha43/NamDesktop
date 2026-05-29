@@ -8,6 +8,48 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Dev mode badge: an amber `● Dev` label appears in the toolbar (left of Settings) whenever NamDesktop is launched in dev mode — mirrors the `● Monitoring` indicator style so mode awareness is always visible in full screen. Closes #270.
+
+- Checkpoint: while in monitoring mode, a Checkpoint button (✔) appears in the toolbar and `File › Checkpoint` (Cmd+Shift+S) is enabled. Checkpoint shows the same accept/reject summary dialog, then flushes accepted changes into the main workspace and resets the external baseline — Claude can keep writing without another toggle. Rejecting discards the external changes but stays in monitoring. Closes #269.
+
+- Monitoring mode toolbar indicator: an amber `● Monitoring` label appears in the toolbar when monitoring mode is active — visible even in macOS full-screen mode where the title bar is hidden. Closes #268.
+
+- Accept/reject dialog on app exit during monitoring mode: closing NamDesktop via the window button, Exit menu item, or Cmd+Q while monitoring mode is active now triggers the same accept/reject summary flow instead of silently discarding changes. Closes #264.
+
+- MCP server: unit tests for all tools in `NamMcpServerTest` — read tools, write tools, monitoring mode guard, and error paths. Closes #260.
+
+- MCP server: read tools now read from `workspace.external.json` when monitoring mode is active, so agents can verify their writes in the same session without restarting monitoring mode.
+
+- MCP server: `list_project_children(project_id)` read tool returns the direct children of a project node (id, title, status, project flag, tags). Use before writing to verify the current structure and avoid acting on stale IDs after monitoring mode restarts. Closes #267.
+
+- MCP server: `create_project(title, description?, tags?, parent_id?)` write tool creates a project node. Omitting `parent_id` creates a top-level project; providing it nests the project under an existing node. Returns the new node's id for chaining. Requires monitoring mode. Closes #265.
+
+- MCP server: `add_action(title, project_id, description?, tags?, status?, blocked_by?)` write tool adds an action as a child of a specific project. Status defaults to BACKLOG. Returns the new node's id. Requires monitoring mode. Closes #266.
+
+- MCP server: `delete_node(node_id)` write tool removes a node from the workspace. Rejects nodes that have children (use the app for recursive deletes). Requires monitoring mode. Closes #263.
+
+- MCP server: `list_done` read tool returns all actions with `status: DONE`. Closes #262.
+
+- MCP server: `find_node(title)` read tool finds nodes by case-insensitive substring match against all node titles. Returns id, title, status, project flag, and tags for each match. Enables agents to look up node IDs by name without reading the workspace file directly. Closes #261.
+
+- MCP server: `list_saved_views` read tool returns the workspace's saved views (name, tags, nextOnly). Agents can use these to apply the user's own context filters when listing next actions. Closes #259.
+
+- MCP server: `blockedBy` support in read and write tools. `list_inbox` and `list_next_actions` now include a `blocked_by` array on each item. `add_inbox_item` and `add_next_action` accept an optional `blocked_by` array of node UUIDs; unknown UUIDs are silently ignored. Closes #258.
+
+- MCP server: `list_next_actions` read tool returns all nodes with `status: NEXT` across the workspace, including id, title, status, tags, description, and blocked_by. Closes #257.
+
+- MCP server: `add_next_action(title, description?, tags?)` write tool creates a new action with `status: NEXT` as a child of the Next Actions container in one call, without requiring the caller to read the workspace file. Requires monitoring mode. Closes #256.
+
+- MCP server (`namdesktop.mcp.NamMcpServer`): run from the same JAR as a separate process to expose workspace tools to AI agents via the MCP stdio protocol. Read tools (`get_workspace_context`, `list_inbox`, `list_projects`, `get_monitoring_status`) work without monitoring mode. Write tools (`add_inbox_item`, `mark_next`, `mark_done`, `mark_backlog`) require monitoring mode to be active and use atomic writes via temp-file rename. Returns a plain-text warning if a write is attempted without monitoring mode. Closes #251.
+
+- Monitoring mode live panel refresh: when an external agent writes to `workspace.external.json`, panels now reload immediately so changes (inbox items, projects, status updates) appear live without exiting monitoring mode. Rejecting on exit restores the original workspace. Closes #254.
+
+- Monitoring mode live change detection fix: replaced `WatchService` with a `Files.getLastModifiedTime()` poll every 500ms, resolving missed events caused by atomic renames on macOS. Closes #253.
+
+- Monitoring mode live reactions: while monitoring mode is active, file changes to `workspace.external.json` are detected via `WatchService` and trigger toast notifications. New inbox items also auto-navigate to the Inbox panel. Closes #250.
+
+- Monitoring mode: an antenna toolbar button and Cmd+Shift+M toggle puts the app into monitoring mode, copying the workspace to `workspace.external.json` for external agents to write into. On exit a summary dialog shows detected changes (inbox items added, projects created, status changes, deletions) with Accept and Reject buttons. Accepting replaces the live workspace; rejecting discards the external file. Closes #249.
+
 - First-run welcome screen: new users see a `WelcomePanel` with two choices — "Explore demo workspace" (loads sample data) or "Start fresh" (opens Inbox). The screen is shown once and dismissed by either choice; state is persisted in `settings.json`. Closes #232.
 
 - Demo accessible outside dev mode: "Run Demo…" is now always available in the File menu. If the workspace already contains data a confirmation warning is shown before overwriting. Closes #226.
