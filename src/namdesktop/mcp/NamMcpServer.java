@@ -134,6 +134,15 @@ public final class NamMcpServer {
         tools.add(tool("list_projects",
                 "List all top-level projects.",
                 MAPPER.createObjectNode()));
+        tools.add(tool("list_next_actions",
+                "List all actions with status NEXT across the whole workspace.",
+                MAPPER.createObjectNode()));
+        tools.add(tool("list_saved_views",
+                "List the saved views (user-defined tag filters) defined in the workspace.",
+                MAPPER.createObjectNode()));
+        tools.add(tool("find_node",
+                "Find nodes by title (case-insensitive substring match). Returns id, title, status, project flag, tags.",
+                schema(Map.of("title", prop("string", "Substring to search for")), List.of("title"))));
         tools.add(tool("get_monitoring_status",
                 "Check whether NamDesktop is in monitoring mode (ready to receive writes).",
                 MAPPER.createObjectNode()));
@@ -142,14 +151,16 @@ public final class NamMcpServer {
                 schema(Map.of(
                         "title",       prop("string", "Title of the inbox item"),
                         "description", prop("string", "Optional description"),
-                        "tags",        tagsArrayProp()
+                        "tags",        tagsArrayProp(),
+                        "blocked_by",  uuidArrayProp("Optional list of node UUIDs this item is blocked by")
                 ), List.of("title"))));
         tools.add(tool("add_next_action",
                 "Add a new action directly to the Next Actions list with status NEXT. Requires monitoring mode.",
                 schema(Map.of(
                         "title",       prop("string", "Title of the action"),
                         "description", prop("string", "Optional description"),
-                        "tags",        tagsArrayProp()
+                        "tags",        tagsArrayProp(),
+                        "blocked_by",  uuidArrayProp("Optional list of node UUIDs this action is blocked by")
                 ), List.of("title"))));
         tools.add(tool("mark_next",
                 "Set a node's status to NEXT. Requires monitoring mode.",
@@ -196,6 +207,14 @@ public final class NamMcpServer {
         return p;
     }
 
+    private ObjectNode uuidArrayProp(String description) {
+        var p = MAPPER.createObjectNode();
+        p.put("type", "array");
+        p.put("description", description);
+        p.putObject("items").put("type", "string");
+        return p;
+    }
+
     // -------------------------------------------------------------------------
     // tools/call dispatch
     // -------------------------------------------------------------------------
@@ -204,7 +223,10 @@ public final class NamMcpServer {
         return switch (name) {
             case "get_workspace_context" -> toolGetContext();
             case "list_inbox"            -> toolListInbox();
+            case "list_next_actions"     -> toolListNextActions();
             case "list_projects"         -> toolListProjects();
+            case "list_saved_views"      -> toolListSavedViews();
+            case "find_node"             -> toolFindNode(args);
             case "get_monitoring_status" -> toolMonitoringStatus();
             case "add_inbox_item"        -> toolAddInboxItem(args);
             case "add_next_action"       -> toolAddNextAction(args);
@@ -253,6 +275,8 @@ public final class NamMcpServer {
                 o.put("description", n.getDescription());
             var tags = o.putArray("tags");
             n.getTags().forEach(tags::add);
+            var blocked = o.putArray("blocked_by");
+            n.getBlockedBy().forEach(id -> blocked.add(id.toString()));
         }
         return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(items), false);
     }
@@ -269,6 +293,59 @@ public final class NamMcpServer {
             n.getTags().forEach(tags::add);
         }
         return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(projects), false);
+    }
+
+    private ObjectNode toolListNextActions() throws IOException {
+        var ws    = repo.load(workspacePath);
+        var items = MAPPER.createArrayNode();
+        ws.getNodes().values().stream()
+                .filter(n -> n.getStatus() == NodeStatus.NEXT)
+                .forEach(n -> {
+                    var o = items.addObject();
+                    o.put("id",      n.getId().toString());
+                    o.put("title",   n.getTitle());
+                    o.put("status",  n.getStatus().name());
+                    o.put("project", n.isProject());
+                    if (n.getDescription() != null && !n.getDescription().isBlank())
+                        o.put("description", n.getDescription());
+                    var tags = o.putArray("tags");
+                    n.getTags().forEach(tags::add);
+                    var blocked = o.putArray("blocked_by");
+                    n.getBlockedBy().forEach(id -> blocked.add(id.toString()));
+                });
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(items), false);
+    }
+
+    private ObjectNode toolListSavedViews() throws IOException {
+        var ws    = repo.load(workspacePath);
+        var views = MAPPER.createArrayNode();
+        for (var v : ws.getSavedViews()) {
+            var o = views.addObject();
+            o.put("name",      v.name());
+            o.put("next_only", v.nextOnly());
+            var tags = o.putArray("tags");
+            v.tags().forEach(tags::add);
+        }
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(views), false);
+    }
+
+    private ObjectNode toolFindNode(JsonNode args) throws IOException {
+        var query = args.path("title").asText("").strip().toLowerCase();
+        if (query.isEmpty()) return textResult("Error: title is required.", true);
+        var ws      = repo.load(workspacePath);
+        var matches = MAPPER.createArrayNode();
+        ws.getNodes().values().stream()
+                .filter(n -> n.getTitle().toLowerCase().contains(query))
+                .forEach(n -> {
+                    var o = matches.addObject();
+                    o.put("id",      n.getId().toString());
+                    o.put("title",   n.getTitle());
+                    o.put("status",  n.getStatus().name());
+                    o.put("project", n.isProject());
+                    var tags = o.putArray("tags");
+                    n.getTags().forEach(tags::add);
+                });
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(matches), false);
     }
 
     private ObjectNode toolMonitoringStatus() {
@@ -297,6 +374,8 @@ public final class NamMcpServer {
                 args.path("tags").forEach(t -> tagList.add(t.asText()));
                 node.setTags(tagList);
             }
+            if (args.hasNonNull("blocked_by"))
+                node.setBlockedBy(parseUuids(args.path("blocked_by"), ws));
             ws.getNodes().put(node.getId(), node);
             ws.getNode(ws.getInboxNodeId()).ifPresent(inbox -> inbox.getChildIds().add(node.getId()));
         });
@@ -318,6 +397,8 @@ public final class NamMcpServer {
                 args.path("tags").forEach(t -> tagList.add(t.asText()));
                 node.setTags(tagList);
             }
+            if (args.hasNonNull("blocked_by"))
+                node.setBlockedBy(parseUuids(args.path("blocked_by"), ws));
             ws.getNodes().put(node.getId(), node);
             ws.getNode(ws.getNextActionsNodeId()).ifPresent(next -> next.getChildIds().add(node.getId()));
         });
@@ -342,6 +423,21 @@ public final class NamMcpServer {
         atomicWrite(w -> w.getNode(finalId).ifPresent(n -> n.setStatus(status)));
         return textResult("Node \"" + node.getTitle() + "\" status changed from "
                 + oldStatus.name() + " to " + status.name() + ".", false);
+    }
+
+    // -------------------------------------------------------------------------
+    // Helpers
+    // -------------------------------------------------------------------------
+
+    private List<UUID> parseUuids(JsonNode array, NamWorkspace ws) {
+        var result = new ArrayList<UUID>();
+        array.forEach(el -> {
+            try {
+                var id = UUID.fromString(el.asText());
+                if (ws.getNode(id).isPresent()) result.add(id);
+            } catch (IllegalArgumentException ignored) {}
+        });
+        return result;
     }
 
     // -------------------------------------------------------------------------

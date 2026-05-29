@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCP server: `find_node(title)` read tool finds nodes by case-insensitive substring match against all node titles. Returns id, title, status, project flag, and tags for each match. Enables agents to look up node IDs by name without reading the workspace file directly. Closes #261.
+
+- MCP server: `list_saved_views` read tool returns the workspace's saved views (name, tags, nextOnly). Agents can use these to apply the user's own context filters when listing next actions. Closes #259.
+
+- MCP server: `blockedBy` support in read and write tools. `list_inbox` and `list_next_actions` now include a `blocked_by` array on each item. `add_inbox_item` and `add_next_action` accept an optional `blocked_by` array of node UUIDs; unknown UUIDs are silently ignored. Closes #258.
+
+- MCP server: `list_next_actions` read tool returns all nodes with `status: NEXT` across the workspace, including id, title, status, tags, description, and blocked_by. Closes #257.
+
 - MCP server: `add_next_action(title, description?, tags?)` write tool creates a new action with `status: NEXT` as a child of the Next Actions container in one call, without requiring the caller to read the workspace file. Requires monitoring mode. Closes #256.
 
 - MCP server (`namdesktop.mcp.NamMcpServer`): run from the same JAR as a separate process to expose workspace tools to AI agents via the MCP stdio protocol. Read tools (`get_workspace_context`, `list_inbox`, `list_projects`, `get_monitoring_status`) work without monitoring mode. Write tools (`add_inbox_item`, `mark_next`, `mark_done`, `mark_backlog`) require monitoring mode to be active and use atomic writes via temp-file rename. Returns a plain-text warning if a write is attempted without monitoring mode. Closes #251.
