@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCP server: `add_next_action(title, description?, tags?)` write tool creates a new action with `status: NEXT` as a child of the Next Actions container in one call, without requiring the caller to read the workspace file. Requires monitoring mode. Closes #256.
+
 - MCP server (`namdesktop.mcp.NamMcpServer`): run from the same JAR as a separate process to expose workspace tools to AI agents via the MCP stdio protocol. Read tools (`get_workspace_context`, `list_inbox`, `list_projects`, `get_monitoring_status`) work without monitoring mode. Write tools (`add_inbox_item`, `mark_next`, `mark_done`, `mark_backlog`) require monitoring mode to be active and use atomic writes via temp-file rename. Returns a plain-text warning if a write is attempted without monitoring mode. Closes #251.
 
 - Monitoring mode live panel refresh: when an external agent writes to `workspace.external.json`, panels now reload immediately so changes (inbox items, projects, status updates) appear live without exiting monitoring mode. Rejecting on exit restores the original workspace. Closes #254.

@@ -144,6 +144,13 @@ public final class NamMcpServer {
                         "description", prop("string", "Optional description"),
                         "tags",        tagsArrayProp()
                 ), List.of("title"))));
+        tools.add(tool("add_next_action",
+                "Add a new action directly to the Next Actions list with status NEXT. Requires monitoring mode.",
+                schema(Map.of(
+                        "title",       prop("string", "Title of the action"),
+                        "description", prop("string", "Optional description"),
+                        "tags",        tagsArrayProp()
+                ), List.of("title"))));
         tools.add(tool("mark_next",
                 "Set a node's status to NEXT. Requires monitoring mode.",
                 schema(Map.of("node_id", prop("string", "UUID of the node")), List.of("node_id"))));
@@ -200,6 +207,7 @@ public final class NamMcpServer {
             case "list_projects"         -> toolListProjects();
             case "get_monitoring_status" -> toolMonitoringStatus();
             case "add_inbox_item"        -> toolAddInboxItem(args);
+            case "add_next_action"       -> toolAddNextAction(args);
             case "mark_next"             -> toolSetStatus(args, NodeStatus.NEXT);
             case "mark_done"             -> toolSetStatus(args, NodeStatus.DONE);
             case "mark_backlog"          -> toolSetStatus(args, NodeStatus.BACKLOG);
@@ -293,6 +301,27 @@ public final class NamMcpServer {
             ws.getNode(ws.getInboxNodeId()).ifPresent(inbox -> inbox.getChildIds().add(node.getId()));
         });
         return textResult("Added \"" + title + "\" to Inbox.", false);
+    }
+
+    private ObjectNode toolAddNextAction(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var title = args.path("title").asText("").strip();
+        if (title.isEmpty()) return textResult("Error: title is required.", true);
+
+        atomicWrite(ws -> {
+            var node = new NamNode(java.util.UUID.randomUUID(), title);
+            node.setStatus(NodeStatus.NEXT);
+            if (args.hasNonNull("description"))
+                node.setDescription(args.path("description").asText());
+            if (args.hasNonNull("tags")) {
+                var tagList = new ArrayList<String>();
+                args.path("tags").forEach(t -> tagList.add(t.asText()));
+                node.setTags(tagList);
+            }
+            ws.getNodes().put(node.getId(), node);
+            ws.getNode(ws.getNextActionsNodeId()).ifPresent(next -> next.getChildIds().add(node.getId()));
+        });
+        return textResult("Added \"" + title + "\" to Next Actions.", false);
     }
 
     private ObjectNode toolSetStatus(JsonNode args, NodeStatus status) throws IOException {
