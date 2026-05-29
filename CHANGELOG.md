@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCP server: `list_done` read tool returns all actions with `status: DONE`. Closes #262.
+
 - MCP server: `find_node(title)` read tool finds nodes by case-insensitive substring match against all node titles. Returns id, title, status, project flag, and tags for each match. Enables agents to look up node IDs by name without reading the workspace file directly. Closes #261.
 
 - MCP server: `list_saved_views` read tool returns the workspace's saved views (name, tags, nextOnly). Agents can use these to apply the user's own context filters when listing next actions. Closes #259.

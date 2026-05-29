@@ -137,6 +137,9 @@ public final class NamMcpServer {
         tools.add(tool("list_next_actions",
                 "List all actions with status NEXT across the whole workspace.",
                 MAPPER.createObjectNode()));
+        tools.add(tool("list_done",
+                "List all actions with status DONE across the whole workspace.",
+                MAPPER.createObjectNode()));
         tools.add(tool("list_saved_views",
                 "List the saved views (user-defined tag filters) defined in the workspace.",
                 MAPPER.createObjectNode()));
@@ -224,6 +227,7 @@ public final class NamMcpServer {
             case "get_workspace_context" -> toolGetContext();
             case "list_inbox"            -> toolListInbox();
             case "list_next_actions"     -> toolListNextActions();
+            case "list_done"             -> toolListDone();
             case "list_projects"         -> toolListProjects();
             case "list_saved_views"      -> toolListSavedViews();
             case "find_node"             -> toolFindNode(args);
@@ -312,6 +316,23 @@ public final class NamMcpServer {
                     n.getTags().forEach(tags::add);
                     var blocked = o.putArray("blocked_by");
                     n.getBlockedBy().forEach(id -> blocked.add(id.toString()));
+                });
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(items), false);
+    }
+
+    private ObjectNode toolListDone() throws IOException {
+        var ws    = repo.load(workspacePath);
+        var items = MAPPER.createArrayNode();
+        ws.getNodes().values().stream()
+                .filter(n -> n.getStatus() == NodeStatus.DONE)
+                .forEach(n -> {
+                    var o = items.addObject();
+                    o.put("id",    n.getId().toString());
+                    o.put("title", n.getTitle());
+                    if (n.getDescription() != null && !n.getDescription().isBlank())
+                        o.put("description", n.getDescription());
+                    var tags = o.putArray("tags");
+                    n.getTags().forEach(tags::add);
                 });
         return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(items), false);
     }
