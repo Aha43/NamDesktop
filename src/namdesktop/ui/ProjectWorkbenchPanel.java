@@ -60,6 +60,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
         rebuild();
     }
 
+    public void refresh() { rebuild(); }
+
     private void rebuild() {
         if (workspace.getNode(currentProjectId).isEmpty()) {
             if (parentProjectId != null

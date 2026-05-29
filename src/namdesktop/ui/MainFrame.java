@@ -587,6 +587,8 @@ public final class MainFrame extends JFrame {
     public void refreshAll() {
         cachedWorkbench   = null;
         cachedWorkbenchId = null;
+        var current = contentArea.getContent();
+        if (current instanceof ProjectWorkbenchPanel pwp) pwp.refresh();
         inboxPanel.refresh();
         projectsPanel.refresh();
         nextActionsPanel.refresh();
