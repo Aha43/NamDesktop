@@ -47,9 +47,7 @@ claude mcp add --scope user namdesktop pwsh /Users/<you>/dev/repos/NamDesktop/sc
 
 **Dev workspace** (safe for testing — matches NamDesktop's dev mode):
 ```bash
-claude mcp add --scope user namdesktop-dev \
-  --env NAMDESKTOP_WORKSPACE=/Users/<you>/.namdesktop/dev/workspace.json \
-  pwsh /Users/<you>/dev/repos/NamDesktop/scripts/mcp-server.ps1
+claude mcp add --scope user namdesktop-dev pwsh /Users/<you>/dev/repos/NamDesktop/scripts/mcp-server-dev.ps1
 ```
 
 Verify:
