@@ -123,7 +123,11 @@ public final class NamWorkspaceService {
     }
 
     public void reloadWorkspace() throws IOException {
-        var fresh = repository.load(path);
+        reloadWorkspaceFrom(path);
+    }
+
+    public void reloadWorkspaceFrom(Path source) throws IOException {
+        var fresh = repository.load(source);
         workspace.setRootNodeId(fresh.getRootNodeId());
         workspace.setInboxNodeId(fresh.getInboxNodeId());
         workspace.setProjectsNodeId(fresh.getProjectsNodeId());

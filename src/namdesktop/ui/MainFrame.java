@@ -315,6 +315,10 @@ public final class MainFrame extends JFrame {
     }
 
     private void onExternalChange(namdesktop.service.MonitoringMode.DiffSummary summary) {
+        try {
+            service.reloadWorkspaceFrom(namdesktop.service.MonitoringMode.externalPath(workspacePath));
+            refreshAll();
+        } catch (java.io.IOException ignored) {}
         showNudge(summary.describe());
         if (summary.inboxAdded() > 0) {
             navPanel.selectById("inbox");
@@ -344,6 +348,7 @@ public final class MainFrame extends JFrame {
                 }
             } else {
                 namdesktop.service.MonitoringMode.reject(workspacePath);
+                try { service.reloadWorkspace(); refreshAll(); } catch (java.io.IOException ignored) {}
             }
             monitoringActive = false;
             updateMonitoringUI();

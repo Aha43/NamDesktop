@@ -5,16 +5,18 @@ import namdesktop.persist.JsonWorkspaceRepository;
 
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.file.attribute.FileTime;
 import java.util.function.Consumer;
 
 public final class ExternalWorkspaceWatcher {
+
+    private static final long POLL_INTERVAL_MS = 500;
 
     private final Path workspacePath;
     private final JsonWorkspaceRepository repo;
     private final Consumer<MonitoringMode.DiffSummary> onChanges;
 
     private volatile boolean running = false;
-    private WatchService watchService;
 
     public ExternalWorkspaceWatcher(Path workspacePath, JsonWorkspaceRepository repo,
                                      Consumer<MonitoringMode.DiffSummary> onChanges) {
@@ -25,60 +27,41 @@ public final class ExternalWorkspaceWatcher {
 
     public void start(NamWorkspace initialExternal) {
         running = true;
-        var thread = new Thread(() -> watch(initialExternal), "external-workspace-watcher");
+        var thread = new Thread(() -> poll(initialExternal), "external-workspace-watcher");
         thread.setDaemon(true);
         thread.start();
     }
 
     public void stop() {
         running = false;
-        if (watchService != null) {
-            try { watchService.close(); } catch (IOException ignored) {}
-        }
     }
 
-    private void watch(NamWorkspace initialExternal) {
-        var extPath  = MonitoringMode.externalPath(workspacePath);
-        var dir      = workspacePath.getParent();
-        var filename = extPath.getFileName().toString();
-        NamWorkspace lastKnown = initialExternal;
+    private void poll(NamWorkspace initialExternal) {
+        var extPath   = MonitoringMode.externalPath(workspacePath);
+        var lastKnown = initialExternal;
+        var lastMtime = FileTime.fromMillis(0);
 
-        try {
-            watchService = FileSystems.getDefault().newWatchService();
-            dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_CREATE);
+        while (running) {
+            try {
+                Thread.sleep(POLL_INTERVAL_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            if (!running || !Files.exists(extPath)) continue;
 
-            while (running) {
-                WatchKey key;
-                try {
-                    key = watchService.poll(500, java.util.concurrent.TimeUnit.MILLISECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    break;
-                }
-                if (key == null) continue;
-
-                boolean relevant = false;
-                for (var event : key.pollEvents()) {
-                    var ctx = event.context();
-                    if (ctx instanceof Path p && p.getFileName().toString().equals(filename)) {
-                        relevant = true;
-                    }
-                }
-                key.reset();
-
-                if (!relevant || !running) continue;
-
-                try {
+            try {
+                var mtime = Files.getLastModifiedTime(extPath);
+                if (!mtime.equals(lastMtime)) {
+                    lastMtime = mtime;
                     var updated = repo.load(extPath);
                     var summary = MonitoringMode.diff(lastKnown, updated);
                     lastKnown = updated;
                     if (!summary.isEmpty()) onChanges.accept(summary);
-                } catch (IOException ignored) {
-                    // unparseable or mid-write — wait for next event
                 }
+            } catch (IOException ignored) {
+                // unparseable or mid-write — wait for next poll
             }
-        } catch (IOException ignored) {
-            // WatchService unavailable or closed on stop()
         }
     }
 }
