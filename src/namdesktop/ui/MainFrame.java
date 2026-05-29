@@ -285,11 +285,34 @@ public final class MainFrame extends JFrame {
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, ev ->
                 zenItem.setText(!toolbar.isVisible() && (int) ev.getNewValue() == 0
                         ? "Exit Zen Mode" : "Enter Zen Mode"));
+        var mask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        var goInboxItem       = new JMenuItem("Inbox");
+        var goNextActionsItem = new JMenuItem("Next Actions");
+        var goBacklogItem     = new JMenuItem("Backlog");
+        var goProjectsItem    = new JMenuItem("Projects");
+        var goDoneItem        = new JMenuItem("Done");
+        goInboxItem      .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, mask));
+        goNextActionsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, mask));
+        goBacklogItem    .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, mask));
+        goProjectsItem   .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, mask));
+        goDoneItem       .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_5, mask));
+        goInboxItem      .addActionListener(e -> navigateTo("inbox"));
+        goNextActionsItem.addActionListener(e -> navigateTo("next-actions"));
+        goBacklogItem    .addActionListener(e -> navigateTo("backlog"));
+        goProjectsItem   .addActionListener(e -> navigateTo("projects"));
+        goDoneItem       .addActionListener(e -> navigateTo("done"));
+
         var viewMenu = new JMenu("View");
         viewMenu.add(toolbarToggleItem);
         viewMenu.add(navToggleItem);
         viewMenu.addSeparator();
         viewMenu.add(zenItem);
+        viewMenu.addSeparator();
+        viewMenu.add(goInboxItem);
+        viewMenu.add(goNextActionsItem);
+        viewMenu.add(goBacklogItem);
+        viewMenu.add(goProjectsItem);
+        viewMenu.add(goDoneItem);
 
         var helpMenuItem = new JMenuItem("Help");
         helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
@@ -694,6 +717,14 @@ public final class MainFrame extends JFrame {
         blockedPanel.refresh();
         donePanel.refresh();
         rebuildDynamicNavSections();
+    }
+
+    private void navigateTo(String id) {
+        navPanel.selectById(id);
+        buildNavEntries(devMode).stream()
+                .filter(e -> e.id().equals(id))
+                .findFirst()
+                .ifPresent(this::onNavSelected);
     }
 
     private void rebuildDynamicNavSections() {

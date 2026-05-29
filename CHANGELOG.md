@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Keyboard shortcuts: `Cmd+1…5` jump directly to Inbox, Next Actions, Backlog, Projects, and Done from anywhere in the app. Wired as View menu accelerators. Closes #245.
+
 - Keyboard shortcut: `Cmd+F` opens the Search panel and focuses the search field. Closes #242.
 
 - Dev mode badge: an amber `● Dev` label appears in the toolbar (left of Settings) whenever NamDesktop is launched in dev mode — mirrors the `● Monitoring` indicator style so mode awareness is always visible in full screen. Closes #270.
