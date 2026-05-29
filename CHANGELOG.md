@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Monitoring mode live reactions: while monitoring mode is active, file changes to `workspace.external.json` are detected via `WatchService` and trigger toast notifications. New inbox items also auto-navigate to the Inbox panel. Closes #250.
+
 - Monitoring mode: an antenna toolbar button and Cmd+Shift+M toggle puts the app into monitoring mode, copying the workspace to `workspace.external.json` for external agents to write into. On exit a summary dialog shows detected changes (inbox items added, projects created, status changes, deletions) with Accept and Reject buttons. Accepting replaces the live workspace; rejecting discards the external file. Closes #249.
 
 - First-run welcome screen: new users see a `WelcomePanel` with two choices — "Explore demo workspace" (loads sample data) or "Start fresh" (opens Inbox). The screen is shown once and dismissed by either choice; state is persisted in `settings.json`. Closes #232.

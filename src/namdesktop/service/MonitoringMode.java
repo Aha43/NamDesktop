@@ -58,7 +58,7 @@ public final class MonitoringMode {
         try { Files.deleteIfExists(path); } catch (IOException ignored) {}
     }
 
-    private static DiffSummary diff(NamWorkspace base, NamWorkspace external) {
+    static DiffSummary diff(NamWorkspace base, NamWorkspace external) {
         var structural = Set.of(
                 base.getRootNodeId(), base.getInboxNodeId(),
                 base.getProjectsNodeId(), base.getNextActionsNodeId());

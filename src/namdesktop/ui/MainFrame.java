@@ -58,6 +58,7 @@ public final class MainFrame extends JFrame {
     private       boolean               sessionRestored  = false;
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
+    private       namdesktop.service.ExternalWorkspaceWatcher externalWatcher;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
@@ -297,6 +298,11 @@ public final class MainFrame extends JFrame {
         if (!monitoringActive) {
             try {
                 namdesktop.service.MonitoringMode.enter(workspacePath);
+                var repo     = new namdesktop.persist.JsonWorkspaceRepository();
+                var initial  = repo.load(namdesktop.service.MonitoringMode.externalPath(workspacePath));
+                externalWatcher = new namdesktop.service.ExternalWorkspaceWatcher(
+                        workspacePath, repo, summary -> SwingUtilities.invokeLater(() -> onExternalChange(summary)));
+                externalWatcher.start(initial);
                 monitoringActive = true;
                 updateMonitoringUI();
             } catch (java.io.IOException e) {
@@ -308,7 +314,16 @@ public final class MainFrame extends JFrame {
         }
     }
 
+    private void onExternalChange(namdesktop.service.MonitoringMode.DiffSummary summary) {
+        showNudge(summary.describe());
+        if (summary.inboxAdded() > 0) {
+            navPanel.selectById("inbox");
+            onNavSelected(new NavigationEntry("inbox", "Inbox", ""));
+        }
+    }
+
     private void exitMonitoringMode() {
+        if (externalWatcher != null) { externalWatcher.stop(); externalWatcher = null; }
         var repo   = new namdesktop.persist.JsonWorkspaceRepository();
         var result = namdesktop.service.MonitoringMode.exit(workspacePath, repo);
         if (result instanceof namdesktop.service.MonitoringMode.ExitResult.NoChanges) {
