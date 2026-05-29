@@ -51,7 +51,7 @@ public final class NamMcpServer {
         new NamMcpServer(workspace).run();
     }
 
-    private NamMcpServer(Path workspacePath) {
+    NamMcpServer(Path workspacePath) {
         this.workspacePath = workspacePath;
     }
 
@@ -246,7 +246,7 @@ public final class NamMcpServer {
     // tools/call dispatch
     // -------------------------------------------------------------------------
 
-    private ObjectNode callTool(String name, JsonNode args) throws IOException {
+    ObjectNode callTool(String name, JsonNode args) throws IOException {
         return switch (name) {
             case "get_workspace_context" -> toolGetContext();
             case "list_inbox"            -> toolListInbox();
@@ -273,8 +273,14 @@ public final class NamMcpServer {
     // Read tools
     // -------------------------------------------------------------------------
 
+    private Path readPath() {
+        return MonitoringMode.isActive(workspacePath)
+                ? MonitoringMode.externalPath(workspacePath)
+                : workspacePath;
+    }
+
     private ObjectNode toolGetContext() throws IOException {
-        var ws = repo.load(workspacePath);
+        var ws = repo.load(readPath());
         var sb = new StringBuilder();
         sb.append("# Workspace context\n\n");
         sb.append("## Projects\n");
@@ -296,7 +302,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListInbox() throws IOException {
-        var ws    = repo.load(workspacePath);
+        var ws    = repo.load(readPath());
         var items = MAPPER.createArrayNode();
         for (var n : ws.getInboxItems()) {
             var o = items.addObject();
@@ -314,7 +320,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListProjects() throws IOException {
-        var ws       = repo.load(workspacePath);
+        var ws       = repo.load(readPath());
         var projects = MAPPER.createArrayNode();
         for (var n : ws.getChildren(ws.getProjectsNodeId())) {
             var o = projects.addObject();
@@ -328,7 +334,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListNextActions() throws IOException {
-        var ws    = repo.load(workspacePath);
+        var ws    = repo.load(readPath());
         var items = MAPPER.createArrayNode();
         ws.getNodes().values().stream()
                 .filter(n -> n.getStatus() == NodeStatus.NEXT)
@@ -349,7 +355,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListDone() throws IOException {
-        var ws    = repo.load(workspacePath);
+        var ws    = repo.load(readPath());
         var items = MAPPER.createArrayNode();
         ws.getNodes().values().stream()
                 .filter(n -> n.getStatus() == NodeStatus.DONE)
@@ -366,7 +372,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListSavedViews() throws IOException {
-        var ws    = repo.load(workspacePath);
+        var ws    = repo.load(readPath());
         var views = MAPPER.createArrayNode();
         for (var v : ws.getSavedViews()) {
             var o = views.addObject();
@@ -385,7 +391,7 @@ public final class NamMcpServer {
         try { id = UUID.fromString(idStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid project_id UUID.", true); }
 
-        var ws   = repo.load(workspacePath);
+        var ws   = repo.load(readPath());
         var node = ws.getNode(id).orElse(null);
         if (node == null) return textResult("Error: no node found with id " + idStr, true);
 
@@ -407,7 +413,7 @@ public final class NamMcpServer {
     private ObjectNode toolFindNode(JsonNode args) throws IOException {
         var query = args.path("title").asText("").strip().toLowerCase();
         if (query.isEmpty()) return textResult("Error: title is required.", true);
-        var ws      = repo.load(workspacePath);
+        var ws      = repo.load(readPath());
         var matches = MAPPER.createArrayNode();
         ws.getNodes().values().stream()
                 .filter(n -> n.getTitle().toLowerCase().contains(query))
