@@ -9,8 +9,8 @@ public final class MonitoringExitDialog extends JDialog {
 
     private boolean accepted = false;
 
-    private MonitoringExitDialog(Window parent, MonitoringMode.DiffSummary summary) {
-        super(parent, "Exit Monitoring Mode", ModalityType.APPLICATION_MODAL);
+    private MonitoringExitDialog(Window parent, MonitoringMode.DiffSummary summary, String title) {
+        super(parent, title, ModalityType.APPLICATION_MODAL);
 
         var message = new JLabel("<html><b>Changes detected:</b><br><br>" + summary.describe() + "</html>");
         message.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
@@ -34,7 +34,11 @@ public final class MonitoringExitDialog extends JDialog {
     }
 
     public static boolean show(Window parent, MonitoringMode.DiffSummary summary) {
-        var dialog = new MonitoringExitDialog(parent, summary);
+        return show(parent, summary, "Exit Monitoring Mode");
+    }
+
+    public static boolean show(Window parent, MonitoringMode.DiffSummary summary, String title) {
+        var dialog = new MonitoringExitDialog(parent, summary, title);
         dialog.setVisible(true);
         return dialog.accepted;
     }

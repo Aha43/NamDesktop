@@ -54,6 +54,17 @@ public final class MonitoringMode {
         deleteQuietly(sentinelPath(workspacePath));
     }
 
+    /** Flush external → main and reset external to new baseline; sentinel stays (monitoring continues). */
+    public static void checkpointAccept(Path workspacePath) throws IOException {
+        Files.copy(externalPath(workspacePath), workspacePath, StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(workspacePath, externalPath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
+    }
+
+    /** Reset external to current main (discard external changes); sentinel stays (monitoring continues). */
+    public static void checkpointReject(Path workspacePath) throws IOException {
+        Files.copy(workspacePath, externalPath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
+    }
+
     private static void deleteQuietly(Path path) {
         try { Files.deleteIfExists(path); } catch (IOException ignored) {}
     }

@@ -59,6 +59,8 @@ public final class MainFrame extends JFrame {
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
+    private       JButton               checkpointButton;
+    private       JMenuItem             checkpointItem;
     private       namdesktop.service.ExternalWorkspaceWatcher externalWatcher;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
@@ -133,6 +135,12 @@ public final class MainFrame extends JFrame {
         monitoringIndicator.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
         monitoringIndicator.setVisible(false);
         toolbar.add(monitoringIndicator);
+        checkpointButton = UiHelper.iconButton("Checkpoint",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/check.svg")).derive(16, 16));
+        checkpointButton.setToolTipText("Checkpoint — flush changes to workspace, stay in monitoring (Cmd+Shift+S)");
+        checkpointButton.setVisible(false);
+        checkpointButton.addActionListener(e -> checkpoint());
+        toolbar.add(checkpointButton);
         var helpButton = UiHelper.iconButton("Help",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
         helpButton.setToolTipText("Help — tutorials and concept reference");
@@ -173,10 +181,17 @@ public final class MainFrame extends JFrame {
                         | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
         monitoringItem.setEnabled(workspacePath != null);
         monitoringItem.addActionListener(e -> toggleMonitoringMode());
+        checkpointItem = new JMenuItem("Checkpoint");
+        checkpointItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()
+                        | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        checkpointItem.setEnabled(false);
+        checkpointItem.addActionListener(e -> checkpoint());
 
         var fileMenu = new JMenu("File");
         fileMenu.add(captureItem);
         fileMenu.add(monitoringItem);
+        fileMenu.add(checkpointItem);
         fileMenu.addSeparator();
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
@@ -309,11 +324,7 @@ public final class MainFrame extends JFrame {
         if (!monitoringActive) {
             try {
                 namdesktop.service.MonitoringMode.enter(workspacePath);
-                var repo     = new namdesktop.persist.JsonWorkspaceRepository();
-                var initial  = repo.load(namdesktop.service.MonitoringMode.externalPath(workspacePath));
-                externalWatcher = new namdesktop.service.ExternalWorkspaceWatcher(
-                        workspacePath, repo, summary -> SwingUtilities.invokeLater(() -> onExternalChange(summary)));
-                externalWatcher.start(initial);
+                startWatcher();
                 monitoringActive = true;
                 updateMonitoringUI();
             } catch (java.io.IOException e) {
@@ -322,6 +333,57 @@ public final class MainFrame extends JFrame {
             }
         } else {
             exitMonitoringMode();
+        }
+    }
+
+    private void startWatcher() throws java.io.IOException {
+        var repo    = new namdesktop.persist.JsonWorkspaceRepository();
+        var initial = repo.load(namdesktop.service.MonitoringMode.externalPath(workspacePath));
+        externalWatcher = new namdesktop.service.ExternalWorkspaceWatcher(
+                workspacePath, repo, summary -> SwingUtilities.invokeLater(() -> onExternalChange(summary)));
+        externalWatcher.start(initial);
+    }
+
+    private void checkpoint() {
+        if (!monitoringActive || workspacePath == null) return;
+        if (externalWatcher != null) { externalWatcher.stop(); externalWatcher = null; }
+        var repo   = new namdesktop.persist.JsonWorkspaceRepository();
+        var result = namdesktop.service.MonitoringMode.exit(workspacePath, repo);
+        if (result instanceof namdesktop.service.MonitoringMode.ExitResult.NoChanges) {
+            showNudge("No changes to checkpoint.");
+        } else if (result instanceof namdesktop.service.MonitoringMode.ExitResult.HasChanges hc) {
+            var accepted = MonitoringExitDialog.show(this, hc.summary(), "Checkpoint");
+            if (accepted) {
+                try {
+                    namdesktop.service.MonitoringMode.checkpointAccept(workspacePath);
+                    service.reloadWorkspace();
+                    refreshAll();
+                    showNudge("Checkpoint — changes saved, monitoring continues.");
+                } catch (java.io.IOException e) {
+                    JOptionPane.showMessageDialog(this, "Checkpoint failed: " + e.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } else {
+                try {
+                    namdesktop.service.MonitoringMode.checkpointReject(workspacePath);
+                } catch (java.io.IOException ignored) {}
+                showNudge("Checkpoint — changes discarded, monitoring continues.");
+            }
+        } else if (result instanceof namdesktop.service.MonitoringMode.ExitResult.Unparseable up) {
+            var choice = JOptionPane.showConfirmDialog(this,
+                    "External workspace is unreadable: " + up.error()
+                            + "\n\nReset it to current workspace and continue?",
+                    "Checkpoint", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice == JOptionPane.YES_OPTION) {
+                try { namdesktop.service.MonitoringMode.checkpointReject(workspacePath); }
+                catch (java.io.IOException ignored) {}
+            }
+        }
+        try { startWatcher(); } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to restart file watcher: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+            monitoringActive = false;
+            updateMonitoringUI();
         }
     }
 
@@ -383,6 +445,8 @@ public final class MainFrame extends JFrame {
                 ? "Exit monitoring mode (Cmd+Shift+M)"
                 : "Enter monitoring mode (Cmd+Shift+M)");
         monitoringIndicator.setVisible(monitoringActive);
+        checkpointButton.setVisible(monitoringActive);
+        checkpointItem.setEnabled(monitoringActive);
     }
 
     private void confirmAndExit() {
