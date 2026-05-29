@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- MCP server (`namdesktop.mcp.NamMcpServer`): run from the same JAR as a separate process to expose workspace tools to AI agents via the MCP stdio protocol. Read tools (`get_workspace_context`, `list_inbox`, `list_projects`, `get_monitoring_status`) work without monitoring mode. Write tools (`add_inbox_item`, `mark_next`, `mark_done`, `mark_backlog`) require monitoring mode to be active and use atomic writes via temp-file rename. Returns a plain-text warning if a write is attempted without monitoring mode. Closes #251.
+
 - Monitoring mode live reactions: while monitoring mode is active, file changes to `workspace.external.json` are detected via `WatchService` and trigger toast notifications. New inbox items also auto-navigate to the Inbox panel. Closes #250.
 
 - Monitoring mode: an antenna toolbar button and Cmd+Shift+M toggle puts the app into monitoring mode, copying the workspace to `workspace.external.json` for external agents to write into. On exit a summary dialog shows detected changes (inbox items added, projects created, status changes, deletions) with Accept and Reject buttons. Accepting replaces the live workspace; rejecting discards the external file. Closes #249.
