@@ -55,7 +55,9 @@ public final class MainFrame extends JFrame {
     private       int                   lastNavDivider = 180;
     private       ProjectWorkbenchPanel cachedWorkbench;
     private       java.util.UUID        cachedWorkbenchId;
-    private       boolean               sessionRestored = false;
+    private       boolean               sessionRestored  = false;
+    private       boolean               monitoringActive = false;
+    private       JButton               monitoringButton;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
         this.workspace        = workspace;
@@ -118,6 +120,12 @@ public final class MainFrame extends JFrame {
             toolbar.add(pushButton);
             toolbar.add(pullButton);
         }
+        monitoringButton = UiHelper.iconButton("Toggle Monitoring Mode",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/antenna.svg")).derive(16, 16));
+        monitoringButton.setToolTipText("Enter monitoring mode (Cmd+Shift+M)");
+        monitoringButton.setEnabled(workspacePath != null);
+        monitoringButton.addActionListener(e -> toggleMonitoringMode());
+        toolbar.add(monitoringButton);
         var helpButton = UiHelper.iconButton("Help",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
         helpButton.setToolTipText("Help — tutorials and concept reference");
@@ -152,8 +160,16 @@ public final class MainFrame extends JFrame {
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         captureItem.addActionListener(e -> inboxPanel.triggerAdd());
 
+        var monitoringItem = new JMenuItem("Toggle Monitoring Mode");
+        monitoringItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_M,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()
+                        | java.awt.event.InputEvent.SHIFT_DOWN_MASK));
+        monitoringItem.setEnabled(workspacePath != null);
+        monitoringItem.addActionListener(e -> toggleMonitoringMode());
+
         var fileMenu = new JMenu("File");
         fileMenu.add(captureItem);
+        fileMenu.add(monitoringItem);
         fileMenu.addSeparator();
         fileMenu.add(manageTagsItem);
         fileMenu.add(searchItem);
@@ -275,6 +291,67 @@ public final class MainFrame extends JFrame {
     }
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }
+
+    private void toggleMonitoringMode() {
+        if (workspacePath == null) return;
+        if (!monitoringActive) {
+            try {
+                namdesktop.service.MonitoringMode.enter(workspacePath);
+                monitoringActive = true;
+                updateMonitoringUI();
+            } catch (java.io.IOException e) {
+                JOptionPane.showMessageDialog(this, "Failed to enter monitoring mode: " + e.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        } else {
+            exitMonitoringMode();
+        }
+    }
+
+    private void exitMonitoringMode() {
+        var repo   = new namdesktop.persist.JsonWorkspaceRepository();
+        var result = namdesktop.service.MonitoringMode.exit(workspacePath, repo);
+        if (result instanceof namdesktop.service.MonitoringMode.ExitResult.NoChanges) {
+            namdesktop.service.MonitoringMode.reject(workspacePath);
+            monitoringActive = false;
+            updateMonitoringUI();
+        } else if (result instanceof namdesktop.service.MonitoringMode.ExitResult.HasChanges hc) {
+            var accepted = MonitoringExitDialog.show(this, hc.summary());
+            if (accepted) {
+                try {
+                    namdesktop.service.MonitoringMode.accept(workspacePath);
+                    service.reloadWorkspace();
+                    refreshAll();
+                } catch (java.io.IOException e) {
+                    JOptionPane.showMessageDialog(this, "Failed to apply changes: " + e.getMessage(),
+                            "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+            } else {
+                namdesktop.service.MonitoringMode.reject(workspacePath);
+            }
+            monitoringActive = false;
+            updateMonitoringUI();
+        } else if (result instanceof namdesktop.service.MonitoringMode.ExitResult.Unparseable up) {
+            var choice = JOptionPane.showConfirmDialog(this,
+                    "External workspace file is unreadable: " + up.error()
+                            + "\n\nReject and discard it?",
+                    "Exit Monitoring Mode", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice == JOptionPane.YES_OPTION) {
+                namdesktop.service.MonitoringMode.reject(workspacePath);
+                monitoringActive = false;
+                updateMonitoringUI();
+            }
+        }
+    }
+
+    private void updateMonitoringUI() {
+        var baseTitle = getTitle().replaceAll(" \\[Monitoring\\]$", "");
+        setTitle(monitoringActive ? baseTitle + " [Monitoring]" : baseTitle);
+        monitoringButton.setToolTipText(monitoringActive
+                ? "Exit monitoring mode (Cmd+Shift+M)"
+                : "Enter monitoring mode (Cmd+Shift+M)");
+    }
 
     private void openSettings() {
         new SettingsDialog(this, settings, () -> {

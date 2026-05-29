@@ -122,6 +122,20 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    public void reloadWorkspace() throws IOException {
+        var fresh = repository.load(path);
+        workspace.setRootNodeId(fresh.getRootNodeId());
+        workspace.setInboxNodeId(fresh.getInboxNodeId());
+        workspace.setProjectsNodeId(fresh.getProjectsNodeId());
+        workspace.setNextActionsNodeId(fresh.getNextActionsNodeId());
+        workspace.setNodes(fresh.getNodes());
+        workspace.setRegisteredTags(fresh.getRegisteredTags());
+        workspace.setSavedViews(fresh.getSavedViews());
+        workspace.setMissionControls(fresh.getMissionControls());
+        workspace.setTemplates(fresh.getTemplates());
+        workspace.setViewOrders(fresh.getViewOrders());
+    }
+
     public void deleteLeaf(UUID nodeId) throws IOException {
         var node = require(nodeId);
         if (!node.getChildIds().isEmpty()) {

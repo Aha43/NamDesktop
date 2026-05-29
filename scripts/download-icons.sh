@@ -38,6 +38,7 @@ ICONS=(
   lock-open
   settings
   inbox
+  antenna
 )
 
 mkdir -p "$ICONS_DIR"
