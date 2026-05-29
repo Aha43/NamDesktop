@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Monitoring mode toolbar indicator: an amber `● Monitoring` label appears in the toolbar when monitoring mode is active — visible even in macOS full-screen mode where the title bar is hidden. Closes #268.
+
 - Accept/reject dialog on app exit during monitoring mode: closing NamDesktop via the window button, Exit menu item, or Cmd+Q while monitoring mode is active now triggers the same accept/reject summary flow instead of silently discarding changes. Closes #264.
 
 - MCP server: unit tests for all tools in `NamMcpServerTest` — read tools, write tools, monitoring mode guard, and error paths. Closes #260.

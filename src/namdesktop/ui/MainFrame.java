@@ -58,6 +58,7 @@ public final class MainFrame extends JFrame {
     private       boolean               sessionRestored  = false;
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
+    private       JLabel                monitoringIndicator;
     private       namdesktop.service.ExternalWorkspaceWatcher externalWatcher;
 
     public MainFrame(NamWorkspace workspace, NamWorkspaceService service, boolean devMode, AppSettings settings, WorkspaceSyncService syncService, Path workspacePath) {
@@ -127,6 +128,11 @@ public final class MainFrame extends JFrame {
         monitoringButton.setEnabled(workspacePath != null);
         monitoringButton.addActionListener(e -> toggleMonitoringMode());
         toolbar.add(monitoringButton);
+        monitoringIndicator = new JLabel("● Monitoring");
+        monitoringIndicator.setForeground(new Color(0xE6, 0x8A, 0x00));
+        monitoringIndicator.setBorder(BorderFactory.createEmptyBorder(0, 4, 0, 4));
+        monitoringIndicator.setVisible(false);
+        toolbar.add(monitoringIndicator);
         var helpButton = UiHelper.iconButton("Help",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
         helpButton.setToolTipText("Help — tutorials and concept reference");
@@ -376,6 +382,7 @@ public final class MainFrame extends JFrame {
         monitoringButton.setToolTipText(monitoringActive
                 ? "Exit monitoring mode (Cmd+Shift+M)"
                 : "Enter monitoring mode (Cmd+Shift+M)");
+        monitoringIndicator.setVisible(monitoringActive);
     }
 
     private void confirmAndExit() {
