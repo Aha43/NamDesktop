@@ -141,7 +141,7 @@ public final class MainFrame extends JFrame {
         var exitButton = UiHelper.iconButton("Exit",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/logout.svg")).derive(16, 16));
         exitButton.setToolTipText("Exit NamDesktop");
-        exitButton.addActionListener(e -> System.exit(0));
+        exitButton.addActionListener(e -> confirmAndExit());
         toolbar.add(exitButton);
 
         var manageTagsItem = new JMenuItem("Manage Tags…");
@@ -196,7 +196,7 @@ public final class MainFrame extends JFrame {
         var exitItem = new JMenuItem("Exit");
         exitItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q,
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        exitItem.addActionListener(e -> System.exit(0));
+        exitItem.addActionListener(e -> confirmAndExit());
         fileMenu.add(exitItem);
         var toolbarToggleItem = new JMenuItem(settings.isShowToolbar() ? "Hide Toolbar" : "Show Toolbar");
         toolbarToggleItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_T,
@@ -275,9 +275,11 @@ public final class MainFrame extends JFrame {
         setJMenuBar(menuBar);
 
         if (Desktop.isDesktopSupported()) {
-            try {
-                Desktop.getDesktop().setPreferencesHandler(e -> openSettings());
-            } catch (UnsupportedOperationException ignored) {}
+            var desktop = Desktop.getDesktop();
+            try { desktop.setPreferencesHandler(e -> openSettings()); }
+            catch (UnsupportedOperationException ignored) {}
+            try { desktop.setQuitHandler((e, r) -> confirmAndExit()); }
+            catch (UnsupportedOperationException ignored) {}
         }
 
         toolbar.setVisible(settings.isShowToolbar());
@@ -285,7 +287,10 @@ public final class MainFrame extends JFrame {
         add(toolbar,        BorderLayout.NORTH);
         add(splitPane,      BorderLayout.CENTER);
         add(demoStatusBar,  BorderLayout.SOUTH);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent e) { confirmAndExit(); }
+        });
         setSize(900, 600);
 
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
@@ -371,6 +376,14 @@ public final class MainFrame extends JFrame {
         monitoringButton.setToolTipText(monitoringActive
                 ? "Exit monitoring mode (Cmd+Shift+M)"
                 : "Enter monitoring mode (Cmd+Shift+M)");
+    }
+
+    private void confirmAndExit() {
+        if (monitoringActive) {
+            exitMonitoringMode();
+            if (monitoringActive) return; // user cancelled (unparseable + chose not to reject)
+        }
+        System.exit(0);
     }
 
     private void openSettings() {

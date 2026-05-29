@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Accept/reject dialog on app exit during monitoring mode: closing NamDesktop via the window button, Exit menu item, or Cmd+Q while monitoring mode is active now triggers the same accept/reject summary flow instead of silently discarding changes. Closes #264.
+
 - MCP server: `delete_node(node_id)` write tool removes a node from the workspace. Rejects nodes that have children (use the app for recursive deletes). Requires monitoring mode. Closes #263.
 
 - MCP server: `list_done` read tool returns all actions with `status: DONE`. Closes #262.
