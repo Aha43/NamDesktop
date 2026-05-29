@@ -27,7 +27,8 @@ Every issue carries two labels:
 | Label | What it covers |
 |---|---|
 | `prerequisites` | Action prerequisites and blocked-by dependency graph |
-| `ai` | AI-powered capture, review, and assistance |
+| `ai` | AI-powered capture and review via internal Anthropic API calls (#211–#214) |
+| `external` | External agent integration: monitoring mode, MCP server, workspace file contract (#249–#251) |
 | `cloud-sync` | Cloud database sync and remote persistence |
 | `branding` | Logo, icon, visual identity, app presentation |
 | `ux-review-1` | Findings from the first critical AI UX review (2026-05-27) |
