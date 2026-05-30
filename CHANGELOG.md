@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- ActionDialog: collapsible Resources section — collapsed by default when empty, auto-expanded when populated. Add-form with type selector (URI/EMAIL/FILE/TEXT), value, and optional note. Clicking a resource opens it (browser/mailto/file-manager/clipboard). Resources removed immediately with ✕. Closes #276.
+
 - Resources domain model: `ResourceType` enum (`TEXT | EMAIL | URI | FILE`), `Resource` class (`type`, `value`, `description`), `List<Resource>` on `NamNode` persisted via Jackson; `NamWorkspaceService.addResource` and `removeResource`. Closes #275.
 
 - Bulk action creation: the add-action dialog in Next Actions and Project Workbench now accepts multiple lines — each non-blank line creates a separate action. Single-line entry and "Create & Edit" work exactly as before. Closes #274.
