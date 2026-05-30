@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- "Seen" touch: opening an ActionDialog or ProjectDialog sets `updatedAt` on the node so staleness reflects actual review activity, not just edits. Closes #284.
+
 - `NamNode` timestamps: `createdAt`, `updatedAt`, `statusChangedAt` (all `LocalDateTime`, nullable). Set on creation and wired through all mutations and status transitions in `NamWorkspaceService`. Serialised as ISO-8601 strings via Jackson (`jackson-datatype-jsr310`). Existing JSON files without these fields deserialise cleanly with `null`. Closes #283.
 
 ### Fixed

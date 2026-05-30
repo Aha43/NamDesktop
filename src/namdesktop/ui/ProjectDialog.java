@@ -22,6 +22,7 @@ public final class ProjectDialog extends NodeDialog {
     public ProjectDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service, Runnable onChanged) {
         super(parent, nodeId, workspace, service, onChanged);
         this.workspace = workspace;
+        try { service.touchNode(nodeId); } catch (java.io.IOException ignored) {}
         setTitle("Project: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
         hideStatusButton();
 
