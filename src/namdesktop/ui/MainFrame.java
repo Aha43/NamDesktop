@@ -183,6 +183,11 @@ public final class MainFrame extends JFrame {
         var newMcItem = new JMenuItem("New Goal Board…");
         newMcItem.addActionListener(e -> createGoalBoard());
 
+        var newItemItem = new JMenuItem("New Item");
+        newItemItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        newItemItem.addActionListener(e -> triggerNewItem());
+
         var captureItem = new JMenuItem("Capture to Inbox");
         captureItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_I,
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
@@ -202,6 +207,7 @@ public final class MainFrame extends JFrame {
         checkpointItem.addActionListener(e -> checkpoint());
 
         var fileMenu = new JMenu("File");
+        fileMenu.add(newItemItem);
         fileMenu.add(captureItem);
         fileMenu.add(monitoringItem);
         fileMenu.add(checkpointItem);
@@ -612,6 +618,13 @@ public final class MainFrame extends JFrame {
                 }
             });
         }, "sync-thread").start();
+    }
+
+    private void triggerNewItem() {
+        var content = contentArea.getContent();
+        if (content instanceof InboxPanel p)             p.triggerAdd();
+        else if (content instanceof ProjectsPanel p)     p.triggerAdd();
+        else if (content instanceof ProjectWorkbenchPanel p) p.triggerAdd();
     }
 
     private void openSearch() {

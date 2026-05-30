@@ -27,6 +27,7 @@ public final class ShortcutsDialog extends JDialog {
                 sc("5"),    "Done");
 
         section(content, "Capture & Search",
+                sc("N"),    "New Item — context-sensitive (Inbox / Projects / Workbench)",
                 sc("I"),    "Capture to Inbox",
                 sc("F"),    "Open Search");
 

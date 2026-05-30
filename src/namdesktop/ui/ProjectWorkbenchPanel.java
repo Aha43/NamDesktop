@@ -62,6 +62,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     public void refresh() { rebuild(); }
 
+    public void triggerAdd() { showAddActionDialog(currentProjectId, null); }
+
     private void rebuild() {
         if (workspace.getNode(currentProjectId).isEmpty()) {
             if (parentProjectId != null
