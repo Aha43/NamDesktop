@@ -14,6 +14,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Resource persistence round-trip test (`JsonWorkspaceRepositoryTest`).
 
+- MCP server: three resource tools — `list_resources`, `add_resource`, `remove_resource` — so Claude can read and manage attached resources via the MCP stdio server. Closes #279.
+
 - Paperclip indicator in all list views (Inbox, Next Actions, Backlog, Done, Context, Projects): a small paperclip icon appears in a fixed-width column when a node has attached resources. Closes #278.
 
 - ProjectDialog: collapsible Resources section — same behaviour as ActionDialog; shared implementation lives in NodeDialog. Closes #277.

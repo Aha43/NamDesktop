@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.model.Resource;
+import namdesktop.model.ResourceType;
 import namdesktop.persist.JsonWorkspaceRepository;
 import namdesktop.service.MonitoringMode;
 
@@ -198,6 +200,23 @@ public final class NamMcpServer {
         tools.add(tool("mark_backlog",
                 "Set a node's status to BACKLOG. Requires monitoring mode.",
                 schema(Map.of("node_id", prop("string", "UUID of the node")), List.of("node_id"))));
+        tools.add(tool("list_resources",
+                "List all resources (links, files, notes) attached to a node.",
+                schema(Map.of("node_id", prop("string", "UUID of the node")), List.of("node_id"))));
+        tools.add(tool("add_resource",
+                "Attach a resource to a node. type must be URI, EMAIL, FILE, or TEXT. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id",     prop("string", "UUID of the node"),
+                        "type",        prop("string", "Resource type: URI, EMAIL, FILE, or TEXT"),
+                        "value",       prop("string", "The resource value (URL, email address, file path, or plain text)"),
+                        "description", prop("string", "Optional short note shown as tooltip")
+                ), List.of("node_id", "type", "value"))));
+        tools.add(tool("remove_resource",
+                "Remove a resource from a node by its zero-based index. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id", prop("string", "UUID of the node"),
+                        "index",   prop("integer", "Zero-based index of the resource to remove")
+                ), List.of("node_id", "index"))));
         return result;
     }
 
@@ -265,6 +284,9 @@ public final class NamMcpServer {
             case "mark_next"             -> toolSetStatus(args, NodeStatus.NEXT);
             case "mark_done"             -> toolSetStatus(args, NodeStatus.DONE);
             case "mark_backlog"          -> toolSetStatus(args, NodeStatus.BACKLOG);
+            case "list_resources"        -> toolListResources(args);
+            case "add_resource"         -> toolAddResource(args);
+            case "remove_resource"      -> toolRemoveResource(args);
             default                      -> textResult("Unknown tool: " + name, true);
         };
     }
@@ -601,6 +623,86 @@ public final class NamMcpServer {
         atomicWrite(w -> w.getNode(finalId).ifPresent(n -> n.setStatus(status)));
         return textResult("Node \"" + node.getTitle() + "\" status changed from "
                 + oldStatus.name() + " to " + status.name() + ".", false);
+    }
+
+    private ObjectNode toolListResources(JsonNode args) throws IOException {
+        var idStr = args.path("node_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        var ws   = repo.load(readPath());
+        var node = ws.getNode(id).orElse(null);
+        if (node == null) return textResult("Error: no node found with id " + idStr, true);
+
+        var arr = MAPPER.createArrayNode();
+        var resources = node.getResources();
+        for (int i = 0; i < resources.size(); i++) {
+            var res = resources.get(i);
+            var o = arr.addObject();
+            o.put("index", i);
+            o.put("type", res.getType().name());
+            o.put("value", res.getValue());
+            if (res.getDescription() != null && !res.getDescription().isBlank())
+                o.put("description", res.getDescription());
+        }
+        return textResult(MAPPER.writerWithDefaultPrettyPrinter().writeValueAsString(arr), false);
+    }
+
+    private ObjectNode toolAddResource(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var idStr = args.path("node_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
+        var typeStr = args.path("type").asText("").strip().toUpperCase();
+        if (typeStr.isEmpty()) return textResult("Error: type is required.", true);
+        var value = args.path("value").asText("").strip();
+        if (value.isEmpty()) return textResult("Error: value is required.", true);
+
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        ResourceType type;
+        try { type = ResourceType.valueOf(typeStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid type \"" + typeStr + "\". Use URI, EMAIL, FILE, or TEXT.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        if (ws.getNode(id).isEmpty()) return textResult("Error: no node found with id " + idStr, true);
+
+        var desc = args.hasNonNull("description") ? args.path("description").asText().strip() : null;
+        if (desc != null && desc.isBlank()) desc = null;
+
+        final UUID finalId = id;
+        final ResourceType finalType = type;
+        final String finalDesc = desc;
+        atomicWrite(w -> w.getNode(finalId).ifPresent(n -> n.getResources().add(new Resource(finalType, value, finalDesc))));
+        return textResult("Added " + typeStr + " resource to node \"" + ws.getNode(id).get().getTitle() + "\".", false);
+    }
+
+    private ObjectNode toolRemoveResource(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var idStr = args.path("node_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
+        if (!args.hasNonNull("index")) return textResult("Error: index is required.", true);
+        var index = args.path("index").asInt(-1);
+        if (index < 0) return textResult("Error: index must be a non-negative integer.", true);
+
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        var ws   = repo.load(MonitoringMode.externalPath(workspacePath));
+        var node = ws.getNode(id).orElse(null);
+        if (node == null) return textResult("Error: no node found with id " + idStr, true);
+        if (index >= node.getResources().size())
+            return textResult("Error: index " + index + " out of range — node has " + node.getResources().size() + " resource(s).", true);
+
+        var removed = node.getResources().get(index);
+        final UUID finalId = id;
+        final int finalIndex = index;
+        atomicWrite(w -> w.getNode(finalId).ifPresent(n -> n.getResources().remove(finalIndex)));
+        return textResult("Removed resource at index " + index + " (" + removed.getType().name() + ": " + removed.getValue() + ").", false);
     }
 
     // -------------------------------------------------------------------------
