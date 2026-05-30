@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Bulk action creation: the add-action dialog in Next Actions and Project Workbench now accepts multiple lines — each non-blank line creates a separate action. Single-line entry and "Create & Edit" work exactly as before. Closes #274.
+
+- Keyboard shortcuts reference dialog: `Help › Keyboard Shortcuts…` (`Cmd+/`) opens a sectioned two-column dialog listing all shortcuts with badge-styled keys. Works on macOS (`⌘⇧`) and Windows (`Ctrl+Shift+`). Closes #272.
+
+- Keyboard shortcuts: `Cmd+1…5` jump directly to Inbox, Next Actions, Backlog, Projects, and Done from anywhere in the app. Wired as View menu accelerators. Closes #245.
+
+- Keyboard shortcut: `Cmd+F` opens the Search panel and focuses the search field. Closes #242.
+
 - Dev mode badge: an amber `● Dev` label appears in the toolbar (left of Settings) whenever NamDesktop is launched in dev mode — mirrors the `● Monitoring` indicator style so mode awareness is always visible in full screen. Closes #270.
 
 - Checkpoint: while in monitoring mode, a Checkpoint button (✔) appears in the toolbar and `File › Checkpoint` (Cmd+Shift+S) is enabled. Checkpoint shows the same accept/reject summary dialog, then flushes accepted changes into the main workspace and resets the external baseline — Claude can keep writing without another toggle. Rejecting discards the external changes but stays in monitoring. Closes #269.

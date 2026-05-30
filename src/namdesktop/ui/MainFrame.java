@@ -111,6 +111,9 @@ public final class MainFrame extends JFrame {
         captureButton.addActionListener(e -> inboxPanel.triggerAdd());
         toolbar.add(captureButton);
         var searchButton = UiHelper.iconButton("Search", new FlatSVGIcon(MainFrame.class.getResource("/icons/search.svg")).derive(16, 16));
+        searchButton.setToolTipText("Search (" +
+                (java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() == java.awt.event.InputEvent.META_DOWN_MASK ? "⌘" : "Ctrl") +
+                "+F)");
         searchButton.addActionListener(e -> openSearch());
         toolbar.add(searchButton);
         var newMcButton = UiHelper.iconButton("New Goal Board…",
@@ -170,6 +173,8 @@ public final class MainFrame extends JFrame {
         manageTagsItem.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
         var searchItem = new JMenuItem("Search…");
+        searchItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         searchItem.addActionListener(e -> openSearch());
         var settingsItem = new JMenuItem("Settings…");
         settingsItem.addActionListener(e -> openSettings());
@@ -280,19 +285,47 @@ public final class MainFrame extends JFrame {
         splitPane.addPropertyChangeListener(JSplitPane.DIVIDER_LOCATION_PROPERTY, ev ->
                 zenItem.setText(!toolbar.isVisible() && (int) ev.getNewValue() == 0
                         ? "Exit Zen Mode" : "Enter Zen Mode"));
+        var mask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        var goInboxItem       = new JMenuItem("Inbox");
+        var goNextActionsItem = new JMenuItem("Next Actions");
+        var goBacklogItem     = new JMenuItem("Backlog");
+        var goProjectsItem    = new JMenuItem("Projects");
+        var goDoneItem        = new JMenuItem("Done");
+        goInboxItem      .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, mask));
+        goNextActionsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_2, mask));
+        goBacklogItem    .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_3, mask));
+        goProjectsItem   .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_4, mask));
+        goDoneItem       .setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_5, mask));
+        goInboxItem      .addActionListener(e -> navigateTo("inbox"));
+        goNextActionsItem.addActionListener(e -> navigateTo("next-actions"));
+        goBacklogItem    .addActionListener(e -> navigateTo("backlog"));
+        goProjectsItem   .addActionListener(e -> navigateTo("projects"));
+        goDoneItem       .addActionListener(e -> navigateTo("done"));
+
         var viewMenu = new JMenu("View");
         viewMenu.add(toolbarToggleItem);
         viewMenu.add(navToggleItem);
         viewMenu.addSeparator();
         viewMenu.add(zenItem);
+        viewMenu.addSeparator();
+        viewMenu.add(goInboxItem);
+        viewMenu.add(goNextActionsItem);
+        viewMenu.add(goBacklogItem);
+        viewMenu.add(goProjectsItem);
+        viewMenu.add(goDoneItem);
 
         var helpMenuItem = new JMenuItem("Help");
         helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
         helpMenuItem.addActionListener(e -> contentArea.setContent(helpPanel));
+        var shortcutsItem = new JMenuItem("Keyboard Shortcuts…");
+        shortcutsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
+        shortcutsItem.addActionListener(e -> ShortcutsDialog.show(this));
         var aboutItem = new JMenuItem("About " + namdesktop.app.AppInfo.NAME + "…");
         aboutItem.addActionListener(e -> new AboutDialog(this).setVisible(true));
         var helpMenu = new JMenu("Help");
         helpMenu.add(helpMenuItem);
+        helpMenu.add(shortcutsItem);
         helpMenu.addSeparator();
         helpMenu.add(aboutItem);
 
@@ -689,6 +722,14 @@ public final class MainFrame extends JFrame {
         blockedPanel.refresh();
         donePanel.refresh();
         rebuildDynamicNavSections();
+    }
+
+    private void navigateTo(String id) {
+        navPanel.selectById(id);
+        buildNavEntries(devMode).stream()
+                .filter(e -> e.id().equals(id))
+                .findFirst()
+                .ifPresent(this::onNavSelected);
     }
 
     private void rebuildDynamicNavSections() {

@@ -308,10 +308,23 @@ public final class NextActionsPanel extends JPanel {
     }
 
     private void addAction() {
-        var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
-        if (title == null || title.isBlank()) return;
+        var area = new JTextArea(5, 28);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && area.isShowing())
+                SwingUtilities.invokeLater(area::requestFocusInWindow);
+        });
+        var panel = new JPanel(new java.awt.BorderLayout(0, 4));
+        panel.add(new JLabel("Action title(s) — one per line:"), java.awt.BorderLayout.NORTH);
+        panel.add(new JScrollPane(area), java.awt.BorderLayout.CENTER);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Add action",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+        if (result != JOptionPane.OK_OPTION) return;
+        var lines = area.getText().lines().map(String::strip).filter(s -> !s.isBlank()).toList();
+        if (lines.isEmpty()) return;
         try {
-            service.createNextAction(title.strip());
+            for (var line : lines) service.createNextAction(line);
             refresh();
         } catch (java.io.IOException ex) {
             showError(ex.getMessage());
