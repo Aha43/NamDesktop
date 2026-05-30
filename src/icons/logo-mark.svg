@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none" style="color:#DDDDDD">
+  
+  <g stroke="currentColor" stroke-width="11" stroke-linecap="round" opacity="0.42">
+    <path d="M128 74 L84 182"></path>
+    <path d="M128 74 L172 182"></path>
+  </g>
+  <!-- signal arcs: NAM is live and in the conversation -->
+  <g fill="none" stroke="#3FA463" stroke-width="7" stroke-linecap="round">
+    <path d="M130.6 44.1 A30 30 0 0 1 157.5 68.8" opacity="0.55"></path>
+    <path d="M131.7 32.2 A42 42 0 0 1 169.4 66.7" opacity="0.3"></path>
+  </g>
+  <circle cx="128" cy="74" r="18" fill="currentColor"></circle>
+  <circle cx="84" cy="182" r="18" fill="currentColor"></circle>
+  <circle cx="172" cy="182" r="27" fill="#3FA463"></circle>
+  <path d="M159 183 l9 9 l18 -21" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>

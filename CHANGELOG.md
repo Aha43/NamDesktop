@@ -6,6 +6,15 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Branding: NamDesktop logo wired into the app. `logo-tile.svg` appears in the Splash dialog above the app name; `logo-wordmark.svg` replaces the plain text name in the About dialog; `logo-mark.svg` is rendered at 16/32/64/128 px and passed to `JFrame.setIconImages` for the window icon and alt-tab. Closes #246, #248.
+- macOS packaging: `package-macos.ps1` now passes `--icon NamDesktop.icns` to jpackage when the file exists; `scripts/make-icns.sh` generates the `.icns` from `assets/logo-mark.svg` using `rsvg-convert` and `iconutil`. Closes #247.
+
+- "Seen" touch: opening an ActionDialog or ProjectDialog sets `updatedAt` on the node so staleness reflects actual review activity, not just edits. Closes #284.
+
+- `NamNode` timestamps: `createdAt`, `updatedAt`, `statusChangedAt` (all `LocalDateTime`, nullable). Set on creation and wired through all mutations and status transitions in `NamWorkspaceService`. Serialised as ISO-8601 strings via Jackson (`jackson-datatype-jsr310`). Existing JSON files without these fields deserialise cleanly with `null`. Closes #283.
+
 ### Fixed
 
 - `add_resource` MCP tool now persists correctly: `MonitoringMode.diff()` now counts resource additions and modifications on existing nodes as a change, so the Checkpoint / Accept dialog triggers instead of silently discarding the external file. Closes #282.

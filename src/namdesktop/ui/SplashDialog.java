@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.app.AppInfo;
 import namdesktop.app.AppSettings;
 
@@ -23,6 +24,10 @@ public final class SplashDialog extends JDialog {
 
         devModeBox = new JCheckBox("Run in dev mode", Files.exists(DEV_MODE_FLAG));
 
+        var logoIcon  = new FlatSVGIcon(SplashDialog.class.getResource("/icons/logo-tile.svg")).derive(96, 96);
+        var logoLabel = new JLabel(logoIcon);
+        logoLabel.setHorizontalAlignment(SwingConstants.CENTER);
+
         var titleLabel = new JLabel(AppInfo.NAME + " " + AppInfo.version());
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 18f));
         titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
@@ -45,11 +50,19 @@ public final class SplashDialog extends JDialog {
         var footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
         footer.add(launchButton);
 
+        var header = new JPanel();
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        header.add(logoLabel);
+        header.add(Box.createVerticalStrut(8));
+        header.add(titleLabel);
+
         var content = new JPanel(new BorderLayout(0, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 40, 20, 40));
-        content.add(titleLabel, BorderLayout.NORTH);
-        content.add(tabs,       BorderLayout.CENTER);
-        content.add(footer,     BorderLayout.SOUTH);
+        content.add(header, BorderLayout.NORTH);
+        content.add(tabs,   BorderLayout.CENTER);
+        content.add(footer, BorderLayout.SOUTH);
 
         setContentPane(content);
         setResizable(false);

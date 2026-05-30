@@ -2,6 +2,7 @@ package namdesktop.persist;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import namdesktop.model.MissionControl;
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
@@ -23,6 +24,8 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
 
     public JsonWorkspaceRepository() {
         mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
     }
 

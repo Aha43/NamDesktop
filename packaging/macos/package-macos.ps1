@@ -22,15 +22,25 @@ Write-Host "Cleaning package output..."
 Remove-Item -Recurse -Force "dist/package" -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force "dist/package" | Out-Null
 
+$IconFile = Join-Path $ScriptDir "NamDesktop.icns"
+if (-not (Test-Path $IconFile)) {
+    Write-Warning "NamDesktop.icns not found at $IconFile — building without custom icon."
+    Write-Warning "Run scripts/make-icns.sh to generate it from assets/logo-mark.svg."
+    $IconFile = $null
+}
+
 Write-Host "Creating macOS DMG..."
-jpackage `
-    --type dmg `
-    --name $AppName `
-    --app-version $AppVersion `
-    --input "build/app" `
-    --main-jar $MainJar `
-    --main-class $MainClass `
-    --dest "dist/package"
+$JpackageArgs = @(
+    "--type", "dmg",
+    "--name", $AppName,
+    "--app-version", $AppVersion,
+    "--input", "build/app",
+    "--main-jar", $MainJar,
+    "--main-class", $MainClass,
+    "--dest", "dist/package"
+)
+if ($IconFile) { $JpackageArgs += "--icon", $IconFile }
+jpackage @JpackageArgs
 
 $GeneratedDmg = "dist/package/$AppName-$AppVersion.dmg"
 $ReleaseDmg   = "dist/package/$AppName-v$ReleaseVersion-macos-$Arch.dmg"

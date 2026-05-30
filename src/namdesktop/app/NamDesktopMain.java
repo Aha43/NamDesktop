@@ -10,12 +10,15 @@ import namdesktop.ui.MainFrame;
 import namdesktop.ui.SplashDialog;
 import swingdemo.ScriptRunner;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import javax.swing.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 
 public final class NamDesktopMain {
 
@@ -51,6 +54,7 @@ public final class NamDesktopMain {
         var syncService = new GitSyncService(settings.getSyncRepoUrl(), SYNC_CLONE_DIR);
         var frame = new MainFrame(workspace, service, devMode, settings, syncService, workspacePath);
         frame.setTitle(AppInfo.NAME + " " + AppInfo.version() + (devMode ? " [DEV]" : ""));
+        frame.setIconImages(appIcons());
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
         if (settings.isStartMaximized()) frame.setExtendedState(java.awt.Frame.MAXIMIZED_BOTH);
@@ -103,6 +107,22 @@ public final class NamDesktopMain {
             System.err.println("[e2e] Failed to read e2e.json: " + ex.getMessage());
             System.exit(1);
         }
+    }
+
+    private static List<BufferedImage> appIcons() {
+        var url = NamDesktopMain.class.getResource("/icons/logo-mark.svg");
+        if (url == null) return List.of();
+        return List.of(16, 32, 64, 128).stream()
+                .map(size -> svgToImage(new FlatSVGIcon(url).derive(size, size), size))
+                .toList();
+    }
+
+    private static BufferedImage svgToImage(FlatSVGIcon icon, int size) {
+        var img = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        var g   = img.createGraphics();
+        icon.paintIcon(null, g, 0, 0);
+        g.dispose();
+        return img;
     }
 
     private static NamWorkspace loadWorkspace(JsonWorkspaceRepository repository, Path path) {

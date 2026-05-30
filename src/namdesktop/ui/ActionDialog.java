@@ -30,6 +30,7 @@ public final class ActionDialog extends NodeDialog {
         super(parent, nodeId, workspace, service, onChanged);
         this.changeCallback  = onChanged;
         this.actionService   = service;
+        try { service.touchNode(nodeId); } catch (java.io.IOException ignored) {}
         setTitle("Action: " + workspace.getNode(nodeId).map(n -> n.getTitle()).orElse(""));
 
         if (showMakeProject) {

@@ -11,6 +11,7 @@ import namdesktop.persist.WorkspaceRepository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -35,6 +36,7 @@ public final class NamWorkspaceService {
         var parent = require(parentId);
         var child = new NamNode(UUID.randomUUID(), title);
         if (parentId.equals(workspace.getProjectsNodeId())) child.setProject(true);
+        stampCreated(child);
         workspace.getNodes().put(child.getId(), child);
         parent.getChildIds().add(child.getId());
         repository.save(path, workspace);
@@ -45,6 +47,7 @@ public final class NamWorkspaceService {
         var parent = require(parentId);
         var child  = new NamNode(UUID.randomUUID(), title);
         if (parentId.equals(workspace.getProjectsNodeId())) child.setProject(true);
+        stampCreated(child);
         workspace.getNodes().put(child.getId(), child);
         var ids   = parent.getChildIds();
         var index = ids.indexOf(beforeId);
@@ -58,6 +61,7 @@ public final class NamWorkspaceService {
         var parent = require(parentId);
         var child = new NamNode(UUID.randomUUID(), title);
         child.setProject(true);
+        stampCreated(child);
         workspace.getNodes().put(child.getId(), child);
         parent.getChildIds().add(child.getId());
         repository.save(path, workspace);
@@ -114,7 +118,9 @@ public final class NamWorkspaceService {
     }
 
     public void renameNode(UUID nodeId, String title) throws IOException {
-        require(nodeId).setTitle(title);
+        var node = require(nodeId);
+        node.setTitle(title);
+        node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
 
@@ -198,6 +204,7 @@ public final class NamWorkspaceService {
         var node = new NamNode(UUID.randomUUID(), title);
         node.setStatus(status);
         if (!tags.isEmpty()) node.setTags(new java.util.ArrayList<>(tags));
+        stampCreated(node);
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(actionsId).orElseThrow().getChildIds().add(node.getId());
         repository.save(path, workspace);
@@ -205,27 +212,38 @@ public final class NamWorkspaceService {
     }
 
     public void updateDescription(UUID nodeId, String description) throws IOException {
-        require(nodeId).setDescription(description);
+        var node = require(nodeId);
+        node.setDescription(description);
+        node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
 
     public void markDone(UUID nodeId) throws IOException {
-        require(nodeId).setStatus(NodeStatus.DONE);
+        stampStatus(require(nodeId), NodeStatus.DONE);
         repository.save(path, workspace);
     }
 
     public void markNext(UUID nodeId) throws IOException {
-        require(nodeId).setStatus(NodeStatus.NEXT);
+        stampStatus(require(nodeId), NodeStatus.NEXT);
         repository.save(path, workspace);
     }
 
     public void markBacklog(UUID nodeId) throws IOException {
-        require(nodeId).setStatus(NodeStatus.BACKLOG);
+        stampStatus(require(nodeId), NodeStatus.BACKLOG);
         repository.save(path, workspace);
     }
 
     public void updateTags(UUID nodeId, List<String> tags) throws IOException {
-        require(nodeId).setTags(new java.util.ArrayList<>(tags));
+        var node = require(nodeId);
+        node.setTags(new java.util.ArrayList<>(tags));
+        node.setUpdatedAt(LocalDateTime.now());
+        repository.save(path, workspace);
+    }
+
+    public void touchNode(UUID nodeId) throws IOException {
+        var node = workspace.getNode(nodeId).orElse(null);
+        if (node == null) return;
+        node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
 
@@ -352,17 +370,19 @@ public final class NamWorkspaceService {
 
     public void addTag(UUID nodeId, String tag) throws IOException {
         var normalised = tag.strip().toLowerCase();
-        var tags = require(nodeId).getTags();
-        if (!tags.contains(normalised)) {
-            tags.add(normalised);
+        var node = require(nodeId);
+        if (!node.getTags().contains(normalised)) {
+            node.getTags().add(normalised);
+            node.setUpdatedAt(LocalDateTime.now());
             repository.save(path, workspace);
         }
     }
 
     public void removeTag(UUID nodeId, String tag) throws IOException {
         var normalised = tag.strip().toLowerCase();
-        var tags = require(nodeId).getTags();
-        if (tags.remove(normalised)) {
+        var node = require(nodeId);
+        if (node.getTags().remove(normalised)) {
+            node.setUpdatedAt(LocalDateTime.now());
             repository.save(path, workspace);
         }
     }
@@ -392,7 +412,7 @@ public final class NamWorkspaceService {
     }
 
     public void convertInboxItemToNextAction(UUID id) throws IOException {
-        require(id);
+        var node = require(id);
         var inbox = workspace.getNode(workspace.getInboxNodeId())
                 .orElseThrow(() -> new IllegalStateException("Inbox area node not found"));
         if (!inbox.getChildIds().remove(id)) {
@@ -401,7 +421,7 @@ public final class NamWorkspaceService {
         workspace.getNode(workspace.getNextActionsNodeId())
                 .orElseThrow(() -> new IllegalStateException("Actions area node not found"))
                 .getChildIds().add(id);
-        require(id).setStatus(NodeStatus.NEXT);
+        stampStatus(node, NodeStatus.NEXT);
         repository.save(path, workspace);
     }
 
@@ -411,8 +431,8 @@ public final class NamWorkspaceService {
         if (parent != null && parent.getId().equals(workspace.getNextActionsNodeId())) {
             convertFromArea(id, workspace.getNextActionsNodeId(), workspace.getProjectsNodeId(), "next actions");
         } else {
-            // action is inside a project — promote in place as a sub-project
             node.setProject(true);
+            node.setUpdatedAt(LocalDateTime.now());
             repository.save(path, workspace);
         }
     }
@@ -429,7 +449,7 @@ public final class NamWorkspaceService {
                     .orElseThrow(() -> new IllegalStateException("Actions area node not found"))
                     .getChildIds().add(id);
         }
-        node.setStatus(NodeStatus.NEXT);
+        stampStatus(node, NodeStatus.NEXT);
         repository.save(path, workspace);
     }
 
@@ -444,6 +464,7 @@ public final class NamWorkspaceService {
                 .orElseThrow(() -> new IllegalStateException("Target area node not found"))
                 .getChildIds().add(id);
         if (targetId.equals(workspace.getProjectsNodeId())) node.setProject(true);
+        node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
 
@@ -471,14 +492,18 @@ public final class NamWorkspaceService {
     }
 
     public void addResource(UUID nodeId, Resource resource) throws IOException {
-        require(nodeId).getResources().add(resource);
+        var node = require(nodeId);
+        node.getResources().add(resource);
+        node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
 
     public void removeResource(UUID nodeId, int index) throws IOException {
-        var resources = require(nodeId).getResources();
+        var node = require(nodeId);
+        var resources = node.getResources();
         if (index >= 0 && index < resources.size()) {
             resources.remove(index);
+            node.setUpdatedAt(LocalDateTime.now());
             repository.save(path, workspace);
         }
     }
@@ -524,6 +549,7 @@ public final class NamWorkspaceService {
     private void cloneTemplateNode(UUID parentId, TemplateNode templateNode) {
         var node = new NamNode(UUID.randomUUID(), templateNode.title());
         node.setProject(templateNode.project());
+        stampCreated(node);
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(parentId).orElseThrow().getChildIds().add(node.getId());
         for (var child : templateNode.children()) cloneTemplateNode(node.getId(), child);
@@ -534,5 +560,18 @@ public final class NamWorkspaceService {
                 .filter(n -> n.getChildIds().contains(nodeId))
                 .findFirst()
                 .orElse(null);
+    }
+
+    private static void stampCreated(NamNode node) {
+        var now = LocalDateTime.now();
+        node.setCreatedAt(now);
+        node.setUpdatedAt(now);
+    }
+
+    private static void stampStatus(NamNode node, NodeStatus status) {
+        var now = LocalDateTime.now();
+        node.setStatus(status);
+        node.setUpdatedAt(now);
+        node.setStatusChangedAt(now);
     }
 }
