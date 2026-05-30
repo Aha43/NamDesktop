@@ -212,6 +212,8 @@ public final class ProjectsPanel extends JPanel {
         UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
     }
 
+    public void triggerAdd() { addProject(); }
+
     private void addProject() {
         var title = JOptionPane.showInputDialog(
                 SwingUtilities.getWindowAncestor(this), "Project title:", "Add project", JOptionPane.PLAIN_MESSAGE);

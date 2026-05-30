@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- E2E coverage for resources: `addResource`, `assertHasResource`, and `assertResourceCount` wired into `NamDemoWiring` / `NamAssertWiring`; resource scenario added to `e2e.json`. Closes #287.
+
+- `Cmd+N` / `Ctrl+N` keyboard shortcut for context-sensitive new item: creates an inbox item when Inbox is active, a new project when Projects is active, and a new action in the current project when the Project Workbench is active; no-op on other panels. Shortcut is listed in the Keyboard Shortcuts dialog. Closes #244.
+
 - Branding: NamDesktop logo wired into the app. `logo-tile.svg` appears in the Splash dialog above the app name; `logo-wordmark.svg` replaces the plain text name in the About dialog; `logo-mark.svg` is rendered at 16/32/64/128 px and passed to `JFrame.setIconImages` for the window icon and alt-tab. Closes #246, #248.
 - macOS packaging: `package-macos.ps1` now passes `--icon NamDesktop.icns` to jpackage when the file exists; `scripts/make-icns.sh` generates the `.icns` from `assets/logo-mark.svg` using `rsvg-convert` and `iconutil`. Closes #247.
 

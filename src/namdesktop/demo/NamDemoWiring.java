@@ -2,6 +2,8 @@ package namdesktop.demo;
 
 import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.Resource;
+import namdesktop.model.ResourceType;
 import namdesktop.service.NamWorkspaceService;
 import swingdemo.ScriptRunner;
 
@@ -39,7 +41,8 @@ public final class NamDemoWiring {
             .register("createSavedView",    this::createSavedView)
             .register("deleteProject",      this::deleteProject)
             .register("addPrerequisite",    this::addPrerequisite)
-            .register("removePrerequisite", this::removePrerequisite);
+            .register("removePrerequisite", this::removePrerequisite)
+            .register("addResource",        this::addResource);
     }
 
     private void addProject(Map<String, Object> args) throws Exception {
@@ -104,6 +107,14 @@ public final class NamDemoWiring {
         var blocked = findByTitle(str(args, "blocked"));
         var prereq  = findByTitle(str(args, "prereq"));
         service.removePrerequisite(blocked.getId(), prereq.getId());
+    }
+
+    private void addResource(Map<String, Object> args) throws Exception {
+        var node  = findByTitle(str(args, "title"));
+        var type  = ResourceType.valueOf(str(args, "type").toUpperCase());
+        var value = str(args, "value");
+        var desc  = args.containsKey("description") ? args.get("description").toString() : "";
+        service.addResource(node.getId(), new Resource(type, value, desc));
     }
 
     private NamNode findByTitle(String title) {
