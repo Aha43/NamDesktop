@@ -6,7 +6,25 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `add_resource` MCP tool now persists correctly: `MonitoringMode.diff()` now counts resource additions and modifications on existing nodes as a change, so the Checkpoint / Accept dialog triggers instead of silently discarding the external file. Closes #282.
+
+- Resources section in ActionDialog and ProjectDialog now starts expanded so the add form is immediately visible and Enter in the value field adds a resource instead of closing the dialog. The panel behind the dialog also refreshes in real time when a resource is added or removed.
+
 ### Added
+
+- Resource persistence round-trip test (`JsonWorkspaceRepositoryTest`).
+
+- MCP server: three resource tools — `list_resources`, `add_resource`, `remove_resource` — so Claude can read and manage attached resources via the MCP stdio server. Closes #279.
+
+- Paperclip indicator in all list views (Inbox, Next Actions, Backlog, Done, Context, Projects): a small paperclip icon appears in a fixed-width column when a node has attached resources. Closes #278.
+
+- ProjectDialog: collapsible Resources section — same behaviour as ActionDialog; shared implementation lives in NodeDialog. Closes #277.
+
+- ActionDialog: collapsible Resources section — collapsed by default when empty, auto-expanded when populated. Add-form with type selector (URI/EMAIL/FILE/TEXT), value, and optional note. Clicking a resource opens it (browser/mailto/file-manager/clipboard). Resources removed immediately with ✕. Closes #276.
+
+- Resources domain model: `ResourceType` enum (`TEXT | EMAIL | URI | FILE`), `Resource` class (`type`, `value`, `description`), `List<Resource>` on `NamNode` persisted via Jackson; `NamWorkspaceService.addResource` and `removeResource`. Closes #275.
 
 - Bulk action creation: the add-action dialog in Next Actions and Project Workbench now accepts multiple lines — each non-blank line creates a separate action. Single-line entry and "Create & Edit" work exactly as before. Closes #274.
 

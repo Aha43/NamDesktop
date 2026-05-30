@@ -26,6 +26,8 @@ public final class UiHelper {
 
     private static final Icon PENCIL_ICON = new FlatSVGIcon(
             UiHelper.class.getResource("/icons/pencil.svg")).derive(12, 12);
+    private static final Icon CLIP_ICON = new FlatSVGIcon(
+            UiHelper.class.getResource("/icons/paperclip.svg")).derive(12, 12);
     private static final Color BADGE_NEXT       = new Color(50, 150, 80);
     private static final Color BADGE_BACKLOG    = new Color(160, 120, 30);
     private static final Color BADGE_DONE_COLOR = new Color(110, 110, 110);
@@ -99,6 +101,20 @@ public final class UiHelper {
                 title.setForeground(dim ? BADGE_DONE_COLOR : fg);
                 title.setText(value != null ? value.toString() : "");
                 return cell;
+            }
+        };
+    }
+
+    public static TableCellRenderer paperclipRenderer() {
+        return new DefaultTableCellRenderer() {
+            { setHorizontalAlignment(SwingConstants.CENTER); }
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                super.getTableCellRendererComponent(t, null, sel, foc, row, col);
+                setIcon(Boolean.TRUE.equals(val) ? CLIP_ICON : null);
+                setToolTipText(Boolean.TRUE.equals(val) ? "Has resources" : null);
+                return this;
             }
         };
     }

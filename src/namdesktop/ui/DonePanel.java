@@ -94,6 +94,9 @@ public final class DonePanel extends JPanel {
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
+        table.getColumnModel().getColumn(3).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(3).setPreferredWidth(18);
+        table.getColumnModel().getColumn(3).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
 
         table.getSelectionModel().addListSelectionListener(e -> {
@@ -263,7 +266,7 @@ public final class DonePanel extends JPanel {
 
     private final class DoneTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Tags"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags", ""};
         private List<DoneItemRow> rows = List.of();
 
         void setRows(List<DoneItemRow> rows) { this.rows = rows; fireTableDataChanged(); }
@@ -297,13 +300,16 @@ public final class DonePanel extends JPanel {
                 case 2 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
+                case 3 -> r.hasResources();
                 default -> null;
             };
         }
 
         @Override
         public Class<?> getColumnClass(int col) {
-            return col == 2 ? String[].class : String.class;
+            if (col == 2) return String[].class;
+            if (col == 3) return Boolean.class;
+            return String.class;
         }
     }
 }

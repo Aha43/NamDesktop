@@ -74,8 +74,10 @@ public final class ActionDialog extends NodeDialog {
             southPanel.add(buildWouldUnblockSection(parent, nodeId, unblocks, workspace, service));
         }
 
+        southPanel.add(buildResourcesSection(nodeId, workspace, service));
+
         addBelowDescription(southPanel);
-        setSize(500, 520);
+        setSize(500, 620);
         setLocationRelativeTo(parent);
     }
 
@@ -241,6 +243,5 @@ public final class ActionDialog extends NodeDialog {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
-
 
 }

@@ -1,8 +1,11 @@
 package namdesktop.persist;
 
 import namdesktop.model.MissionControl;
+import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.ProjectTemplate;
+import namdesktop.model.Resource;
+import namdesktop.model.ResourceType;
 import namdesktop.model.TemplateNode;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -237,5 +240,27 @@ class JsonWorkspaceRepositoryTest {
         assertEquals("Actions", nextActions.getTitle());
         assertTrue(ws.getNode(ws.getRootNodeId()).orElseThrow()
                 .getChildIds().contains(ws.getNextActionsNodeId()));
+    }
+
+    @Test
+    void saveAndLoad_preservesResources(@TempDir Path dir) throws IOException {
+        var ws   = NamWorkspace.createDefault();
+        var node = new NamNode(UUID.randomUUID(), "Buy milk");
+        node.getResources().add(new Resource(ResourceType.URI,   "https://example.com", "Link"));
+        node.getResources().add(new Resource(ResourceType.TEXT,  "plain text note",     null));
+        ws.getNodes().put(node.getId(), node);
+
+        var file = dir.resolve("ws.json");
+        repo.save(file, ws);
+
+        var loaded = repo.load(file);
+        var reloaded = loaded.getNode(node.getId()).orElseThrow();
+        assertEquals(2, reloaded.getResources().size());
+        assertEquals(ResourceType.URI,  reloaded.getResources().get(0).getType());
+        assertEquals("https://example.com", reloaded.getResources().get(0).getValue());
+        assertEquals("Link",                reloaded.getResources().get(0).getDescription());
+        assertEquals(ResourceType.TEXT, reloaded.getResources().get(1).getType());
+        assertEquals("plain text note", reloaded.getResources().get(1).getValue());
+        assertNull(reloaded.getResources().get(1).getDescription());
     }
 }

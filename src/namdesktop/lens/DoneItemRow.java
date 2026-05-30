@@ -6,4 +6,5 @@ import java.util.UUID;
 public record DoneItemRow(UUID id, String title,
                           String parentTitle, UUID parentId,
                           String projectPath,
-                          List<String> tags, List<String> inheritedTags) {}
+                          List<String> tags, List<String> inheritedTags,
+                          boolean hasResources) {}

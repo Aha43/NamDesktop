@@ -37,7 +37,8 @@ public final class ContextLens {
                     var projectPath = parent != null ? buildProjectPath(workspace, parent.getId(), structural) : null;
                     return new ContextItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
-                            projectPath, List.copyOf(ownTags), inherited);
+                            projectPath, List.copyOf(ownTags), inherited,
+                            !n.getResources().isEmpty());
                 })
                 .toList();
     }

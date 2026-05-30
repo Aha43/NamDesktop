@@ -43,6 +43,9 @@ public final class InboxPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        table.getColumnModel().getColumn(1).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(1).setPreferredWidth(18);
+        table.getColumnModel().getColumn(1).setMaxWidth(18);
         table.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
@@ -255,7 +258,7 @@ public final class InboxPanel extends JPanel {
 
     private static final class InboxTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title"};
+        private static final String[] COLUMNS = {"Title", ""};
         private List<InboxItemRow> rows = List.of();
 
         void setRows(List<InboxItemRow> rows) {
@@ -270,10 +273,14 @@ public final class InboxPanel extends JPanel {
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
 
         @Override
+        public Class<?> getColumnClass(int col) { return col == 1 ? Boolean.class : String.class; }
+
+        @Override
         public Object getValueAt(int row, int col) {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
+                case 1 -> r.hasResources();
                 default -> null;
             };
         }
