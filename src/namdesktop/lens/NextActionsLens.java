@@ -32,7 +32,8 @@ public final class NextActionsLens {
                     return new NextActionItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
                             parent != null ? parent.getId() : null,
-                            isSubProject, projectPath, List.copyOf(ownTags), inherited);
+                            isSubProject, projectPath, List.copyOf(ownTags), inherited,
+                            !n.getResources().isEmpty());
                 })
                 .toList();
     }

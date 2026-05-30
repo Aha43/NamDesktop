@@ -29,7 +29,8 @@ public final class DoneLens {
                     return new DoneItemRow(n.getId(), n.getTitle(),
                             displayParent != null ? displayParent.getTitle() : null,
                             displayParent != null ? displayParent.getId()    : null,
-                            projectPath, List.copyOf(ownTags), inherited);
+                            projectPath, List.copyOf(ownTags), inherited,
+                            !n.getResources().isEmpty());
                 })
                 .toList();
     }

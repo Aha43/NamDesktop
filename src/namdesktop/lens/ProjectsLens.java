@@ -17,7 +17,7 @@ public final class ProjectsLens {
         var tagSet = filterTags.isEmpty() ? null : Set.copyOf(filterTags);
         return workspace.getChildren(projectsId).stream()
                 .filter(n -> tagSet == null || n.getTags().stream().anyMatch(tagSet::contains))
-                .map(n -> new ProjectItemRow(n.getId(), n.getTitle(), n.getStatus(), List.copyOf(n.getTags())))
+                .map(n -> new ProjectItemRow(n.getId(), n.getTitle(), n.getStatus(), List.copyOf(n.getTags()), !n.getResources().isEmpty()))
                 .toList();
     }
 }

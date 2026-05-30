@@ -39,6 +39,7 @@ ICONS=(
   settings
   inbox
   antenna
+  paperclip
 )
 
 mkdir -p "$ICONS_DIR"

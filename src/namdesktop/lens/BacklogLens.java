@@ -34,7 +34,8 @@ public final class BacklogLens {
                     return new BacklogItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             displayParent != null ? displayParent.getTitle() : null,
                             displayParent != null ? displayParent.getId() : null,
-                            isSubProject, projectPath, List.copyOf(ownTags), inherited);
+                            isSubProject, projectPath, List.copyOf(ownTags), inherited,
+                            !n.getResources().isEmpty());
                 })
                 .toList();
     }

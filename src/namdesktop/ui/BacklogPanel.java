@@ -212,6 +212,9 @@ public final class BacklogPanel extends JPanel {
         table.getColumnModel().getColumn(2).setPreferredWidth(110);
         table.getColumnModel().getColumn(3).setPreferredWidth(70);
         table.getColumnModel().getColumn(3).setMaxWidth(70);
+        table.getColumnModel().getColumn(4).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(4).setPreferredWidth(18);
+        table.getColumnModel().getColumn(4).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
@@ -349,7 +352,7 @@ public final class BacklogPanel extends JPanel {
 
     private final class BacklogTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status", ""};
         private List<BacklogItemRow> rows = List.of();
 
         void setRows(List<BacklogItemRow> rows) {
@@ -389,13 +392,16 @@ public final class BacklogPanel extends JPanel {
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
                 case 3 -> r.status();
+                case 4 -> r.hasResources();
                 default -> null;
             };
         }
 
         @Override
         public Class<?> getColumnClass(int col) {
-            return col == 2 ? String[].class : String.class;
+            if (col == 2) return String[].class;
+            if (col == 4) return Boolean.class;
+            return String.class;
         }
     }
 }

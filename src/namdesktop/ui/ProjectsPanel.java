@@ -53,6 +53,9 @@ public final class ProjectsPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
 
+        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(2).setPreferredWidth(18);
+        table.getColumnModel().getColumn(2).setMaxWidth(18);
         table.getColumn("Project").setCellRenderer(new TableCellRenderer() {
             private final JPanel cell   = new JPanel(new BorderLayout(4, 0));
             private final JLabel title  = new JLabel();
@@ -255,7 +258,7 @@ public final class ProjectsPanel extends JPanel {
 
     private final class ProjectsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Project", "Tags"};
+        private static final String[] COLUMNS = {"Project", "Tags", ""};
         private List<ProjectItemRow> rows = List.of();
 
         void setRows(List<ProjectItemRow> rows) {
@@ -285,11 +288,15 @@ public final class ProjectsPanel extends JPanel {
         }
 
         @Override
+        public Class<?> getColumnClass(int col) { return col == 2 ? Boolean.class : String.class; }
+
+        @Override
         public Object getValueAt(int row, int col) {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> String.join(", ", r.tags());
+                case 2 -> r.hasResources();
                 default -> null;
             };
         }

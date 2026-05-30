@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Paperclip indicator in all list views (Inbox, Next Actions, Backlog, Done, Context, Projects): a small paperclip icon appears in a fixed-width column when a node has attached resources. Closes #278.
+
 - ProjectDialog: collapsible Resources section — same behaviour as ActionDialog; shared implementation lives in NodeDialog. Closes #277.
 
 - ActionDialog: collapsible Resources section — collapsed by default when empty, auto-expanded when populated. Add-form with type selector (URI/EMAIL/FILE/TEXT), value, and optional note. Clicking a resource opens it (browser/mailto/file-manager/clipboard). Resources removed immediately with ✕. Closes #276.
