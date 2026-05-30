@@ -42,6 +42,11 @@ $Dependencies = @(
         Dir       = $LibDir
     },
     @{
+        File      = "jackson-datatype-jsr310-$JacksonVersion.jar"
+        GroupPath = "com/fasterxml/jackson/datatype/jackson-datatype-jsr310/$JacksonVersion"
+        Dir       = $LibDir
+    },
+    @{
         File      = "jsvg-$JsvgVersion.jar"
         GroupPath = "com/github/weisj/jsvg/$JsvgVersion"
         Dir       = $LibDir
