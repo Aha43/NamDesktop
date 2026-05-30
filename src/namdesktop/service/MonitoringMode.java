@@ -74,7 +74,7 @@ public final class MonitoringMode {
                 base.getRootNodeId(), base.getInboxNodeId(),
                 base.getProjectsNodeId(), base.getNextActionsNodeId());
 
-        int inboxAdded = 0, projectsCreated = 0, actionsAdded = 0, statusChanged = 0, deleted = 0;
+        int inboxAdded = 0, projectsCreated = 0, actionsAdded = 0, statusChanged = 0, deleted = 0, resourcesChanged = 0;
 
         for (var entry : external.getNodes().entrySet()) {
             var id      = entry.getKey();
@@ -91,8 +91,9 @@ public final class MonitoringMode {
                     else
                         actionsAdded++;
                 }
-            } else if (baseNode.getStatus() != extNode.getStatus()) {
-                statusChanged++;
+            } else {
+                if (baseNode.getStatus() != extNode.getStatus()) statusChanged++;
+                if (!baseNode.getResources().equals(extNode.getResources())) resourcesChanged++;
             }
         }
 
@@ -101,7 +102,7 @@ public final class MonitoringMode {
             if (!external.getNodes().containsKey(id)) deleted++;
         }
 
-        return new DiffSummary(inboxAdded, projectsCreated, actionsAdded, statusChanged, deleted);
+        return new DiffSummary(inboxAdded, projectsCreated, actionsAdded, statusChanged, deleted, resourcesChanged);
     }
 
     public sealed interface ExitResult {
@@ -111,20 +112,21 @@ public final class MonitoringMode {
     }
 
     public record DiffSummary(int inboxAdded, int projectsCreated, int actionsAdded,
-                               int statusChanged, int deleted) {
+                               int statusChanged, int deleted, int resourcesChanged) {
 
         public boolean isEmpty() {
             return inboxAdded == 0 && projectsCreated == 0 && actionsAdded == 0
-                    && statusChanged == 0 && deleted == 0;
+                    && statusChanged == 0 && deleted == 0 && resourcesChanged == 0;
         }
 
         public String describe() {
             var parts = new ArrayList<String>();
-            if (inboxAdded      > 0) parts.add(inboxAdded      + (inboxAdded      == 1 ? " item added to Inbox"    : " items added to Inbox"));
-            if (projectsCreated > 0) parts.add(projectsCreated + (projectsCreated == 1 ? " project created"        : " projects created"));
-            if (actionsAdded    > 0) parts.add(actionsAdded    + (actionsAdded    == 1 ? " action added"           : " actions added"));
-            if (statusChanged   > 0) parts.add(statusChanged   + (statusChanged   == 1 ? " status change"          : " status changes"));
-            if (deleted         > 0) parts.add(deleted         + (deleted         == 1 ? " item deleted"           : " items deleted"));
+            if (inboxAdded       > 0) parts.add(inboxAdded       + (inboxAdded       == 1 ? " item added to Inbox"    : " items added to Inbox"));
+            if (projectsCreated  > 0) parts.add(projectsCreated  + (projectsCreated  == 1 ? " project created"        : " projects created"));
+            if (actionsAdded     > 0) parts.add(actionsAdded     + (actionsAdded     == 1 ? " action added"           : " actions added"));
+            if (statusChanged    > 0) parts.add(statusChanged    + (statusChanged    == 1 ? " status change"          : " status changes"));
+            if (deleted          > 0) parts.add(deleted          + (deleted          == 1 ? " item deleted"           : " items deleted"));
+            if (resourcesChanged > 0) parts.add(resourcesChanged + (resourcesChanged == 1 ? " resource change"        : " resource changes"));
             return String.join(", ", parts);
         }
     }

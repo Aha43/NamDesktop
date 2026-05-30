@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- `add_resource` MCP tool now persists correctly: `MonitoringMode.diff()` now counts resource additions and modifications on existing nodes as a change, so the Checkpoint / Accept dialog triggers instead of silently discarding the external file. Closes #282.
+
 - Resources section in ActionDialog and ProjectDialog now starts expanded so the add form is immediately visible and Enter in the value field adds a resource instead of closing the dialog. The panel behind the dialog also refreshes in real time when a resource is added or removed.
 
 ### Added
