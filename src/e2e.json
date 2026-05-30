@@ -63,5 +63,11 @@
   {"action":"deleteProject",    "args":{"title":"Buy sunscreen"},                             "delayMs":50, "description":"Delete the prereq — blockedBy reference should be swept"},
   {"action":"assertNodeNotExists","args":{"title":"Buy sunscreen"},                           "delayMs":20},
   {"action":"assertNotBlocked", "args":{"title":"Pack suitcase"},                             "delayMs":20, "description":"After prereq deleted, Pack suitcase should be unblocked"},
-  {"action":"assertNodeCount",  "args":{"count":6},                                           "delayMs":20, "description":"Trip to Rome (Book flights + Book hotel) + Call dentist + Research options + Pack suitcase"}
+  {"action":"assertNodeCount",  "args":{"count":6},                                           "delayMs":20, "description":"Trip to Rome (Book flights + Book hotel) + Call dentist + Research options + Pack suitcase"},
+
+  {"action":"addResource",       "args":{"title":"Book hotel",  "type":"URI",  "value":"https://booking.com/rome", "description":"Hotel booking site"}, "delayMs":50, "description":"Attach a URI resource to an action"},
+  {"action":"addResource",       "args":{"title":"Book hotel",  "type":"TEXT", "value":"Confirmation: ABC123"},    "delayMs":50, "description":"Attach a text note to the same action"},
+  {"action":"assertHasResource", "args":{"title":"Book hotel",  "type":"URI",  "value":"https://booking.com/rome"},"delayMs":20, "description":"URI resource should be present"},
+  {"action":"assertHasResource", "args":{"title":"Book hotel",  "value":"Confirmation: ABC123"},                   "delayMs":20, "description":"Text resource should be present (type optional)"},
+  {"action":"assertResourceCount","args":{"title":"Book hotel", "count":2},                                         "delayMs":20, "description":"Action should have exactly 2 resources"}
 ]

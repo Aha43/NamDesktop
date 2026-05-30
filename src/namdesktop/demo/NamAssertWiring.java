@@ -2,6 +2,7 @@ package namdesktop.demo;
 
 import namdesktop.model.NodeStatus;
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.ResourceType;
 import namdesktop.service.NamWorkspaceService;
 import swingdemo.ScriptRunner;
 
@@ -34,7 +35,9 @@ public final class NamAssertWiring {
             .register("assertSavedViewExists", this::assertSavedViewExists)
             .register("assertNodeCount",       this::assertNodeCount)
             .register("assertIsBlocked",       this::assertIsBlocked)
-            .register("assertNotBlocked",      this::assertNotBlocked);
+            .register("assertNotBlocked",      this::assertNotBlocked)
+            .register("assertHasResource",     this::assertHasResource)
+            .register("assertResourceCount",   this::assertResourceCount);
     }
 
     private void assertNodeExists(Map<String, Object> args) {
@@ -118,6 +121,33 @@ public final class NamAssertWiring {
                 .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
         if (service.isBlocked(node.getId()))
             throw new IllegalStateException("Expected \"" + title + "\" to be unblocked but it is blocked");
+    }
+
+    private void assertHasResource(Map<String, Object> args) {
+        var title = str(args, "title");
+        var value = str(args, "value");
+        var type  = args.containsKey("type")
+                ? ResourceType.valueOf(str(args, "type").toUpperCase()) : null;
+        var node  = workspace.getNodes().values().stream()
+                .filter(n -> title.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
+        var found = node.getResources().stream()
+                .anyMatch(r -> value.equals(r.getValue()) && (type == null || type == r.getType()));
+        if (!found) throw new IllegalStateException(
+                "Node \"" + title + "\": expected resource with value \"" + value + "\" but resources were " + node.getResources());
+    }
+
+    private void assertResourceCount(Map<String, Object> args) {
+        var title    = str(args, "title");
+        var expected = ((Number) args.get("count")).intValue();
+        var node     = workspace.getNodes().values().stream()
+                .filter(n -> title.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
+        var actual = node.getResources().size();
+        if (actual != expected) throw new IllegalStateException(
+                "Node \"" + title + "\": expected " + expected + " resource(s) but found " + actual);
     }
 
     private static String str(Map<String, Object> args, String key) {
