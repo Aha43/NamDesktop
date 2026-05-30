@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `NamNode` timestamps: `createdAt`, `updatedAt`, `statusChangedAt` (all `LocalDateTime`, nullable). Set on creation and wired through all mutations and status transitions in `NamWorkspaceService`. Serialised as ISO-8601 strings via Jackson (`jackson-datatype-jsr310`). Existing JSON files without these fields deserialise cleanly with `null`. Closes #283.
+
 ### Fixed
 
 - `add_resource` MCP tool now persists correctly: `MonitoringMode.diff()` now counts resource additions and modifications on existing nodes as a change, so the Checkpoint / Accept dialog triggers instead of silently discarding the external file. Closes #282.

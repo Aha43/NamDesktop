@@ -1,5 +1,6 @@
 package namdesktop.model;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -15,6 +16,9 @@ public final class NamNode {
     private List<String> tags    = new ArrayList<>();
     private List<UUID> blockedBy   = new ArrayList<>();
     private List<Resource> resources = new ArrayList<>();
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+    private LocalDateTime statusChangedAt;
 
     public NamNode() {}
 
@@ -49,6 +53,15 @@ public final class NamNode {
 
     public List<Resource> getResources() { return resources; }
     public void setResources(List<Resource> resources) { this.resources = resources != null ? resources : new ArrayList<>(); }
+
+    public LocalDateTime getCreatedAt()                    { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt)      { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt()                    { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt)      { this.updatedAt = updatedAt; }
+
+    public LocalDateTime getStatusChangedAt()              { return statusChangedAt; }
+    public void setStatusChangedAt(LocalDateTime t)        { this.statusChangedAt = t; }
 
     @Override
     public String toString() { return title; }
