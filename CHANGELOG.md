@@ -6,7 +6,13 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Resources section in ActionDialog and ProjectDialog now starts expanded so the add form is immediately visible and Enter in the value field adds a resource instead of closing the dialog. The panel behind the dialog also refreshes in real time when a resource is added or removed.
+
 ### Added
+
+- Resource persistence round-trip test (`JsonWorkspaceRepositoryTest`).
 
 - Paperclip indicator in all list views (Inbox, Next Actions, Backlog, Done, Context, Projects): a small paperclip icon appears in a fixed-width column when a node has attached resources. Closes #278.
 

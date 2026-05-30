@@ -77,7 +77,7 @@ public final class ActionDialog extends NodeDialog {
         southPanel.add(buildResourcesSection(nodeId, workspace, service));
 
         addBelowDescription(southPanel);
-        setSize(500, 560);
+        setSize(500, 620);
         setLocationRelativeTo(parent);
     }
 

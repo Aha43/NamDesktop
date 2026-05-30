@@ -269,7 +269,7 @@ public class NodeDialog extends JDialog {
                 removeBtn.setMargin(new Insets(0, 4, 0, 4));
                 removeBtn.setToolTipText("Remove resource");
                 removeBtn.addActionListener(e -> {
-                    try { service.removeResource(nodeId, idx); rebuildList[0].run(); }
+                    try { service.removeResource(nodeId, idx); rebuildList[0].run(); notifyChanged(); }
                     catch (IOException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); }
                 });
 
@@ -298,13 +298,17 @@ public class NodeDialog extends JDialog {
                 valueField.setText("");
                 descField.setText("");
                 rebuildList[0].run();
+                notifyChanged();
             } catch (IOException ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
         valueField.addActionListener(e -> addBtn.doClick());
 
+        var addLabel = new JLabel("Add:");
+        addLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         var addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        addRow.add(addLabel);
         addRow.add(typeCombo);
         addRow.add(valueField);
         addRow.add(new JLabel("Note:"));
@@ -318,8 +322,7 @@ public class NodeDialog extends JDialog {
         content.add(addRow, BorderLayout.NORTH);
         content.add(scroll, BorderLayout.CENTER);
 
-        var initialCount = workspace.getNode(nodeId).map(n -> n.getResources().size()).orElse(0);
-        content.setVisible(initialCount > 0);
+        content.setVisible(true);
 
         var headerBtn = new JButton();
         headerBtn.setBorderPainted(false);
@@ -332,7 +335,12 @@ public class NodeDialog extends JDialog {
             headerBtn.setText((content.isVisible() ? "▼" : "▶") + " Resources" + (count > 0 ? " (" + count + ")" : ""));
         };
         updateHeader.run();
-        headerBtn.addActionListener(e -> { content.setVisible(!content.isVisible()); updateHeader.run(); });
+        headerBtn.addActionListener(e -> {
+            content.setVisible(!content.isVisible());
+            updateHeader.run();
+            outer.revalidate();
+            outer.repaint();
+        });
         var origRebuild = rebuildList[0];
         rebuildList[0] = () -> { origRebuild.run(); updateHeader.run(); };
 

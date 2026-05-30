@@ -41,7 +41,7 @@ public final class ProjectDialog extends NodeDialog {
         southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
         southPanel.add(buildResourcesSection(nodeId, workspace, service));
         addBelowDescription(southPanel);
-        setSize(500, 420);
+        setSize(500, 460);
     }
 
     private void saveAsTemplate() {
