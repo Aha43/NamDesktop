@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+  
+  <defs>
+    <linearGradient id="tileSheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#474A4C"></stop>
+      <stop offset="1" stop-color="#393C3E"></stop>
+    </linearGradient>
+  </defs>
+  <rect x="4" y="4" width="248" height="248" rx="56" fill="url(#tileSheen)" stroke="#595C5E" stroke-width="2"></rect>
+  <g transform="translate(0 6) scale(0.86) translate(20 18)">
+    <g stroke="#DDDDDD" stroke-width="11" stroke-linecap="round" opacity="0.42">
+      <path d="M128 74 L84 182"></path>
+      <path d="M128 74 L172 182"></path>
+    </g>
+    <g fill="none" stroke="#3FA463" stroke-width="7" stroke-linecap="round">
+      <path d="M130.6 44.1 A30 30 0 0 1 157.5 68.8" opacity="0.6"></path>
+      <path d="M131.7 32.2 A42 42 0 0 1 169.4 66.7" opacity="0.32"></path>
+    </g>
+    <circle cx="128" cy="74" r="18" fill="#DDDDDD"></circle>
+    <circle cx="84" cy="182" r="18" fill="#DDDDDD"></circle>
+    <circle cx="172" cy="182" r="27" fill="#3FA463"></circle>
+    <path d="M159 183 l9 9 l18 -21" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+</svg>

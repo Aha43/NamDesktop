@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.app.AppInfo;
 
 import javax.swing.*;
@@ -11,9 +12,9 @@ public final class AboutDialog extends JDialog {
     public AboutDialog(Window owner) {
         super(owner, "About " + AppInfo.NAME, ModalityType.APPLICATION_MODAL);
 
-        var nameLabel = new JLabel(AppInfo.NAME);
-        nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD, 18f));
-        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        var wordmarkIcon  = new FlatSVGIcon(AboutDialog.class.getResource("/icons/logo-wordmark.svg")).derive(200, 60);
+        var wordmarkLabel = new JLabel(wordmarkIcon);
+        wordmarkLabel.setHorizontalAlignment(SwingConstants.CENTER);
 
         var versionLabel = new JLabel("Version " + AppInfo.version());
         versionLabel.setFont(versionLabel.getFont().deriveFont(12f));
@@ -23,9 +24,9 @@ public final class AboutDialog extends JDialog {
         var content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setBorder(new EmptyBorder(32, 48, 24, 48));
-        nameLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        wordmarkLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
         versionLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        content.add(nameLabel);
+        content.add(wordmarkLabel);
         content.add(Box.createVerticalStrut(6));
         content.add(versionLabel);
         content.add(Box.createVerticalStrut(24));

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="200" viewBox="0 0 660 200" fill="none">
+  
+  <g transform="translate(24 30)">
+    <rect x="0" y="0" width="140" height="140" rx="31" fill="#3F4244" stroke="#595C5E" stroke-width="1.5"></rect>
+    <g transform="translate(8 10) scale(0.47)">
+      <g stroke="#DDDDDD" stroke-width="11" stroke-linecap="round" opacity="0.42">
+        <path d="M128 74 L84 182"></path>
+        <path d="M128 74 L172 182"></path>
+      </g>
+      <g fill="none" stroke="#3FA463" stroke-width="7" stroke-linecap="round">
+        <path d="M130.6 44.1 A30 30 0 0 1 157.5 68.8" opacity="0.6"></path>
+        <path d="M131.7 32.2 A42 42 0 0 1 169.4 66.7" opacity="0.32"></path>
+      </g>
+      <circle cx="128" cy="74" r="18" fill="#DDDDDD"></circle>
+      <circle cx="84" cy="182" r="18" fill="#DDDDDD"></circle>
+      <circle cx="172" cy="182" r="27" fill="#3FA463"></circle>
+      <path d="M159 183 l9 9 l18 -21" fill="none" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"></path>
+    </g>
+  </g>
+  <text x="196" y="118" font-family="-apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, system-ui, sans-serif" font-size="94" font-weight="700" letter-spacing="-2" fill="#E8E8E6">NAM</text>
+  <text x="200" y="156" font-family="-apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, system-ui, sans-serif" font-size="20" font-weight="600" letter-spacing="6.5" fill="#9A9D9F">NEXT ACTION MASTER</text>
+</svg>
