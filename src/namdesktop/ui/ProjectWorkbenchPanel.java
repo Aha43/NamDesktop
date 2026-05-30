@@ -515,32 +515,43 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private void showAddActionDialog(UUID targetProjectId, UUID beforeId) {
-        var titleField = new JTextField(24);
-        titleField.addHierarchyListener(e -> {
-            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0
-                    && titleField.isShowing())
-                SwingUtilities.invokeLater(titleField::requestFocusInWindow);
+        var area = new JTextArea(5, 24);
+        area.setLineWrap(true);
+        area.setWrapStyleWord(true);
+        area.addHierarchyListener(e -> {
+            if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && area.isShowing())
+                SwingUtilities.invokeLater(area::requestFocusInWindow);
         });
         var panel = new JPanel(new BorderLayout(0, 4));
-        panel.add(new JLabel("Action title:"), BorderLayout.NORTH);
-        panel.add(titleField, BorderLayout.CENTER);
+        panel.add(new JLabel("Action title(s) — one per line:"), BorderLayout.NORTH);
+        panel.add(new JScrollPane(area), BorderLayout.CENTER);
 
         var options = new Object[]{"Create & Edit", "Create", "Cancel"};
-        var result  = JOptionPane.showOptionDialog(parent, panel, "Add action",
+        var choice  = JOptionPane.showOptionDialog(parent, panel, "Add action",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE,
                 null, options, options[1]);
 
-        if (result == 2 || result < 0) return;
-        var title = titleField.getText().strip();
-        if (title.isBlank()) return;
+        if (choice == 2 || choice < 0) return;
+        var lines = area.getText().lines().map(String::strip).filter(s -> !s.isBlank()).toList();
+        if (lines.isEmpty()) return;
 
         try {
-            var newId = beforeId != null
-                    ? service.insertChildBefore(targetProjectId, beforeId, title)
-                    : service.addChild(targetProjectId, title);
+            UUID lastId = null;
+            UUID insertBefore = beforeId;
+            // When inserting before a selected item, reverse so typed order is preserved
+            var ordered = new java.util.ArrayList<>(lines);
+            if (insertBefore != null) java.util.Collections.reverse(ordered);
+            for (var line : ordered) {
+                if (insertBefore != null) {
+                    lastId = service.insertChildBefore(targetProjectId, insertBefore, line);
+                    insertBefore = lastId;
+                } else {
+                    lastId = service.addChild(targetProjectId, line);
+                }
+            }
             rebuild();
-            if (result == 0)
-                new ActionDialog(parent, newId, workspace, service, true, this::rebuild).setVisible(true);
+            if (choice == 0 && lines.size() == 1 && lastId != null)
+                new ActionDialog(parent, lastId, workspace, service, true, this::rebuild).setVisible(true);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(parent, "Failed to save: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);

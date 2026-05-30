@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Bulk action creation: the add-action dialog in Next Actions and Project Workbench now accepts multiple lines — each non-blank line creates a separate action. Single-line entry and "Create & Edit" work exactly as before. Closes #274.
+
 - Keyboard shortcuts reference dialog: `Help › Keyboard Shortcuts…` (`Cmd+/`) opens a sectioned two-column dialog listing all shortcuts with badge-styled keys. Works on macOS (`⌘⇧`) and Windows (`Ctrl+Shift+`). Closes #272.
 
 - Keyboard shortcuts: `Cmd+1…5` jump directly to Inbox, Next Actions, Backlog, Projects, and Done from anywhere in the app. Wired as View menu accelerators. Closes #245.
