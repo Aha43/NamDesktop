@@ -752,13 +752,18 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private static final Icon WB_PENCIL_ICON = new FlatSVGIcon(
             ProjectWorkbenchPanel.class.getResource("/icons/pencil.svg")).derive(12, 12);
+    private static final Icon WB_CLIP_ICON = new FlatSVGIcon(
+            ProjectWorkbenchPanel.class.getResource("/icons/paperclip.svg")).derive(12, 12);
     private static final int PENCIL_WIDTH = UiHelper.ACTION_PENCIL_W;
+    private static final int CLIP_WIDTH   = 16;
 
     private static final class ActionCellRenderer implements ListCellRenderer<NamNode> {
-        private final JPanel panel  = new JPanel(new BorderLayout(6, 0));
-        private final JLabel badge  = new JLabel("", SwingConstants.CENTER);
-        private final JLabel label  = new JLabel();
-        private final JLabel pencil = new JLabel(WB_PENCIL_ICON);
+        private final JPanel panel     = new JPanel(new BorderLayout(6, 0));
+        private final JLabel badge     = new JLabel("", SwingConstants.CENTER);
+        private final JLabel label     = new JLabel();
+        private final JLabel clip      = new JLabel();
+        private final JLabel pencil    = new JLabel(WB_PENCIL_ICON);
+        private final JPanel east      = new JPanel(new BorderLayout());
 
         ActionCellRenderer() {
             badge.setOpaque(true);
@@ -766,12 +771,18 @@ public final class ProjectWorkbenchPanel extends JPanel {
             badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
             badge.setPreferredSize(new Dimension(BADGE_WIDTH, 0));
             badge.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
+            clip.setOpaque(false);
+            clip.setPreferredSize(new Dimension(CLIP_WIDTH, 0));
+            clip.setHorizontalAlignment(SwingConstants.CENTER);
             pencil.setOpaque(false);
             pencil.setPreferredSize(new Dimension(PENCIL_WIDTH, 0));
             pencil.setHorizontalAlignment(SwingConstants.CENTER);
+            east.setOpaque(false);
+            east.add(clip,   BorderLayout.CENTER);
+            east.add(pencil, BorderLayout.EAST);
             panel.add(badge,  BorderLayout.WEST);
             panel.add(label,  BorderLayout.CENTER);
-            panel.add(pencil, BorderLayout.EAST);
+            panel.add(east,   BorderLayout.EAST);
             panel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
         }
 
@@ -787,6 +798,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
             });
             var bg = isSelected ? list.getSelectionBackground() : list.getBackground();
             panel.setBackground(bg);
+            east.setBackground(bg);
             badge.setBackground(bg);
             badge.setForeground(isSelected ? list.getSelectionForeground() : switch (status) {
                 case NEXT    -> BADGE_NEXT;
@@ -796,6 +808,9 @@ public final class ProjectWorkbenchPanel extends JPanel {
             label.setText(node.getTitle());
             label.setForeground(isSelected ? list.getSelectionForeground()
                                            : status == NodeStatus.DONE ? Color.GRAY : list.getForeground());
+            var hasRes = !node.getResources().isEmpty();
+            clip.setIcon(hasRes ? WB_CLIP_ICON : null);
+            clip.setToolTipText(hasRes ? "Has resources" : null);
             return panel;
         }
     }
