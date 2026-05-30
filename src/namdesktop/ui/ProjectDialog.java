@@ -37,7 +37,11 @@ public final class ProjectDialog extends NodeDialog {
         saveTemplateButton.addActionListener(e -> saveAsTemplate());
         addToolbarButton(saveTemplateButton);
 
-        setSize(500, 350);
+        var southPanel = new JPanel();
+        southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
+        southPanel.add(buildResourcesSection(nodeId, workspace, service));
+        addBelowDescription(southPanel);
+        setSize(500, 420);
     }
 
     private void saveAsTemplate() {

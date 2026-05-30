@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- ProjectDialog: collapsible Resources section — same behaviour as ActionDialog; shared implementation lives in NodeDialog. Closes #277.
+
 - ActionDialog: collapsible Resources section — collapsed by default when empty, auto-expanded when populated. Add-form with type selector (URI/EMAIL/FILE/TEXT), value, and optional note. Clicking a resource opens it (browser/mailto/file-manager/clipboard). Resources removed immediately with ✕. Closes #276.
 
 - Resources domain model: `ResourceType` enum (`TEXT | EMAIL | URI | FILE`), `Resource` class (`type`, `value`, `description`), `List<Resource>` on `NamNode` persisted via Jackson; `NamWorkspaceService.addResource` and `removeResource`. Closes #275.

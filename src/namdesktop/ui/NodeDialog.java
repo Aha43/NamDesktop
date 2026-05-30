@@ -2,8 +2,11 @@ package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.ui.UiHelper;
+import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
+import namdesktop.model.Resource;
+import namdesktop.model.ResourceType;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -222,5 +225,141 @@ public class NodeDialog extends JDialog {
 
     protected void addBelowDescription(JComponent component) {
         centre.add(component, BorderLayout.SOUTH);
+    }
+
+    protected JComponent buildResourcesSection(UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
+        var outer = new JPanel(new BorderLayout());
+        outer.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+
+        var listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+
+        var typeCombo  = new JComboBox<>(ResourceType.values());
+        typeCombo.setSelectedItem(ResourceType.URI);
+        var valueField = new JTextField(18);
+        var descField  = new JTextField(10);
+        descField.setToolTipText("Optional note (shown as tooltip)");
+
+        var content = new JPanel(new BorderLayout(0, 2));
+        content.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 4));
+
+        Runnable[] rebuildList = {null};
+        rebuildList[0] = () -> {
+            listPanel.removeAll();
+            var resources = workspace.getNode(nodeId).map(NamNode::getResources).orElse(List.of());
+            for (int i = 0; i < resources.size(); i++) {
+                final int idx = i;
+                var res = resources.get(i);
+                var typeLabel = new JLabel(res.getType().name());
+                typeLabel.setFont(typeLabel.getFont().deriveFont(Font.PLAIN, 10f));
+                typeLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+                typeLabel.setPreferredSize(new Dimension(40, 0));
+
+                var valueBtn = new JButton("<html><u>" + escapeHtml(res.getValue()) + "</u></html>");
+                valueBtn.setBorderPainted(false);
+                valueBtn.setContentAreaFilled(false);
+                valueBtn.setFocusPainted(false);
+                valueBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+                if (res.getDescription() != null && !res.getDescription().isBlank())
+                    valueBtn.setToolTipText(res.getDescription());
+                valueBtn.addActionListener(e -> openResource(res));
+
+                var removeBtn = new JButton("×");
+                removeBtn.setFont(removeBtn.getFont().deriveFont(Font.BOLD));
+                removeBtn.setMargin(new Insets(0, 4, 0, 4));
+                removeBtn.setToolTipText("Remove resource");
+                removeBtn.addActionListener(e -> {
+                    try { service.removeResource(nodeId, idx); rebuildList[0].run(); }
+                    catch (IOException ex) { JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE); }
+                });
+
+                var row = new JPanel(new BorderLayout(4, 0));
+                row.setBorder(BorderFactory.createEmptyBorder(1, 0, 1, 0));
+                row.add(typeLabel,  BorderLayout.WEST);
+                row.add(valueBtn,   BorderLayout.CENTER);
+                row.add(removeBtn,  BorderLayout.EAST);
+                row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+                listPanel.add(row);
+            }
+            listPanel.revalidate();
+            listPanel.repaint();
+        };
+        rebuildList[0].run();
+
+        var addBtn = new JButton("Add");
+        addBtn.addActionListener(e -> {
+            var value = valueField.getText().strip();
+            if (value.isBlank()) return;
+            var desc = descField.getText().strip();
+            try {
+                service.addResource(nodeId, new Resource(
+                        (ResourceType) typeCombo.getSelectedItem(), value,
+                        desc.isEmpty() ? null : desc));
+                valueField.setText("");
+                descField.setText("");
+                rebuildList[0].run();
+            } catch (IOException ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+        valueField.addActionListener(e -> addBtn.doClick());
+
+        var addRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        addRow.add(typeCombo);
+        addRow.add(valueField);
+        addRow.add(new JLabel("Note:"));
+        addRow.add(descField);
+        addRow.add(addBtn);
+
+        var scroll = new JScrollPane(listPanel);
+        scroll.setBorder(null);
+        scroll.setPreferredSize(new Dimension(0, 72));
+
+        content.add(addRow, BorderLayout.NORTH);
+        content.add(scroll, BorderLayout.CENTER);
+
+        var initialCount = workspace.getNode(nodeId).map(n -> n.getResources().size()).orElse(0);
+        content.setVisible(initialCount > 0);
+
+        var headerBtn = new JButton();
+        headerBtn.setBorderPainted(false);
+        headerBtn.setContentAreaFilled(false);
+        headerBtn.setHorizontalAlignment(SwingConstants.LEFT);
+        headerBtn.setFont(headerBtn.getFont().deriveFont(Font.BOLD));
+        headerBtn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        Runnable updateHeader = () -> {
+            var count = workspace.getNode(nodeId).map(n -> n.getResources().size()).orElse(0);
+            headerBtn.setText((content.isVisible() ? "▼" : "▶") + " Resources" + (count > 0 ? " (" + count + ")" : ""));
+        };
+        updateHeader.run();
+        headerBtn.addActionListener(e -> { content.setVisible(!content.isVisible()); updateHeader.run(); });
+        var origRebuild = rebuildList[0];
+        rebuildList[0] = () -> { origRebuild.run(); updateHeader.run(); };
+
+        outer.add(headerBtn, BorderLayout.NORTH);
+        outer.add(content,   BorderLayout.CENTER);
+        return outer;
+    }
+
+    protected void openResource(Resource res) {
+        try {
+            var desktop = Desktop.isDesktopSupported() ? Desktop.getDesktop() : null;
+            switch (res.getType()) {
+                case URI   -> { if (desktop != null) desktop.browse(new java.net.URI(res.getValue())); }
+                case EMAIL -> { if (desktop != null) desktop.mail(new java.net.URI("mailto:" + res.getValue())); }
+                case FILE  -> { if (desktop != null) desktop.open(new java.io.File(res.getValue())); }
+                case TEXT  -> {
+                    var sel = new java.awt.datatransfer.StringSelection(res.getValue());
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(sel, null);
+                    MainFrame.showNudge("Copied to clipboard");
+                }
+            }
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Could not open: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    protected static String escapeHtml(String s) {
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
     }
 }
