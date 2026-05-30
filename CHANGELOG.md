@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Resources domain model: `ResourceType` enum (`TEXT | EMAIL | URI | FILE`), `Resource` class (`type`, `value`, `description`), `List<Resource>` on `NamNode` persisted via Jackson; `NamWorkspaceService.addResource` and `removeResource`. Closes #275.
+
 - Bulk action creation: the add-action dialog in Next Actions and Project Workbench now accepts multiple lines — each non-blank line creates a separate action. Single-line entry and "Create & Edit" work exactly as before. Closes #274.
 
 - Keyboard shortcuts reference dialog: `Help › Keyboard Shortcuts…` (`Cmd+/`) opens a sectioned two-column dialog listing all shortcuts with badge-styled keys. Works on macOS (`⌘⇧`) and Windows (`Ctrl+Shift+`). Closes #272.

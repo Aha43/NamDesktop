@@ -5,6 +5,7 @@ import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.NodeStatus;
 import namdesktop.model.ProjectTemplate;
+import namdesktop.model.Resource;
 import namdesktop.model.TemplateNode;
 import namdesktop.persist.WorkspaceRepository;
 
@@ -467,6 +468,19 @@ public final class NamWorkspaceService {
         ids.set(idx, ids.get(idx + 1));
         ids.set(idx + 1, nodeId);
         repository.save(path, workspace);
+    }
+
+    public void addResource(UUID nodeId, Resource resource) throws IOException {
+        require(nodeId).getResources().add(resource);
+        repository.save(path, workspace);
+    }
+
+    public void removeResource(UUID nodeId, int index) throws IOException {
+        var resources = require(nodeId).getResources();
+        if (index >= 0 && index < resources.size()) {
+            resources.remove(index);
+            repository.save(path, workspace);
+        }
     }
 
     private NamNode require(UUID nodeId) {

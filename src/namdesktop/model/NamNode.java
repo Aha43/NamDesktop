@@ -13,7 +13,8 @@ public final class NamNode {
     private boolean project = false;
     private List<UUID> childIds  = new ArrayList<>();
     private List<String> tags    = new ArrayList<>();
-    private List<UUID> blockedBy = new ArrayList<>();
+    private List<UUID> blockedBy   = new ArrayList<>();
+    private List<Resource> resources = new ArrayList<>();
 
     public NamNode() {}
 
@@ -45,6 +46,9 @@ public final class NamNode {
 
     public List<UUID> getBlockedBy() { return blockedBy; }
     public void setBlockedBy(List<UUID> blockedBy) { this.blockedBy = blockedBy != null ? blockedBy : new ArrayList<>(); }
+
+    public List<Resource> getResources() { return resources; }
+    public void setResources(List<Resource> resources) { this.resources = resources != null ? resources : new ArrayList<>(); }
 
     @Override
     public String toString() { return title; }
