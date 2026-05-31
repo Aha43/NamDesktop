@@ -6,6 +6,9 @@ import namdesktop.app.AppInfo;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.net.URI;
 
 public final class AboutDialog extends JDialog {
 
@@ -30,6 +33,29 @@ public final class AboutDialog extends JDialog {
         content.add(Box.createVerticalStrut(6));
         content.add(versionLabel);
         content.add(Box.createVerticalStrut(24));
+
+        var repoLabel = new JLabel("<html><a href=''>GitHub repository</a></html>");
+        repoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        repoLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        repoLabel.setToolTipText(AppInfo.REPO_URL);
+        repoLabel.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                try { Desktop.getDesktop().browse(new URI(AppInfo.REPO_URL)); } catch (Exception ignored) {}
+            }
+        });
+        content.add(repoLabel);
+        content.add(Box.createVerticalStrut(4));
+
+        var repoUrlField = new JTextField(AppInfo.REPO_URL);
+        repoUrlField.setEditable(false);
+        repoUrlField.setFont(repoUrlField.getFont().deriveFont(10f));
+        repoUrlField.setForeground(UIManager.getColor("Label.disabledForeground"));
+        repoUrlField.setBorder(null);
+        repoUrlField.setBackground(UIManager.getColor("Panel.background"));
+        repoUrlField.setHorizontalAlignment(JTextField.CENTER);
+        repoUrlField.setAlignmentX(Component.CENTER_ALIGNMENT);
+        content.add(repoUrlField);
+        content.add(Box.createVerticalStrut(16));
 
         var closeButton = new JButton("Close");
         closeButton.setAlignmentX(Component.CENTER_ALIGNMENT);

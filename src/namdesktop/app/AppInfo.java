@@ -4,7 +4,8 @@ import java.io.InputStream;
 
 public final class AppInfo {
 
-    public static final String NAME = "NamDesktop";
+    public static final String NAME     = "NamDesktop";
+    public static final String REPO_URL = "https://github.com/Aha43/NamDesktop";
 
     private AppInfo() {}
 
