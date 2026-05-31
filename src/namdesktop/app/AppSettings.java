@@ -31,6 +31,7 @@ public final class AppSettings {
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
     private boolean welcomed         = false;
+    private boolean backlogFreeOnly  = true;
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -52,6 +53,8 @@ public final class AppSettings {
     public void    setLastProjectId(String v)        { this.lastProjectId = v; }
     public boolean isWelcomed()                      { return welcomed; }
     public void    setWelcomed(boolean v)            { this.welcomed = v; }
+    public boolean isBacklogFreeOnly()               { return backlogFreeOnly; }
+    public void    setBacklogFreeOnly(boolean v)     { this.backlogFreeOnly = v; }
 
     public static AppSettings load() {
         try {
@@ -68,6 +71,7 @@ public final class AppSettings {
                 s.setLastNavId(dto.lastNavId);
                 s.setLastProjectId(dto.lastProjectId);
                 s.setWelcomed(dto.welcomed != null && dto.welcomed);
+                s.setBacklogFreeOnly(dto.backlogFreeOnly == null || dto.backlogFreeOnly);
                 return s;
             }
         } catch (Exception e) {
@@ -89,6 +93,7 @@ public final class AppSettings {
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
         dto.welcomed         = this.welcomed;
+        dto.backlogFreeOnly  = this.backlogFreeOnly;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -104,5 +109,6 @@ public final class AppSettings {
         public String  lastNavId;
         public String  lastProjectId;
         public Boolean welcomed;
+        public Boolean backlogFreeOnly;
     }
 }

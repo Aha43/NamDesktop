@@ -17,7 +17,11 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -41,6 +45,9 @@ public final class BacklogPanel extends JPanel {
     private boolean statusColumnVisible = true;
     private MoonCardPanel moonCardPanel;
     private boolean showBlocked = false;
+    private boolean freeOnly;
+    private final JPanel filterStrip;
+    private final Set<UUID> selectedProjects = new HashSet<>();
 
     public BacklogPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -48,6 +55,8 @@ public final class BacklogPanel extends JPanel {
         this.service       = service;
         this.onOpenProject = onOpenProject;
         this.tableModel    = new BacklogTableModel();
+        this.freeOnly      = AppSettings.getInstance().isBacklogFreeOnly();
+        this.filterStrip   = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 2));
 
         upButton   = UiHelper.iconButton("Move up",
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
@@ -66,6 +75,21 @@ public final class BacklogPanel extends JPanel {
                 new FlatSVGIcon(BacklogPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
         moonButton.setToolTipText("Work through this list one action at a time");
         moonButton.addActionListener(e -> enterDeckMode());
+
+        var listIcon      = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/layout-list.svg")).derive(16, 16);
+        var dashboardIcon = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16);
+        var freeOnlyBtn   = new JToggleButton(freeOnly ? listIcon : dashboardIcon);
+        freeOnlyBtn.setSelected(freeOnly);
+        freeOnlyBtn.setToolTipText(freeOnly ? "Free actions only — click to show all" : "All backlog actions — click to show free only");
+        freeOnlyBtn.addActionListener(e -> {
+            freeOnly = freeOnlyBtn.isSelected();
+            freeOnlyBtn.setIcon(freeOnly ? listIcon : dashboardIcon);
+            freeOnlyBtn.setToolTipText(freeOnly ? "Free actions only — click to show all" : "All backlog actions — click to show free only");
+            selectedProjects.clear();
+            AppSettings.getInstance().setBacklogFreeOnly(freeOnly);
+            try { AppSettings.getInstance().save(); } catch (java.io.IOException ignored) {}
+            refresh();
+        });
 
         var lockIcon     = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
         var lockOpenIcon = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock-open.svg")).derive(16, 16);
@@ -86,9 +110,15 @@ public final class BacklogPanel extends JPanel {
         toolbar.add(upButton);
         toolbar.add(downButton);
         toolbar.add(Box.createHorizontalGlue());
+        toolbar.add(freeOnlyBtn);
         toolbar.add(showBlockedBtn);
         toolbar.add(moonButton);
-        add(toolbar, BorderLayout.NORTH);
+
+        var north = new JPanel(new BorderLayout());
+        north.add(toolbar, BorderLayout.NORTH);
+        north.add(filterStrip, BorderLayout.CENTER);
+        filterStrip.setVisible(!freeOnly);
+        add(north, BorderLayout.NORTH);
 
         table = new JTable(tableModel) {
             @Override
@@ -258,9 +288,21 @@ public final class BacklogPanel extends JPanel {
         var ordered   = service.getViewOrder(NamWorkspaceService.VIEW_BACKLOG, liveNodes);
         currentOrder  = ordered.stream().map(NamNode::getId).toList();
         var rowById   = liveRows.stream().collect(Collectors.toMap(BacklogItemRow::id, r -> r));
-        var displayIds = showBlocked
-                ? currentOrder
-                : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
+
+        rebuildFilterStrip(liveRows, rowById);
+
+        var displayIds = currentOrder.stream()
+                .filter(id -> showBlocked || !service.isBlocked(id))
+                .filter(id -> {
+                    var row = rowById.get(id);
+                    if (freeOnly) return row.parentId() == null;
+                    if (!selectedProjects.isEmpty()) {
+                        var topLevel = topLevelProjectOf(id);
+                        return topLevel != null && selectedProjects.contains(topLevel);
+                    }
+                    return true;
+                })
+                .toList();
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
         if (moonCardPanel == null)
             deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
@@ -274,6 +316,51 @@ public final class BacklogPanel extends JPanel {
                 }
             }
         }
+    }
+
+    private void rebuildFilterStrip(List<BacklogItemRow> liveRows, Map<UUID, BacklogItemRow> rowById) {
+        filterStrip.setVisible(!freeOnly);
+        if (freeOnly) { filterStrip.revalidate(); filterStrip.repaint(); return; }
+
+        var projectsNodeId = workspace.getProjectsNodeId();
+        Map<UUID, String> topProjects = new LinkedHashMap<>();
+        for (var id : currentOrder) {
+            var row = rowById.get(id);
+            if (row.parentId() == null) continue;
+            var top = topLevelProjectOf(id);
+            if (top != null && !topProjects.containsKey(top))
+                workspace.getNode(top).ifPresent(n -> topProjects.put(top, n.getTitle()));
+        }
+
+        filterStrip.removeAll();
+        selectedProjects.retainAll(topProjects.keySet());
+        for (var entry : topProjects.entrySet()) {
+            var id    = entry.getKey();
+            var chip  = new JToggleButton(entry.getValue());
+            chip.setSelected(selectedProjects.contains(id));
+            chip.setFont(chip.getFont().deriveFont(11f));
+            chip.addActionListener(e -> {
+                if (chip.isSelected()) selectedProjects.add(id); else selectedProjects.remove(id);
+                refresh();
+            });
+            filterStrip.add(chip);
+        }
+        filterStrip.revalidate();
+        filterStrip.repaint();
+    }
+
+    private UUID topLevelProjectOf(UUID nodeId) {
+        var projectsNodeId = workspace.getProjectsNodeId();
+        var path = workspace.buildPath(nodeId);
+        UUID result = null;
+        for (var node : path) {
+            if (workspace.getParent(node.getId())
+                    .map(p -> p.getId().equals(projectsNodeId)).orElse(false)) {
+                result = node.getId();
+                break;
+            }
+        }
+        return result;
     }
 
     private void showStatusPopup(int row, Component comp, int x, int y) {

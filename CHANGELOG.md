@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Backlog panel: top-level project filter strip — visible in "all actions" mode; one chip per top-level project with ≥1 backlog action; click to narrow the list, multiple chips = OR; session-only state. Closes #290.
+- Backlog panel: free-actions toggle — default shows only free (standalone) actions; toggle to reveal all backlog actions including project actions; persisted in settings. Closes #289.
+
 - E2E coverage for resources: `addResource`, `assertHasResource`, and `assertResourceCount` wired into `NamDemoWiring` / `NamAssertWiring`; resource scenario added to `e2e.json`. Closes #287.
 
 - `Cmd+N` / `Ctrl+N` keyboard shortcut for context-sensitive new item: creates an inbox item when Inbox is active, a new project when Projects is active, and a new action in the current project when the Project Workbench is active; no-op on other panels. Shortcut is listed in the Keyboard Shortcuts dialog. Closes #244.
