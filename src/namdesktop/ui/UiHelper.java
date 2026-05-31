@@ -45,6 +45,16 @@ public final class UiHelper {
         return btn;
     }
 
+    public static JToggleButton iconToggleButton(String label, Icon icon) {
+        var settings = AppSettings.getInstance();
+        var dense    = settings != null && settings.isDense();
+        var btn      = new JToggleButton(dense ? "" : label, icon);
+        btn.setToolTipText(label);
+        btn.putClientProperty(PROP_DENSEABLE, Boolean.TRUE);
+        btn.putClientProperty(PROP_LABEL, label);
+        return btn;
+    }
+
     /** Always icon-only regardless of dense mode — use for compact inline contexts like breadcrumbs. */
     public static JButton iconOnlyButton(String label, Icon icon) {
         var btn = new JButton("", icon);
@@ -202,7 +212,7 @@ public final class UiHelper {
 
     private static void applyDenseToContainer(Container c, boolean dense) {
         for (var comp : c.getComponents()) {
-            if (comp instanceof JButton btn && Boolean.TRUE.equals(btn.getClientProperty(PROP_DENSEABLE))) {
+            if (comp instanceof AbstractButton btn && Boolean.TRUE.equals(btn.getClientProperty(PROP_DENSEABLE))) {
                 btn.setText(dense ? "" : (String) btn.getClientProperty(PROP_LABEL));
             }
             if (comp instanceof Container sub) applyDenseToContainer(sub, dense);

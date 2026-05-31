@@ -78,13 +78,11 @@ public final class BacklogPanel extends JPanel {
 
         var listIcon      = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/layout-list.svg")).derive(16, 16);
         var dashboardIcon = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16);
-        var freeOnlyBtn   = new JToggleButton(freeOnly ? listIcon : dashboardIcon);
+        var freeOnlyBtn   = UiHelper.iconToggleButton("Free only", freeOnly ? listIcon : dashboardIcon);
         freeOnlyBtn.setSelected(freeOnly);
-        freeOnlyBtn.setToolTipText(freeOnly ? "Free actions only — click to show all" : "All backlog actions — click to show free only");
         freeOnlyBtn.addActionListener(e -> {
             freeOnly = freeOnlyBtn.isSelected();
             freeOnlyBtn.setIcon(freeOnly ? listIcon : dashboardIcon);
-            freeOnlyBtn.setToolTipText(freeOnly ? "Free actions only — click to show all" : "All backlog actions — click to show free only");
             selectedProjects.clear();
             AppSettings.getInstance().setBacklogFreeOnly(freeOnly);
             try { AppSettings.getInstance().save(); } catch (java.io.IOException ignored) {}
@@ -93,14 +91,10 @@ public final class BacklogPanel extends JPanel {
 
         var lockIcon     = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock.svg")).derive(16, 16);
         var lockOpenIcon = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/lock-open.svg")).derive(16, 16);
-        var showBlockedBtn = new JToggleButton(lockIcon);
-        showBlockedBtn.setToolTipText("Blocked actions hidden — click to show");
+        var showBlockedBtn = UiHelper.iconToggleButton("Blocked", lockIcon);
         showBlockedBtn.addActionListener(e -> {
             showBlocked = showBlockedBtn.isSelected();
             showBlockedBtn.setIcon(showBlocked ? lockOpenIcon : lockIcon);
-            showBlockedBtn.setToolTipText(showBlocked
-                    ? "Blocked actions visible — click to hide"
-                    : "Blocked actions hidden — click to show");
             refresh();
         });
 
