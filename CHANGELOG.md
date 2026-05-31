@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- Monitoring mode: checkpoint confirm dialog no longer re-appears on exit when no new changes exist. Root cause: `Resource` lacked `equals()`/`hashCode()`, so the post-checkpoint diff always reported resource changes even when both files were identical. Closes #302.
+
 ### Added
 
 - Help: Done concept article added; Done entry added to the left-hand concept index. Fixes broken `concept://done` link in the Next Actions article. Closes #299.

@@ -22,4 +22,18 @@ public final class Resource {
 
     public String getDescription()       { return description; }
     public void setDescription(String d) { this.description = d; }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Resource r)) return false;
+        return type == r.type
+                && java.util.Objects.equals(value, r.value)
+                && java.util.Objects.equals(description, r.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return java.util.Objects.hash(type, value, description);
+    }
 }
