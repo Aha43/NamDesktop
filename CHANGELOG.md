@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Help: Done concept article added; Done entry added to the left-hand concept index. Fixes broken `concept://done` link in the Next Actions article. Closes #299.
+
 - Backlog panel: top-level project filter strip — visible in "all actions" mode; one chip per top-level project with ≥1 backlog action; click to narrow the list, multiple chips = OR; session-only state. Closes #290.
 - Backlog panel: free-actions toggle — default shows only free (standalone) actions; toggle to reveal all backlog actions including project actions; persisted in settings. Closes #289.
 
