@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; margin: 16px; line-height: 1.5;">
+
+<h3>Working with an AI assistant</h3>
+
+<p>NamDesktop exposes an MCP server that lets an AI assistant — such as Claude — read
+and update your workspace through natural conversation. You can ask it to capture
+inbox items, organise actions into projects, mark things done, or give you a summary
+of what is on your plate.</p>
+
+<h4>How it connects</h4>
+<p>NamDesktop starts an MCP stdio server automatically when the app launches. Configure
+your AI client (e.g. Claude Desktop) to connect via the MCP server entry for
+NamDesktop. Once connected, the assistant can see your inbox, projects, next actions,
+backlog, and any saved filters.</p>
+
+<h4>Monitoring mode — reads vs. writes</h4>
+<p>Reading is always available. <b>Writes require monitoring mode</b> to be active —
+this is a deliberate safety gate so the AI cannot modify your workspace without your
+knowledge.</p>
+<p>Enable monitoring mode by pressing <b>Cmd+Shift+M</b> (macOS) or clicking the
+antenna icon in the toolbar. An amber <b>● Monitoring</b> badge appears to confirm
+it is active. While monitoring mode is on, the assistant can create projects, add
+actions, move items, attach resources, and delete nodes.</p>
+
+<h4>Checkpoint and Accept</h4>
+<p>After the assistant has made changes, press <b>Checkpoint</b> (✔ in the toolbar,
+or <b>Cmd+Shift+S</b>) to review what it did. A summary dialog lists every addition,
+edit, and deletion. Accept to keep the changes; reject to discard them. Either way,
+monitoring mode stays active so you can continue the conversation.</p>
+<p>If you close NamDesktop while monitoring mode is active, the same accept/reject
+dialog appears — no changes are silently lost.</p>
+
+<h4>What the assistant can do</h4>
+<ul>
+  <li>List inbox items, next actions, backlog, projects, done items, and saved filters</li>
+  <li>Create projects and nest them under parent projects</li>
+  <li>Add inbox items, next actions, and project actions</li>
+  <li>Mark items as next, done, or backlog</li>
+  <li>Attach and remove resources (URIs, files, notes) on any node</li>
+  <li>Find nodes by title</li>
+  <li>Delete leaf nodes (nodes with no children)</li>
+</ul>
+
+<h4>Tips</h4>
+<ul>
+  <li>Start a session by asking the assistant to summarise your inbox or next actions —
+      it reads everything before suggesting changes.</li>
+  <li>Enable monitoring mode only when you are ready for the assistant to make changes.
+      Leave it off for read-only conversations.</li>
+  <li>Use Checkpoint frequently during longer sessions so you can review changes in
+      small batches.</li>
+</ul>
+
+</body>
+</html>
