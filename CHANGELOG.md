@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- MCP server: `edit_resource` tool — update value and/or description of an existing resource in place by node id and zero-based index. Both fields optional; omit to keep existing, pass empty string to clear description. Requires monitoring mode. Closes #300.
 - Monitoring mode: persistent amber status bar at the bottom warns "in-app edits are not captured by checkpoint" while monitoring is active. Checkpoint dialog also shows this note. Closes #304.
 - Monitoring mode: checkpoint confirm dialog no longer re-appears on exit when no new changes exist. Root cause: `Resource` lacked `equals()`/`hashCode()`, so the post-checkpoint diff always reported resource changes even when both files were identical. Closes #302.
 
