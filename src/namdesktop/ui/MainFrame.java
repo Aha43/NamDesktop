@@ -148,7 +148,7 @@ public final class MainFrame extends JFrame {
         toolbar.add(checkpointButton);
         var helpButton = UiHelper.iconButton("Help",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
-        helpButton.setToolTipText("Help — tutorials and concept reference");
+        helpButton.setToolTipText("Help — tutorials and concept reference (F1)");
         helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
         toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
