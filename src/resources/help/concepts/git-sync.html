@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; margin: 16px; line-height: 1.5;">
+
+<h3>Git sync</h3>
+
+<p>Git sync lets you back up and share your workspace across machines using a private
+GitHub repository. NamDesktop clones the repo locally, copies your
+<code>workspace.json</code> into it, and pushes — or pulls the latest version down
+when you switch machines.</p>
+
+<h4>Setting it up</h4>
+<ol>
+  <li>Create a <b>private</b> GitHub repository for your workspace (no README needed).</li>
+  <li>Make sure <code>git</code> is installed and authenticated on your machine
+      (e.g. via SSH key or GitHub CLI).</li>
+  <li>Open <b>Settings</b> in NamDesktop and paste the repo URL into
+      <b>Sync repo URL</b> (e.g. <code>https://github.com/you/my-workspace</code>).</li>
+  <li>Save Settings. Push and Pull buttons appear in the toolbar and under
+      <b>File</b> in the menu bar.</li>
+</ol>
+
+<h4>Pushing and pulling</h4>
+<p>Click <b>Push workspace</b> (↑) to save your current workspace to the remote repo.
+Click <b>Pull workspace</b> (↓) to overwrite your local workspace with the version
+from the remote. NamDesktop saves before pushing and reloads after pulling.</p>
+
+<p><b>Pull replaces your local workspace.</b> Make sure you have pushed from your other
+machine first, or you will overwrite unsaved work.</p>
+
+<h4>How it works</h4>
+<p>On first use NamDesktop clones the repo into a local cache folder. Each push copies
+<code>workspace.json</code> into the clone, commits with the message <em>sync</em>,
+and runs <code>git push</code>. Each pull runs <code>git pull</code> and copies the
+updated file back into your workspace location. No history is kept beyond what Git
+stores in the repo.</p>
+
+</body>
+</html>

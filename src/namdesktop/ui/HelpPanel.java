@@ -7,70 +7,77 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 
 public final class HelpPanel extends JPanel {
 
-    private record Tutorial(String title, String resource) {}
+    private record Concept(String title, String slug) {}
 
-    private static final List<Tutorial> TUTORIALS = List.of(
-            new Tutorial("Getting started",           "/resources/help/tutorials/getting-started.html"),
-            new Tutorial("Planning a goal with a Goal Board",  "/resources/help/tutorials/planning-a-goal-with-mcr.html")
+    private static final List<Concept> CONCEPTS = List.of(
+            new Concept("Getting started",   "tutorials/getting-started"),
+            new Concept("GTD basics",        "gtd"),
+            new Concept("Inbox",             "inbox"),
+            new Concept("Next Actions",      "next-actions"),
+            new Concept("Backlog",           "backlog"),
+            new Concept("Projects",          "projects"),
+            new Concept("Project Workbench", "workbench"),
+            new Concept("Tag filter",        "contexts"),
+            new Concept("Goal Board",        "mission-control"),
+            new Concept("Focus mode",        "focus-mode"),
+            new Concept("Git sync",          "git-sync"),
+            new Concept("AI assistant",      "ai-assistant")
     );
 
-    private final JEditorPane tutorialPane;
-    private final JEditorPane conceptPane;
+    private final JEditorPane mainPane;
+    private final JEditorPane sidePane;
     private final JSplitPane  contentSplit;
 
     public HelpPanel() {
         super(new BorderLayout());
 
-        tutorialPane = makeEditorPane();
-        conceptPane  = makeEditorPane();
+        mainPane = makeEditorPane();
+        sidePane = makeEditorPane();
 
-        var tutorialScroll = new JScrollPane(tutorialPane);
-        tutorialScroll.setBorder(null);
+        var mainScroll = new JScrollPane(mainPane);
+        mainScroll.setBorder(null);
 
-        var conceptScroll = new JScrollPane(conceptPane);
-        conceptScroll.setBorder(null);
+        var sideScroll = new JScrollPane(sidePane);
+        sideScroll.setBorder(null);
 
-        contentSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tutorialScroll, conceptScroll);
+        contentSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, mainScroll, sideScroll);
         contentSplit.setResizeWeight(1.0);
         contentSplit.setBorder(null);
         contentSplit.setDividerSize(4);
 
-        var listModel = new DefaultListModel<Tutorial>();
-        TUTORIALS.forEach(listModel::addElement);
-        var tutorialList = new JList<>(listModel);
-        tutorialList.setCellRenderer(new TutorialRenderer());
-        tutorialList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        tutorialList.setBorder(new EmptyBorder(4, 4, 4, 4));
-        tutorialList.addListSelectionListener(e -> {
+        var listModel = new DefaultListModel<Concept>();
+        CONCEPTS.forEach(listModel::addElement);
+        var conceptList = new JList<>(listModel);
+        conceptList.setCellRenderer(new ConceptRenderer());
+        conceptList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        conceptList.setBorder(new EmptyBorder(4, 4, 4, 4));
+        conceptList.addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
-            var t = tutorialList.getSelectedValue();
-            if (t != null) loadTutorial(t.resource());
+            var c = conceptList.getSelectedValue();
+            if (c != null) loadMain(c.slug());
         });
 
-        var listScroll = new JScrollPane(tutorialList);
-        listScroll.setPreferredSize(new Dimension(190, 0));
+        var listScroll = new JScrollPane(conceptList);
+        listScroll.setPreferredSize(new Dimension(160, 0));
         listScroll.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1,
                 UIManager.getColor("Separator.foreground")));
+        listScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-        add(listScroll,   BorderLayout.WEST);
+        add(listScroll,  BorderLayout.WEST);
         add(contentSplit, BorderLayout.CENTER);
 
-        // Concept pane starts hidden (no divider needed until content arrives)
         SwingUtilities.invokeLater(() -> contentSplit.setDividerLocation(1.0));
 
-        tutorialList.setSelectedIndex(0);
+        conceptList.setSelectedIndex(0);
     }
 
     private JEditorPane makeEditorPane() {
         var kit = new HTMLEditorKit();
-        var css = kit.getStyleSheet();
-        applyStyles(css);
-
+        applyStyles(kit.getStyleSheet());
         var pane = new JEditorPane();
         pane.setEditorKit(kit);
         pane.setEditable(false);
@@ -91,40 +98,37 @@ public final class HelpPanel extends JPanel {
         css.addRule("code { font-size: 12px; }");
     }
 
-    private void loadTutorial(String resourcePath) {
-        var url = HelpPanel.class.getResource(resourcePath);
+    private void loadMain(String slug) {
+        var path = slug.contains("/")
+                ? "/resources/help/" + slug + ".html"
+                : "/resources/help/concepts/" + slug + ".html";
+        var url = HelpPanel.class.getResource(path);
         if (url == null) {
-            tutorialPane.setText("<html><body style='font-family:sans-serif;margin:16px'>"
-                    + "<p><i>Content not found: " + resourcePath + "</i></p></body></html>");
-            return;
+            mainPane.setText(errorHtml("No article for \"" + slug + "\"."));
+        } else {
+            try {
+                mainPane.setPage(url);
+                mainPane.setCaretPosition(0);
+            } catch (IOException e) {
+                mainPane.setText(errorHtml("Failed to load article."));
+            }
         }
-        try {
-            tutorialPane.setPage(url);
-            tutorialPane.setCaretPosition(0);
-        } catch (IOException e) {
-            tutorialPane.setText("<html><body style='font-family:sans-serif;margin:16px'>"
-                    + "<p><i>Failed to load content.</i></p></body></html>");
-        }
-        // Collapse concept pane when loading a new tutorial
         SwingUtilities.invokeLater(() -> contentSplit.setDividerLocation(1.0));
     }
 
-    private void loadConcept(String slug) {
+    private void loadSide(String slug) {
         var resourcePath = "/resources/help/concepts/" + slug + ".html";
         var url = HelpPanel.class.getResource(resourcePath);
         if (url == null) {
-            conceptPane.setText("<html><body style='font-family:sans-serif;margin:16px'>"
-                    + "<p><i>No article for \"" + slug + "\".</i></p></body></html>");
+            sidePane.setText(errorHtml("No article for \"" + slug + "\"."));
         } else {
             try {
-                conceptPane.setPage(url);
-                conceptPane.setCaretPosition(0);
+                sidePane.setPage(url);
+                sidePane.setCaretPosition(0);
             } catch (IOException e) {
-                conceptPane.setText("<html><body style='font-family:sans-serif;margin:16px'>"
-                        + "<p><i>Failed to load concept.</i></p></body></html>");
+                sidePane.setText(errorHtml("Failed to load article."));
             }
         }
-        // Reveal concept pane at ~35% of total width
         SwingUtilities.invokeLater(() -> {
             int total = contentSplit.getWidth();
             if (total > 0) contentSplit.setDividerLocation((int) (total * 0.65));
@@ -133,22 +137,25 @@ public final class HelpPanel extends JPanel {
 
     private void handleLink(HyperlinkEvent e) {
         if (e.getEventType() != HyperlinkEvent.EventType.ACTIVATED) return;
-        var url = e.getURL();
-        // concept:// links have no URL object — check description
+        var url  = e.getURL();
         var desc = e.getDescription();
         if (desc != null && desc.startsWith("concept://")) {
-            loadConcept(desc.substring("concept://".length()));
+            loadSide(desc.substring("concept://".length()));
         } else if (url != null && (url.getProtocol().equals("http") || url.getProtocol().equals("https"))) {
             try { Desktop.getDesktop().browse(url.toURI()); } catch (Exception ignored) {}
         }
     }
 
-    private static final class TutorialRenderer extends DefaultListCellRenderer {
+    private static String errorHtml(String msg) {
+        return "<html><body style='font-family:sans-serif;margin:16px'><p><i>" + msg + "</i></p></body></html>";
+    }
+
+    private static final class ConceptRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(
                 JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof Tutorial t) setText(t.title());
+            if (value instanceof Concept c) setText(c.title());
             return this;
         }
     }
