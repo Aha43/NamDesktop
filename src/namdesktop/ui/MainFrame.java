@@ -60,6 +60,7 @@ public final class MainFrame extends JFrame {
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
+    private       JLabel                monitoringStatusBar;
     private       JButton               checkpointButton;
     private       JMenuItem             checkpointItem;
     private       namdesktop.service.ExternalWorkspaceWatcher externalWatcher;
@@ -352,9 +353,20 @@ public final class MainFrame extends JFrame {
 
         toolbar.setVisible(settings.isShowToolbar());
         if (!settings.isShowNavPane()) SwingUtilities.invokeLater(() -> splitPane.setDividerLocation(0));
-        add(toolbar,        BorderLayout.NORTH);
-        add(splitPane,      BorderLayout.CENTER);
-        add(demoStatusBar,  BorderLayout.SOUTH);
+        monitoringStatusBar = new JLabel("● Monitoring active — in-app edits are not captured by checkpoint");
+        monitoringStatusBar.setForeground(new Color(0xE6, 0x8A, 0x00));
+        monitoringStatusBar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, UIManager.getColor("Separator.foreground")),
+                BorderFactory.createEmptyBorder(3, 8, 3, 8)));
+        monitoringStatusBar.setVisible(false);
+
+        var bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.add(monitoringStatusBar, BorderLayout.NORTH);
+        bottomPanel.add(demoStatusBar,       BorderLayout.SOUTH);
+
+        add(toolbar,      BorderLayout.NORTH);
+        add(splitPane,    BorderLayout.CENTER);
+        add(bottomPanel,  BorderLayout.SOUTH);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override public void windowClosing(java.awt.event.WindowEvent e) { confirmAndExit(); }
@@ -492,6 +504,7 @@ public final class MainFrame extends JFrame {
                 ? "Exit monitoring mode (Cmd+Shift+M)"
                 : "Enter monitoring mode (Cmd+Shift+M)");
         monitoringIndicator.setVisible(monitoringActive);
+        monitoringStatusBar.setVisible(monitoringActive);
         checkpointButton.setVisible(monitoringActive);
         checkpointItem.setEnabled(monitoringActive);
     }
