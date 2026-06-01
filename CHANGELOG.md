@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- MCP test plan: `docs/test/mcp-testplan.md` — one section per tool, Setup/Action/Assert/Cleanup pattern, Python3 assertions against `workspace.json`, cleanup pass. Closes #306.
 - MCP server: `update_node` tool — update title, description, and/or tags on an existing node in place. All fields optional; omit to keep existing, empty string clears description, empty array clears tags. Requires monitoring mode. Closes #303. Supersedes #301 (set_tags).
 - MCP server: `edit_resource` tool — update value and/or description of an existing resource in place by node id and zero-based index. Both fields optional; omit to keep existing, pass empty string to clear description. Requires monitoring mode. Closes #300.
 - Monitoring mode: persistent amber status bar at the bottom warns "in-app edits are not captured by checkpoint" while monitoring is active. Checkpoint dialog also shows this note. Closes #304.
