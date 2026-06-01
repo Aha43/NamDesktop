@@ -50,7 +50,8 @@ public final class MainFrame extends JFrame {
     private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
     private       Timer            nudgeTimer;
-    private static java.util.function.Consumer<String> nudgeCallback = msg -> {};
+    private static java.util.function.Consumer<String> nudgeCallback          = msg -> {};
+    private static Runnable                             dialogRefreshCallback = () -> {};
     private final JSplitPane            splitPane;
     private       int                   lastNavDivider = 180;
     private       ProjectWorkbenchPanel cachedWorkbench;
@@ -378,6 +379,9 @@ public final class MainFrame extends JFrame {
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }
 
+    public static void setDialogRefreshCallback(Runnable r)  { dialogRefreshCallback = r != null ? r : () -> {}; }
+    public static void clearDialogRefreshCallback()           { dialogRefreshCallback = () -> {}; }
+
     private void toggleMonitoringMode() {
         if (workspacePath == null) return;
         if (!monitoringActive) {
@@ -450,6 +454,7 @@ public final class MainFrame extends JFrame {
         try {
             service.reloadWorkspaceFrom(namdesktop.service.MonitoringMode.externalPath(workspacePath));
             refreshAll();
+            dialogRefreshCallback.run();
         } catch (java.io.IOException ignored) {}
         showNudge(summary.describe());
         if (summary.inboxAdded() > 0) {

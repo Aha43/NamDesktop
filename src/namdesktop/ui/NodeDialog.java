@@ -344,6 +344,13 @@ public class NodeDialog extends JDialog {
         var origRebuild = rebuildList[0];
         rebuildList[0] = () -> { origRebuild.run(); updateHeader.run(); };
 
+        MainFrame.setDialogRefreshCallback(rebuildList[0]);
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosed(java.awt.event.WindowEvent e) {
+                MainFrame.clearDialogRefreshCallback();
+            }
+        });
+
         outer.add(headerBtn, BorderLayout.NORTH);
         outer.add(content,   BorderLayout.CENTER);
         return outer;
