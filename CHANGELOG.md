@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Power user mode: Settings toggle (off by default) that restores the full inline toolbar in Project Workbench — section headers gain Rename, Description, and Delete buttons; action toolbars gain Rename and Edit tags; breadcrumb ancestor links gain a pencil. All removed by #227; now opt-in. Closes #235.
+
 ### Fixed
 
 - MCP test plan: `docs/test/mcp-testplan.md` — one section per tool, Setup/Action/Assert/Cleanup pattern, Python3 assertions against `workspace.json`, cleanup pass. Closes #306.

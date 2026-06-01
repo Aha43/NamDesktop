@@ -80,8 +80,22 @@ public final class SettingsPanel extends JPanel {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(maximizedBox, gbc);
 
-        // Sync repo URL
+        // Power user mode
         gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Power user mode:"), gbc);
+
+        var powerBox = new JCheckBox("Show inline Rename, Description, Delete and tag buttons in Project Workbench", settings.isPowerMode());
+        powerBox.addActionListener(e -> {
+            settings.setPowerMode(powerBox.isSelected());
+            save(settings);
+            onChanged.run();
+        });
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(powerBox, gbc);
+
+        // Sync repo URL
+        gbc.gridx = 0; gbc.gridy = 5; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         add(new JLabel("Sync repo URL:"), gbc);
 
         var syncUrlField = new JTextField(settings.getSyncRepoUrl(), 30);
@@ -91,7 +105,7 @@ public final class SettingsPanel extends JPanel {
         });
         syncUrlField.addActionListener(e -> saveSyncUrl(settings, syncUrlField));
 
-        gbc.gridx = 1; gbc.gridy = 4; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.gridy = 5; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(syncUrlField, gbc);
     }
 

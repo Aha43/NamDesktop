@@ -526,6 +526,8 @@ public final class MainFrame extends JFrame {
         new SettingsDialog(this, settings, () -> {
             nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
             backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            var current = contentArea.getContent();
+            if (current instanceof ProjectWorkbenchPanel pwp) pwp.refresh();
         }).setVisible(true);
     }
 
