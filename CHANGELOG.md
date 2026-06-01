@@ -9,6 +9,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Power user mode: Settings toggle (off by default) that restores the full inline toolbar in Project Workbench — section headers gain Rename, Description, and Delete buttons; action toolbars gain Rename and Edit tags; breadcrumb ancestor links gain a pencil. All removed by #227; now opt-in. Closes #235.
+- Project Workbench: "Make project" button in ActionDialog converts an action to a sub-project in place — the action gains `isProject=true`, disappears from the actions list, and becomes a new sub-project section on the next rebuild. Closes #39.
 
 ### Fixed
 
