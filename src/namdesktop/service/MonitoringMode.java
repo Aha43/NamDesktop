@@ -22,20 +22,26 @@ public final class MonitoringMode {
         return workspacePath.resolveSibling(".namdesktop-monitoring");
     }
 
+    public static Path baselinePath(Path workspacePath) {
+        return workspacePath.resolveSibling("workspace.monitoring-base.json");
+    }
+
     public static boolean isActive(Path workspacePath) {
         return workspacePath != null && Files.exists(sentinelPath(workspacePath));
     }
 
     public static void enter(Path workspacePath) throws IOException {
         Files.copy(workspacePath, externalPath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(workspacePath, baselinePath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
         Files.writeString(sentinelPath(workspacePath), "monitoring");
     }
 
     public static ExitResult exit(Path workspacePath, JsonWorkspaceRepository repo) {
-        var extPath = externalPath(workspacePath);
+        var extPath  = externalPath(workspacePath);
         if (!Files.exists(extPath)) return new ExitResult.NoChanges();
+        var basePath = baselinePath(workspacePath);
         try {
-            var base     = repo.load(workspacePath);
+            var base     = repo.load(Files.exists(basePath) ? basePath : workspacePath);
             var external = repo.load(extPath);
             var summary  = diff(base, external);
             return summary.isEmpty() ? new ExitResult.NoChanges() : new ExitResult.HasChanges(summary);
@@ -47,22 +53,26 @@ public final class MonitoringMode {
     public static void accept(Path workspacePath) throws IOException {
         Files.move(externalPath(workspacePath), workspacePath, StandardCopyOption.REPLACE_EXISTING);
         deleteQuietly(sentinelPath(workspacePath));
+        deleteQuietly(baselinePath(workspacePath));
     }
 
     public static void reject(Path workspacePath) {
         deleteQuietly(externalPath(workspacePath));
         deleteQuietly(sentinelPath(workspacePath));
+        deleteQuietly(baselinePath(workspacePath));
     }
 
     /** Flush external → main and reset external to new baseline; sentinel stays (monitoring continues). */
     public static void checkpointAccept(Path workspacePath) throws IOException {
         Files.copy(externalPath(workspacePath), workspacePath, StandardCopyOption.REPLACE_EXISTING);
         Files.copy(workspacePath, externalPath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(workspacePath, baselinePath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
     }
 
     /** Reset external to current main (discard external changes); sentinel stays (monitoring continues). */
     public static void checkpointReject(Path workspacePath) throws IOException {
         Files.copy(workspacePath, externalPath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(workspacePath, baselinePath(workspacePath), StandardCopyOption.REPLACE_EXISTING);
     }
 
     private static void deleteQuietly(Path path) {

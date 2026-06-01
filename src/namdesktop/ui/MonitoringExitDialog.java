@@ -9,10 +9,14 @@ public final class MonitoringExitDialog extends JDialog {
 
     private boolean accepted = false;
 
-    private MonitoringExitDialog(Window parent, MonitoringMode.DiffSummary summary, String title) {
+    private MonitoringExitDialog(Window parent, MonitoringMode.DiffSummary summary, String title, boolean isCheckpoint) {
         super(parent, title, ModalityType.APPLICATION_MODAL);
 
-        var message = new JLabel("<html><b>Changes detected:</b><br><br>" + summary.describe() + "</html>");
+        var html = "<html><b>Changes detected:</b><br><br>" + summary.describe();
+        if (isCheckpoint)
+            html += "<br><br><i style='color:gray'>Note: in-app edits made during monitoring are not captured here.</i>";
+        html += "</html>";
+        var message = new JLabel(html);
         message.setBorder(BorderFactory.createEmptyBorder(12, 16, 12, 16));
 
         var acceptButton = new JButton("Accept");
@@ -28,17 +32,19 @@ public final class MonitoringExitDialog extends JDialog {
         setLayout(new BorderLayout());
         add(message, BorderLayout.CENTER);
         add(footer,  BorderLayout.SOUTH);
-        setSize(400, 180);
+        setSize(400, isCheckpoint ? 220 : 180);
         setResizable(false);
         setLocationRelativeTo(parent);
     }
 
     public static boolean show(Window parent, MonitoringMode.DiffSummary summary) {
-        return show(parent, summary, "Exit Monitoring Mode");
+        var dialog = new MonitoringExitDialog(parent, summary, "Exit Monitoring Mode", false);
+        dialog.setVisible(true);
+        return dialog.accepted;
     }
 
     public static boolean show(Window parent, MonitoringMode.DiffSummary summary, String title) {
-        var dialog = new MonitoringExitDialog(parent, summary, title);
+        var dialog = new MonitoringExitDialog(parent, summary, title, title.equals("Checkpoint"));
         dialog.setVisible(true);
         return dialog.accepted;
     }

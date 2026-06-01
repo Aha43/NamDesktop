@@ -19,6 +19,7 @@ public final class HelpPanel extends JPanel {
             new Concept("Inbox",             "inbox"),
             new Concept("Next Actions",      "next-actions"),
             new Concept("Backlog",           "backlog"),
+            new Concept("Done",              "done"),
             new Concept("Projects",          "projects"),
             new Concept("Project Workbench", "workbench"),
             new Concept("Tag filter",        "contexts"),
