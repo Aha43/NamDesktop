@@ -20,6 +20,8 @@ All write-tool tests require monitoring mode to be active before the call and in
 
 ---
 
+> **Note on read-tool assertions:** Most read tools are verified against the tool's response text rather than `workspace.json` directly. This is intentionally lighter — a follow-up pass can tighten these once the write-tool assertions are stable.
+
 ## Read tools
 
 ### get_workspace_context
@@ -60,10 +62,20 @@ All write-tool tests require monitoring mode to be active before the call and in
 
 ### list_done
 
-**Setup:** None.  
+**Setup:** Create `TEST_done_action` via `add_inbox_item`, then `mark_done` it, and checkpoint. (Without a known DONE node the array may be empty, which vacuously passes any per-element assertion.)  
 **Action:** `list_done`  
-**Assert:** Response is a JSON array. Each element has `status: "DONE"`.  
-**Cleanup:** None.
+**Assert:**
+```bash
+python3 -c "
+import json
+ws = json.load(open('$WS'))
+node = next((n for n in ws['nodes'].values() if n['title'] == 'TEST_done_action'), None)
+assert node, 'TEST_done_action not found'
+assert node['status'] == 'DONE', f'expected DONE got {node[\"status\"]}'
+print('PASS')
+"
+```
+**Cleanup:** Delete `TEST_done_action`.
 
 ---
 
@@ -78,14 +90,16 @@ All write-tool tests require monitoring mode to be active before the call and in
 
 ### get_monitoring_status
 
+Run this test **last among read tools** so it doesn't leave monitoring mode on and interfere with write-tool tests that manage mode themselves.
+
 **Setup:** Monitoring mode off.  
 **Action:** `get_monitoring_status`  
 **Assert:** Response contains `not active` or equivalent.
 
-**Setup:** Monitoring mode on.  
+**Setup:** Enable monitoring mode (`Cmd+Shift+M`).  
 **Action:** `get_monitoring_status`  
 **Assert:** Response contains `active` or equivalent.  
-**Cleanup:** None.
+**Cleanup:** Disable monitoring mode (`Cmd+Shift+M`) before proceeding to write-tool tests.
 
 ---
 
@@ -151,7 +165,7 @@ node = next((n for n in ws['nodes'].values() if n['title'] == 'TEST_toplevel_pro
 assert node, 'TEST_toplevel_project not found'
 assert node['project'] == True
 projects_id = ws['projectsNodeId']
-parent = next(n for n in ws['nodes'].values() if projects_id in (n.get('childIds') or []) or n['id'] == projects_id)
+assert node['id'] in ws['nodes'][projects_id]['childIds'], 'not a child of the Projects root'
 print('PASS')
 "
 ```
@@ -328,7 +342,7 @@ print('PASS')
 
 ---
 
-### update_node
+### update_node *(implemented — Closes #303)*
 
 **Setup:** `TEST_update_node` exists with title `TEST_update_node`, no tags.  
 **Action:** `update_node` with `title: "TEST_update_node_renamed"`, `tags: ["@test"]`, `description: "new desc"`  
@@ -345,6 +359,12 @@ print('PASS')
 "
 ```
 **Cleanup:** Delete `TEST_update_node_renamed`.
+
+---
+
+### set_tags *(superseded — closed as #301; use `update_node` with `tags` field instead)*
+
+No dedicated test needed. Tag-setting is covered by the `update_node` test above.
 
 ---
 
