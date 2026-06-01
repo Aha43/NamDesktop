@@ -4,7 +4,7 @@ Executed in the dogfooding chat against a running NamDesktop instance.
 Assertions use `python3 -c` against `~/.namdesktop/workspace.json` — not visual inspection.
 Test nodes use the `TEST_` prefix so they are easy to identify and clean up.
 
-**Last tested:** —  
+**Last tested:** 2026-06-01  
 **App version:** 0.1.0  
 **Update this stamp** after each run.
 
