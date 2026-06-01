@@ -217,6 +217,14 @@ public final class NamMcpServer {
                         "node_id", prop("string", "UUID of the node"),
                         "index",   prop("integer", "Zero-based index of the resource to remove")
                 ), List.of("node_id", "index"))));
+        tools.add(tool("update_node",
+                "Update editable properties of an existing node. All fields optional — only provided fields are changed. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id",     prop("string", "UUID of the node to update"),
+                        "title",       prop("string", "New title (omit to keep existing)"),
+                        "description", prop("string", "New description (omit to keep, empty string to clear)"),
+                        "tags",        prop("array",  "New tag list — replaces current tags wholesale (omit to keep existing, empty array to clear)")
+                ), List.of("node_id"))));
         tools.add(tool("edit_resource",
                 "Update the value and/or description of an existing resource in place. Requires monitoring mode.",
                 schema(Map.of(
@@ -292,6 +300,7 @@ public final class NamMcpServer {
             case "mark_next"             -> toolSetStatus(args, NodeStatus.NEXT);
             case "mark_done"             -> toolSetStatus(args, NodeStatus.DONE);
             case "mark_backlog"          -> toolSetStatus(args, NodeStatus.BACKLOG);
+            case "update_node"          -> toolUpdateNode(args);
             case "list_resources"        -> toolListResources(args);
             case "add_resource"         -> toolAddResource(args);
             case "remove_resource"      -> toolRemoveResource(args);
@@ -612,6 +621,40 @@ public final class NamMcpServer {
             w.getNodes().values().forEach(n -> n.getChildIds().remove(finalId));
         });
         return textResult("Deleted \"" + title + "\".", false);
+    }
+
+    private ObjectNode toolUpdateNode(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var idStr = args.path("node_id").asText("").strip();
+        if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
+        if (!args.hasNonNull("title") && !args.hasNonNull("description") && !args.hasNonNull("tags"))
+            return textResult("Error: at least one of title, description, or tags must be provided.", true);
+
+        UUID id;
+        try { id = UUID.fromString(idStr); }
+        catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        if (ws.getNode(id).isEmpty()) return textResult("Error: no node found with id " + idStr, true);
+
+        final UUID   finalId   = id;
+        final String newTitle  = args.hasNonNull("title")       ? args.path("title").asText().strip()       : null;
+        final String newDesc   = args.hasNonNull("description")  ? args.path("description").asText()         : null;
+        final JsonNode tagsNode = args.hasNonNull("tags")        ? args.path("tags")                          : null;
+
+        if (newTitle != null && newTitle.isEmpty())
+            return textResult("Error: title must not be blank.", true);
+
+        atomicWrite(w -> w.getNode(finalId).ifPresent(n -> {
+            if (newTitle != null)  n.setTitle(newTitle);
+            if (newDesc  != null)  n.setDescription(newDesc.isBlank() ? null : newDesc);
+            if (tagsNode != null) {
+                var list = new ArrayList<String>();
+                tagsNode.forEach(t -> { var tag = t.asText().strip(); if (!tag.isBlank()) list.add(tag); });
+                n.setTags(list);
+            }
+        }));
+        return textResult("Updated node \"" + ws.getNode(id).get().getTitle() + "\".", false);
     }
 
     private ObjectNode toolSetStatus(JsonNode args, NodeStatus status) throws IOException {
