@@ -29,7 +29,8 @@ public final class HelpPanel extends JPanel {
             new Concept("Focus mode",        "focus-mode"),
             new Concept("Git sync",          "git-sync"),
             new Concept("AI assistant",      "ai-assistant"),
-            new Concept("Templates",         "templates")
+            new Concept("Templates",         "templates"),
+            new Concept("Saved Views",       "saved-views")
     );
 
     private final JEditorPane mainPane;
