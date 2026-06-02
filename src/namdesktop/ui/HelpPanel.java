@@ -30,7 +30,8 @@ public final class HelpPanel extends JPanel {
             new Concept("Git sync",          "git-sync"),
             new Concept("AI assistant",      "ai-assistant"),
             new Concept("Templates",         "templates"),
-            new Concept("Saved Views",       "saved-views")
+            new Concept("Saved Views",       "saved-views"),
+            new Concept("Resources",         "resources")
     );
 
     private final JEditorPane mainPane;
