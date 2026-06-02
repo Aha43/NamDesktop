@@ -41,6 +41,7 @@ public final class ShortcutsDialog extends JDialog {
                 scs("Z"),   "Enter / Exit Zen Mode");
 
         section(content, "General",
+                sc("S"),    "Push workspace (sync) — or confirm local auto-save when sync is not configured",
                 sc(","),    "Settings",
                 sc("Q"),    "Quit",
                 "F1",       "Help",

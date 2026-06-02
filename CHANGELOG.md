@@ -6,6 +6,12 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- `Cmd+S` / `Ctrl+S` keyboard shortcut in the File menu: pushes the workspace to the configured git sync remote when sync is set up; otherwise shows a brief "Workspace auto-saved locally." nudge confirming that auto-save is active. Closes #241.
+- Power user mode: Settings toggle (off by default) that restores the full inline toolbar in Project Workbench — section headers gain Rename, Description, and Delete buttons; action toolbars gain Rename and Edit tags; breadcrumb ancestor links gain a pencil. All removed by #227; now opt-in. Closes #235.
+- Project Workbench: "Make project" button in ActionDialog converts an action to a sub-project in place — the action gains `isProject=true`, disappears from the actions list, and becomes a new sub-project section on the next rebuild. Closes #39.
+
 ### Fixed
 
 - MCP test plan: `docs/test/mcp-testplan.md` — one section per tool, Setup/Action/Assert/Cleanup pattern, Python3 assertions against `workspace.json`, cleanup pass. Closes #306.

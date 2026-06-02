@@ -125,6 +125,7 @@ public final class MainFrame extends JFrame {
         toolbar.add(newMcButton);
         if (!devMode && syncService.isConfigured()) {
             var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
+            pushButton.setToolTipText("Push workspace (Cmd+S)");
             pushButton.addActionListener(e -> runSync(true));
             var pullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
             pullButton.addActionListener(e -> runSync(false));
@@ -223,15 +224,22 @@ public final class MainFrame extends JFrame {
         fileMenu.add(runDemoItem);
         fileMenu.addSeparator();
 
+        var saveItem = new JMenuItem(!devMode && syncService.isConfigured() ? "Push workspace" : "Save workspace");
+        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+                java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         if (!devMode && syncService.isConfigured()) {
-            var pushItem = new JMenuItem("Push workspace");
-            pushItem.addActionListener(e -> runSync(true));
+            saveItem.addActionListener(e -> runSync(true));
+        } else {
+            saveItem.addActionListener(e -> showNudge("Workspace auto-saved locally."));
+        }
+        fileMenu.add(saveItem);
+
+        if (!devMode && syncService.isConfigured()) {
             var pullItem = new JMenuItem("Pull workspace");
             pullItem.addActionListener(e -> runSync(false));
-            fileMenu.add(pushItem);
             fileMenu.add(pullItem);
-            fileMenu.addSeparator();
         }
+        fileMenu.addSeparator();
 
         fileMenu.add(settingsItem);
         fileMenu.addSeparator();
@@ -526,6 +534,8 @@ public final class MainFrame extends JFrame {
         new SettingsDialog(this, settings, () -> {
             nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
             backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            var current = contentArea.getContent();
+            if (current instanceof ProjectWorkbenchPanel pwp) pwp.refresh();
         }).setVisible(true);
     }
 
