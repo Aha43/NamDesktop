@@ -1,5 +1,7 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.HyperlinkEvent;
@@ -32,6 +34,7 @@ public final class HelpPanel extends JPanel {
     private final JEditorPane mainPane;
     private final JEditorPane sidePane;
     private final JSplitPane  contentSplit;
+    private final JButton     popOutButton;
 
     public HelpPanel() {
         super(new BorderLayout());
@@ -68,12 +71,31 @@ public final class HelpPanel extends JPanel {
                 UIManager.getColor("Separator.foreground")));
         listScroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 
-        add(listScroll,  BorderLayout.WEST);
+        popOutButton = new JButton(new FlatSVGIcon(HelpPanel.class.getResource("/icons/external-link.svg")).derive(14, 14));
+        popOutButton.setToolTipText("Open help in floating window");
+        popOutButton.setBorderPainted(false);
+        popOutButton.setContentAreaFilled(false);
+        popOutButton.setFocusPainted(false);
+        popOutButton.setVisible(false);
+
+        var header = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
+        header.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0,
+                UIManager.getColor("Separator.foreground")));
+        header.add(popOutButton);
+
+        add(header,       BorderLayout.NORTH);
+        add(listScroll,   BorderLayout.WEST);
         add(contentSplit, BorderLayout.CENTER);
 
         SwingUtilities.invokeLater(() -> contentSplit.setDividerLocation(1.0));
 
         conceptList.setSelectedIndex(0);
+    }
+
+    public void setOnPopOut(Runnable r) {
+        for (var l : popOutButton.getActionListeners()) popOutButton.removeActionListener(l);
+        if (r != null) popOutButton.addActionListener(e -> r.run());
+        popOutButton.setVisible(r != null);
     }
 
     private JEditorPane makeEditorPane() {

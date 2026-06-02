@@ -58,6 +58,8 @@ public final class MainFrame extends JFrame {
     private       java.util.UUID        cachedWorkbenchId;
     private       boolean               sessionRestored  = false;
     private final boolean               devMode;
+    private       JComponent            lastNonHelpContent;
+    private       JDialog               helpDialog;
     private       boolean               monitoringActive = false;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
@@ -84,6 +86,7 @@ public final class MainFrame extends JFrame {
         this.blockedPanel     = new BlockedPanel(workspace, service, this::openProjectWorkbench);
         this.searchPanel      = new SearchPanel(workspace, service);
         this.helpPanel        = new HelpPanel();
+        this.helpPanel.setOnPopOut(this::popOutHelp);
 
         this.demoStatusBar = new JLabel(" ");
         this.demoStatusBar.setFont(demoStatusBar.getFont().deriveFont(Font.ITALIC));
@@ -152,7 +155,7 @@ public final class MainFrame extends JFrame {
         var helpButton = UiHelper.iconButton("Help",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/help.svg")).derive(16, 16));
         helpButton.setToolTipText("Help — tutorials and concept reference (F1)");
-        helpButton.addActionListener(e -> contentArea.setContent(helpPanel));
+        helpButton.addActionListener(e -> showHelp());
         toolbar.add(helpButton);
         toolbar.add(Box.createHorizontalGlue());
         if (devMode) {
@@ -332,7 +335,7 @@ public final class MainFrame extends JFrame {
 
         var helpMenuItem = new JMenuItem("Help");
         helpMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F1, 0));
-        helpMenuItem.addActionListener(e -> contentArea.setContent(helpPanel));
+        helpMenuItem.addActionListener(e -> showHelp());
         var shortcutsItem = new JMenuItem("Keyboard Shortcuts…");
         shortcutsItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_SLASH,
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
@@ -794,6 +797,51 @@ public final class MainFrame extends JFrame {
         } catch (IllegalArgumentException | java.io.IOException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    private void showHelp() {
+        if (helpDialog != null && helpDialog.isVisible()) {
+            helpDialog.toFront();
+            helpDialog.requestFocus();
+            return;
+        }
+        var current = contentArea.getContent();
+        if (current != helpPanel) lastNonHelpContent = current;
+        helpPanel.setOnPopOut(this::popOutHelp);
+        contentArea.setContent(helpPanel);
+    }
+
+    private void popOutHelp() {
+        var restore = lastNonHelpContent != null ? lastNonHelpContent : inboxPanel;
+        contentArea.setContent(restore);
+
+        helpPanel.setOnPopOut(null);
+
+        helpDialog = new JDialog(this, "Help", false);
+        helpDialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        helpDialog.setContentPane(helpPanel);
+
+        var s = settings;
+        helpDialog.setSize(s.getHelpDialogWidth(), s.getHelpDialogHeight());
+        if (s.getHelpDialogX() != null && s.getHelpDialogY() != null) {
+            helpDialog.setLocation(s.getHelpDialogX(), s.getHelpDialogY());
+        } else {
+            helpDialog.setLocationRelativeTo(this);
+        }
+
+        helpDialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosing(java.awt.event.WindowEvent e) {
+                s.setHelpDialogWidth(helpDialog.getWidth());
+                s.setHelpDialogHeight(helpDialog.getHeight());
+                s.setHelpDialogX(helpDialog.getX());
+                s.setHelpDialogY(helpDialog.getY());
+                try { s.save(); } catch (java.io.IOException ignored) {}
+                helpPanel.setOnPopOut(MainFrame.this::popOutHelp);
+                helpDialog = null;
+            }
+        });
+
+        helpDialog.setVisible(true);
     }
 
     private static JPanel placeholder(String label) {

@@ -41,6 +41,7 @@ ICONS=(
   antenna
   paperclip
   arrows-transfer-up
+  external-link
 )
 
 mkdir -p "$ICONS_DIR"

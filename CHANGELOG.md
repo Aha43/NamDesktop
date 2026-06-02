@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Help: pop-out button (top-right of help panel) opens help in a non-modal floating dialog so the user can read and use the app simultaneously. F1 / Help menu raises the floating dialog when already open. Dialog position and size are persisted in settings. Closes #317.
+
 - Project Workbench power mode: Rename, Edit description, and Delete buttons for the current project moved from the "This project" section header to the breadcrumb toolbar (upper right, next to the pencil). Sub-project section headers are unchanged. Closes #316.
 
 - Move to…: actions can now be moved to the free (standalone) actions area via a "(Free action)" entry at the top of the picker — analogous to moving a project to top-level. MCP `move_node` also accepts `nextActionsNodeId` as target, and omitting `new_parent_id` for an action now moves it to free actions instead of returning an error. Closes #314.
