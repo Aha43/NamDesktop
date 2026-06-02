@@ -222,19 +222,19 @@ class MonitoringModeTest {
 
     @Test
     void describe_singleInboxItem() {
-        var s = new MonitoringMode.DiffSummary(1, 0, 0, 0, 0, 0);
+        var s = new MonitoringMode.DiffSummary(1, 0, 0, 0, 0, 0, 0);
         assertEquals("1 item added to Inbox", s.describe());
     }
 
     @Test
     void describe_pluralInboxItems() {
-        var s = new MonitoringMode.DiffSummary(3, 0, 0, 0, 0, 0);
+        var s = new MonitoringMode.DiffSummary(3, 0, 0, 0, 0, 0, 0);
         assertEquals("3 items added to Inbox", s.describe());
     }
 
     @Test
     void describe_mixedChanges() {
-        var s = new MonitoringMode.DiffSummary(2, 1, 0, 3, 0, 0);
+        var s = new MonitoringMode.DiffSummary(2, 1, 0, 3, 0, 0, 0);
         assertTrue(s.describe().contains("2 items added to Inbox"));
         assertTrue(s.describe().contains("1 project created"));
         assertTrue(s.describe().contains("3 status changes"));
@@ -242,19 +242,46 @@ class MonitoringModeTest {
 
     @Test
     void describe_isEmpty_whenAllZero() {
-        assertTrue(new MonitoringMode.DiffSummary(0, 0, 0, 0, 0, 0).isEmpty());
+        assertTrue(new MonitoringMode.DiffSummary(0, 0, 0, 0, 0, 0, 0).isEmpty());
     }
 
     @Test
     void describe_notEmpty_whenAnyNonZero() {
-        assertFalse(new MonitoringMode.DiffSummary(0, 0, 1, 0, 0, 0).isEmpty());
+        assertFalse(new MonitoringMode.DiffSummary(0, 0, 1, 0, 0, 0, 0).isEmpty());
     }
 
     @Test
     void describe_resourceChange() {
-        var s = new MonitoringMode.DiffSummary(0, 0, 0, 0, 0, 2);
+        var s = new MonitoringMode.DiffSummary(0, 0, 0, 0, 0, 2, 0);
         assertTrue(s.describe().contains("2 resource changes"));
         assertFalse(s.isEmpty());
+    }
+
+    @Test
+    void diff_detectsNodeMoved(@TempDir Path tmpDir) throws IOException {
+        var wsPath    = tmpDir.resolve("workspace.json");
+        var base      = NamWorkspace.createDefault();
+        var projectA  = new NamNode(UUID.randomUUID(), "Project A");
+        projectA.setProject(true);
+        var projectB  = new NamNode(UUID.randomUUID(), "Project B");
+        projectB.setProject(true);
+        var action    = new NamNode(UUID.randomUUID(), "Some action");
+        base.getNodes().put(projectA.getId(), projectA);
+        base.getNodes().put(projectB.getId(), projectB);
+        base.getNodes().put(action.getId(), action);
+        base.getNode(base.getProjectsNodeId()).orElseThrow().getChildIds().add(projectA.getId());
+        base.getNode(base.getProjectsNodeId()).orElseThrow().getChildIds().add(projectB.getId());
+        projectA.getChildIds().add(action.getId());
+        repo.save(wsPath, base);
+
+        var ext = repo.load(wsPath);
+        ext.getNode(projectA.getId()).orElseThrow().getChildIds().remove(action.getId());
+        ext.getNode(projectB.getId()).orElseThrow().getChildIds().add(action.getId());
+
+        var summary = MonitoringMode.diff(base, ext);
+        assertEquals(1, summary.moved());
+        assertFalse(summary.isEmpty());
+        assertTrue(summary.describe().contains("1 node moved"));
     }
 
     @Test

@@ -53,5 +53,6 @@ printf '<json-rpc-messages>' \
 | `mark_done` | write | Change node status to DONE |
 | `mark_backlog` | write | Change node status to BACKLOG |
 | `delete_node` | write | Node must have no children |
+| `move_node` | write | Move node within project forest; omit `new_parent_id` to promote project to top-level |
 
 All write tools require monitoring mode to be active.

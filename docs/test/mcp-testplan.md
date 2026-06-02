@@ -368,6 +368,68 @@ No dedicated test needed. Tag-setting is covered by the `update_node` test above
 
 ---
 
+### move_node — action between projects *(Closes #309)*
+
+> **Known gap:** Checkpoint silently drops moves until #313 is fixed (`diff()` doesn't track parent/childId changes). Run these tests after #313 is resolved.
+
+**Setup:** `TEST_source_proj` and `TEST_target_proj` exist; `TEST_movable_action` is a child of `TEST_source_proj`.  
+**Action:** `move_node` with `node_id: <TEST_movable_action id>`, `new_parent_id: <TEST_target_proj id>`  
+**Assert:**
+```bash
+python3 -c "
+import json
+ws = json.load(open('$WS'))
+src  = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_source_proj')
+tgt  = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_target_proj')
+act  = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_movable_action')
+assert act['id'] in tgt.get('childIds', []),  'action not in target project'
+assert act['id'] not in src.get('childIds', []), 'action still in source project'
+print('PASS')
+"
+```
+**Cleanup:** Delete `TEST_movable_action`, `TEST_source_proj`, `TEST_target_proj`.
+
+---
+
+### move_node — nest project under another *(Closes #309)*
+
+**Setup:** `TEST_proj_A` and `TEST_proj_B` are both top-level projects.  
+**Action:** `move_node` with `node_id: <TEST_proj_B id>`, `new_parent_id: <TEST_proj_A id>`  
+**Assert:**
+```bash
+python3 -c "
+import json
+ws = json.load(open('$WS'))
+a = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_proj_A')
+b = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_proj_B')
+assert b['id'] in a.get('childIds', []), 'TEST_proj_B not nested under TEST_proj_A'
+print('PASS')
+"
+```
+
+---
+
+### move_node — promote nested project to top-level *(Closes #309)*
+
+**Setup:** `TEST_proj_B` is nested under `TEST_proj_A` (from previous sub-case, or re-created).  
+**Action:** `move_node` with `node_id: <TEST_proj_B id>` — omit `new_parent_id`  
+**Assert:**
+```bash
+python3 -c "
+import json
+ws = json.load(open('$WS'))
+projects_id = ws['projectsNodeId']
+b = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_proj_B')
+a = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_proj_A')
+assert b['id'] in ws['nodes'][projects_id].get('childIds', []), 'TEST_proj_B not at top level'
+assert b['id'] not in a.get('childIds', []), 'TEST_proj_B still nested under TEST_proj_A'
+print('PASS')
+"
+```
+**Cleanup:** Delete `TEST_proj_B`, then `TEST_proj_A`.
+
+---
+
 ### delete_node
 
 **Setup:** `TEST_delete_me` exists as a leaf node.  

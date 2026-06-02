@@ -139,6 +139,9 @@ public final class NamMcpServer {
         tools.add(tool("list_next_actions",
                 "List all actions with status NEXT across the whole workspace.",
                 MAPPER.createObjectNode()));
+        tools.add(tool("list_backlog",
+                "List all actions with status BACKLOG across the whole workspace.",
+                MAPPER.createObjectNode()));
         tools.add(tool("list_done",
                 "List all actions with status DONE across the whole workspace.",
                 MAPPER.createObjectNode()));
@@ -233,6 +236,24 @@ public final class NamMcpServer {
                         "value",       prop("string",  "New value (omit to keep existing)"),
                         "description", prop("string",  "New description/note (omit to keep existing, empty string to clear)")
                 ), List.of("node_id", "index"))));
+        tools.add(tool("add_blocked_by",
+                "Add a blocking relationship to an existing node. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id",       prop("string", "UUID of the node that is blocked"),
+                        "blocked_by_id", prop("string", "UUID of the node that blocks it")
+                ), List.of("node_id", "blocked_by_id"))));
+        tools.add(tool("remove_blocked_by",
+                "Remove a blocking relationship from an existing node. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id",       prop("string", "UUID of the blocked node"),
+                        "blocked_by_id", prop("string", "UUID of the blocker to remove")
+                ), List.of("node_id", "blocked_by_id"))));
+        tools.add(tool("move_node",
+                "Move a node to a new parent within the project forest. Projects may be moved to any project or to top-level; actions may be moved between projects. Requires monitoring mode.",
+                schema(Map.of(
+                        "node_id",       prop("string", "UUID of the node to move"),
+                        "new_parent_id", prop("string", "UUID of the new parent project, or omit / null for top-level (projects only)")
+                ), List.of("node_id"))));
         return result;
     }
 
@@ -286,6 +307,7 @@ public final class NamMcpServer {
             case "get_workspace_context" -> toolGetContext();
             case "list_inbox"            -> toolListInbox();
             case "list_next_actions"     -> toolListNextActions();
+            case "list_backlog"          -> toolListBacklog();
             case "list_done"             -> toolListDone();
             case "list_projects"         -> toolListProjects();
             case "list_saved_views"      -> toolListSavedViews();
@@ -305,6 +327,9 @@ public final class NamMcpServer {
             case "add_resource"         -> toolAddResource(args);
             case "remove_resource"      -> toolRemoveResource(args);
             case "edit_resource"        -> toolEditResource(args);
+            case "add_blocked_by"       -> toolAddBlockedBy(args);
+            case "remove_blocked_by"    -> toolRemoveBlockedBy(args);
+            case "move_node"            -> toolMoveNode(args);
             default                      -> textResult("Unknown tool: " + name, true);
         };
     }
@@ -374,10 +399,18 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolListNextActions() throws IOException {
+        return toolListByStatus(NodeStatus.NEXT);
+    }
+
+    private ObjectNode toolListBacklog() throws IOException {
+        return toolListByStatus(NodeStatus.BACKLOG);
+    }
+
+    private ObjectNode toolListByStatus(NodeStatus status) throws IOException {
         var ws    = repo.load(readPath());
         var items = MAPPER.createArrayNode();
         ws.getNodes().values().stream()
-                .filter(n -> n.getStatus() == NodeStatus.NEXT)
+                .filter(n -> n.getStatus() == status)
                 .forEach(n -> {
                     var o = items.addObject();
                     o.put("id",      n.getId().toString());
@@ -788,6 +821,114 @@ public final class NamMcpServer {
             if (newDesc  != null)                        r.setDescription(newDesc.isBlank() ? null : newDesc);
         }));
         return textResult("Updated resource at index " + index + " on node \"" + node.getTitle() + "\".", false);
+    }
+
+    private ObjectNode toolAddBlockedBy(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var nodeIdStr   = args.path("node_id").asText("").strip();
+        var blockerStr  = args.path("blocked_by_id").asText("").strip();
+        if (nodeIdStr.isEmpty())  return textResult("Error: node_id is required.", true);
+        if (blockerStr.isEmpty()) return textResult("Error: blocked_by_id is required.", true);
+
+        UUID nodeId, blockerId;
+        try { nodeId   = UUID.fromString(nodeIdStr);  } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+        try { blockerId = UUID.fromString(blockerStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid blocked_by_id UUID.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        if (ws.getNode(nodeId).isEmpty())   return textResult("Error: no node found with node_id " + nodeIdStr, true);
+        if (ws.getNode(blockerId).isEmpty()) return textResult("Error: no node found with blocked_by_id " + blockerStr, true);
+        if (nodeId.equals(blockerId))        return textResult("Error: a node cannot block itself.", true);
+
+        var result = atomicWriteWithResult(w -> {
+            var node = w.getNode(nodeId).orElseThrow();
+            if (node.getBlockedBy().contains(blockerId)) return null;
+            if (wouldCreateBlockedByCycle(w, nodeId, blockerId))
+                return "Error: adding this relationship would create a cycle.";
+            node.getBlockedBy().add(blockerId);
+            return null;
+        });
+        if (result != null) return textResult(result, true);
+        var blocker = ws.getNode(blockerId).get();
+        return textResult("Node \"" + ws.getNode(nodeId).get().getTitle() + "\" is now blocked by \"" + blocker.getTitle() + "\".", false);
+    }
+
+    private ObjectNode toolRemoveBlockedBy(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var nodeIdStr  = args.path("node_id").asText("").strip();
+        var blockerStr = args.path("blocked_by_id").asText("").strip();
+        if (nodeIdStr.isEmpty())  return textResult("Error: node_id is required.", true);
+        if (blockerStr.isEmpty()) return textResult("Error: blocked_by_id is required.", true);
+
+        UUID nodeId, blockerId;
+        try { nodeId    = UUID.fromString(nodeIdStr);  } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+        try { blockerId = UUID.fromString(blockerStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid blocked_by_id UUID.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        if (ws.getNode(nodeId).isEmpty()) return textResult("Error: no node found with node_id " + nodeIdStr, true);
+
+        final UUID finalBlockerId = blockerId;
+        atomicWrite(w -> w.getNode(nodeId).ifPresent(n -> n.getBlockedBy().remove(finalBlockerId)));
+        return textResult("Removed blocking relationship from \"" + ws.getNode(nodeId).get().getTitle() + "\".", false);
+    }
+
+    private boolean wouldCreateBlockedByCycle(NamWorkspace ws, UUID nodeId, UUID newBlockerId) {
+        var visited = new HashSet<UUID>();
+        var stack   = new ArrayDeque<UUID>();
+        stack.push(newBlockerId);
+        while (!stack.isEmpty()) {
+            var current = stack.pop();
+            if (current.equals(nodeId)) return true;
+            if (!visited.add(current)) continue;
+            ws.getNode(current).ifPresent(n -> n.getBlockedBy().forEach(stack::push));
+        }
+        return false;
+    }
+
+    private ObjectNode toolMoveNode(JsonNode args) throws IOException {
+        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        var nodeIdStr     = args.path("node_id").asText("").strip();
+        var newParentStr  = args.path("new_parent_id").asText("").strip();
+        if (nodeIdStr.isEmpty()) return textResult("Error: node_id is required.", true);
+
+        UUID nodeId;
+        try { nodeId = UUID.fromString(nodeIdStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
+
+        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var node = ws.getNode(nodeId).orElse(null);
+        if (node == null) return textResult("Error: no node found with node_id " + nodeIdStr, true);
+
+        var structuralIds = Set.of(ws.getRootNodeId(), ws.getInboxNodeId(),
+                ws.getProjectsNodeId(), ws.getNextActionsNodeId());
+        if (structuralIds.contains(nodeId))
+            return textResult("Error: structural nodes cannot be moved.", true);
+
+        UUID newParentId;
+        if (newParentStr.isEmpty()) {
+            if (!node.isProject()) return textResult("Error: actions cannot be moved to the top-level project area. Specify a project as the target.", true);
+            newParentId = ws.getProjectsNodeId();
+        } else {
+            try { newParentId = UUID.fromString(newParentStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid new_parent_id UUID.", true); }
+            var newParent = ws.getNode(newParentId).orElse(null);
+            if (newParent == null) return textResult("Error: no node found with new_parent_id " + newParentStr, true);
+            if (structuralIds.contains(newParentId) && !newParentId.equals(ws.getProjectsNodeId()))
+                return textResult("Error: invalid target parent.", true);
+            if (!node.isProject() && newParentId.equals(ws.getProjectsNodeId()))
+                return textResult("Error: actions cannot be moved to the top-level project area. Specify a project as the target.", true);
+            if (!node.isProject() && !newParent.isProject())
+                return textResult("Error: actions can only be moved into project nodes. Use 'Make project' on the target node first.", true);
+        }
+
+        if (nodeId.equals(newParentId)) return textResult("Error: a node cannot be its own parent.", true);
+        var subtree = ws.collectSubtree(nodeId);
+        if (subtree.contains(newParentId)) return textResult("Error: cannot move a node into one of its own descendants.", true);
+
+        final UUID finalNewParentId = newParentId;
+        atomicWrite(w -> {
+            w.getNodes().values().forEach(n -> n.getChildIds().remove(nodeId));
+            w.getNode(finalNewParentId).ifPresent(p -> p.getChildIds().add(nodeId));
+        });
+        var parentTitle = newParentId.equals(ws.getProjectsNodeId()) ? "top-level projects" : ws.getNode(newParentId).get().getTitle();
+        return textResult("Moved \"" + node.getTitle() + "\" to \"" + parentTitle + "\".", false);
     }
 
     // -------------------------------------------------------------------------

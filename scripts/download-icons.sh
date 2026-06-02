@@ -40,6 +40,7 @@ ICONS=(
   inbox
   antenna
   paperclip
+  arrows-transfer-up
 )
 
 mkdir -p "$ICONS_DIR"
