@@ -41,6 +41,12 @@ public final class ActionDialog extends NodeDialog {
             addToolbarButton(makeProjectButton);
         }
 
+        var moveButton = UiHelper.iconButton("Move to…",
+                new FlatSVGIcon(ActionDialog.class.getResource("/icons/arrows-transfer-up.svg")).derive(16, 16));
+        moveButton.setToolTipText("Move this action to a different project");
+        moveButton.addActionListener(e -> moveTo(parent, nodeId, workspace, service));
+        addToolbarButton(moveButton);
+
         var structural   = structuralIds(workspace);
         var parentNode   = workspace.getParent(nodeId)
                 .filter(p -> !structural.contains(p.getId()))
@@ -241,6 +247,19 @@ public final class ActionDialog extends NodeDialog {
             dispose();
         } catch (IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to convert: " + e.getMessage(),
+                    "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void moveTo(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
+        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, "(Free action)", workspace.getNextActionsNodeId());
+        if (picked == null) return;
+        try {
+            service.moveNode(nodeId, picked);
+            notifyChanged();
+            dispose();
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to move: " + e.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -1,5 +1,6 @@
 package namdesktop.service;
 
+import namdesktop.model.NamNode;
 import namdesktop.model.NamWorkspace;
 import namdesktop.persist.JsonWorkspaceRepository;
 
@@ -84,7 +85,7 @@ public final class MonitoringMode {
                 base.getRootNodeId(), base.getInboxNodeId(),
                 base.getProjectsNodeId(), base.getNextActionsNodeId());
 
-        int inboxAdded = 0, projectsCreated = 0, actionsAdded = 0, statusChanged = 0, deleted = 0, resourcesChanged = 0;
+        int inboxAdded = 0, projectsCreated = 0, actionsAdded = 0, statusChanged = 0, deleted = 0, resourcesChanged = 0, moved = 0;
 
         for (var entry : external.getNodes().entrySet()) {
             var id      = entry.getKey();
@@ -104,6 +105,9 @@ public final class MonitoringMode {
             } else {
                 if (baseNode.getStatus() != extNode.getStatus()) statusChanged++;
                 if (!baseNode.getResources().equals(extNode.getResources())) resourcesChanged++;
+                var baseParentId = base.getParent(id).map(NamNode::getId);
+                var extParentId  = external.getParent(id).map(NamNode::getId);
+                if (!baseParentId.equals(extParentId)) moved++;
             }
         }
 
@@ -112,7 +116,7 @@ public final class MonitoringMode {
             if (!external.getNodes().containsKey(id)) deleted++;
         }
 
-        return new DiffSummary(inboxAdded, projectsCreated, actionsAdded, statusChanged, deleted, resourcesChanged);
+        return new DiffSummary(inboxAdded, projectsCreated, actionsAdded, statusChanged, deleted, resourcesChanged, moved);
     }
 
     public sealed interface ExitResult {
@@ -122,11 +126,11 @@ public final class MonitoringMode {
     }
 
     public record DiffSummary(int inboxAdded, int projectsCreated, int actionsAdded,
-                               int statusChanged, int deleted, int resourcesChanged) {
+                               int statusChanged, int deleted, int resourcesChanged, int moved) {
 
         public boolean isEmpty() {
             return inboxAdded == 0 && projectsCreated == 0 && actionsAdded == 0
-                    && statusChanged == 0 && deleted == 0 && resourcesChanged == 0;
+                    && statusChanged == 0 && deleted == 0 && resourcesChanged == 0 && moved == 0;
         }
 
         public String describe() {
@@ -137,6 +141,7 @@ public final class MonitoringMode {
             if (statusChanged    > 0) parts.add(statusChanged    + (statusChanged    == 1 ? " status change"          : " status changes"));
             if (deleted          > 0) parts.add(deleted          + (deleted          == 1 ? " item deleted"           : " items deleted"));
             if (resourcesChanged > 0) parts.add(resourcesChanged + (resourcesChanged == 1 ? " resource change"        : " resource changes"));
+            if (moved            > 0) parts.add(moved            + (moved            == 1 ? " node moved"             : " nodes moved"));
             return String.join(", ", parts);
         }
     }

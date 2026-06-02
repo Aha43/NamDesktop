@@ -32,6 +32,12 @@ public final class ProjectDialog extends NodeDialog {
         convertButton.addActionListener(e -> convertToAction());
         addToolbarButton(convertButton);
 
+        var moveButton = UiHelper.iconButton("Move to…",
+                new FlatSVGIcon(ProjectDialog.class.getResource("/icons/arrows-transfer-up.svg")).derive(16, 16));
+        moveButton.setToolTipText("Move this project under a different parent");
+        moveButton.addActionListener(e -> moveTo(parent, nodeId));
+        addToolbarButton(moveButton);
+
         var saveTemplateButton = UiHelper.iconButton("Save as Template…",
                 new FlatSVGIcon(ProjectDialog.class.getResource("/icons/copy.svg")).derive(16, 16));
         saveTemplateButton.setToolTipText("Save this project's structure as a reusable template");
@@ -98,6 +104,18 @@ public final class ProjectDialog extends NodeDialog {
                     "Cannot convert", ERROR_MESSAGE);
         } catch (IOException e) {
             showMessageDialog(this, "Failed to save: " + e.getMessage(), "Error", ERROR_MESSAGE);
+        }
+    }
+
+    private void moveTo(Window parent, UUID nodeId) {
+        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, "(Top level)", workspace.getProjectsNodeId());
+        if (picked == null) return;
+        try {
+            service.moveNode(nodeId, picked);
+            notifyChanged();
+            dispose();
+        } catch (IOException e) {
+            showMessageDialog(this, "Failed to move: " + e.getMessage(), "Error", ERROR_MESSAGE);
         }
     }
 }

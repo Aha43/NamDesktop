@@ -8,6 +8,17 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Move to…: actions can now be moved to the free (standalone) actions area via a "(Free action)" entry at the top of the picker — analogous to moving a project to top-level. MCP `move_node` also accepts `nextActionsNodeId` as target, and omitting `new_parent_id` for an action now moves it to free actions instead of returning an error. Closes #314.
+
+### Fixed
+
+- Monitoring mode: `move_node` MCP changes are no longer silently dropped at checkpoint. `MonitoringMode.diff()` now detects when an existing node's parent differs between baseline and external and counts it as a `moved` change; `DiffSummary.describe()` surfaces "N node(s) moved" in the checkpoint dialog. Closes #313.
+
+### Added
+
+- MCP: `list_backlog` tool — lists all nodes with status BACKLOG across the workspace, consistent with `list_next_actions` and `list_done`. Closes #311.
+- MCP: `add_blocked_by` / `remove_blocked_by` tools — add or remove a blocking relationship on an existing node after creation. Cycle detection prevents circular dependencies. Requires monitoring mode. Closes #310.
+- MCP + UI: `move_node` MCP tool reparents a node within the project forest; actions may be moved between projects, projects may be moved to any project or top-level. Moving an action into a non-project is rejected (use "Make project" first). "Move to…" button added to ActionDialog (moves the action to a different project) and ProjectDialog (moves the project to a different parent or top-level). Closes #309.
 - `Cmd+S` / `Ctrl+S` keyboard shortcut in the File menu: pushes the workspace to the configured git sync remote when sync is set up; otherwise shows a brief "Workspace auto-saved locally." nudge confirming that auto-save is active. Closes #241.
 - Power user mode: Settings toggle (off by default) that restores the full inline toolbar in Project Workbench — section headers gain Rename, Description, and Delete buttons; action toolbars gain Rename and Edit tags; breadcrumb ancestor links gain a pencil. All removed by #227; now opt-in. Closes #235.
 - Project Workbench: "Make project" button in ActionDialog converts an action to a sub-project in place — the action gains `isProject=true`, disappears from the actions list, and becomes a new sub-project section on the next rebuild. Closes #39.

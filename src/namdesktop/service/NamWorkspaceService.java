@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -553,6 +554,28 @@ public final class NamWorkspaceService {
         workspace.getNodes().put(node.getId(), node);
         workspace.getNode(parentId).orElseThrow().getChildIds().add(node.getId());
         for (var child : templateNode.children()) cloneTemplateNode(node.getId(), child);
+    }
+
+    public void moveNode(UUID nodeId, UUID newParentId) throws IOException {
+        var node = require(nodeId);
+        var structuralIds = Set.of(workspace.getRootNodeId(), workspace.getInboxNodeId(),
+                workspace.getProjectsNodeId(), workspace.getNextActionsNodeId());
+        if (structuralIds.contains(nodeId))
+            throw new IllegalArgumentException("Structural nodes cannot be moved.");
+        if (!node.isProject() && newParentId.equals(workspace.getProjectsNodeId()))
+            throw new IllegalArgumentException("Actions cannot be moved to the top-level project area.");
+        var newParent = require(newParentId);
+        if (!node.isProject() && !newParent.isProject() && !structuralIds.contains(newParentId))
+            throw new IllegalArgumentException("Actions can only be moved into project nodes.");
+        if (nodeId.equals(newParentId))
+            throw new IllegalArgumentException("A node cannot be its own parent.");
+        var subtree = workspace.collectSubtree(nodeId);
+        if (subtree.contains(newParentId))
+            throw new IllegalArgumentException("Cannot move a node into one of its own descendants.");
+        workspace.getNodes().values().forEach(n -> n.getChildIds().remove(nodeId));
+        newParent.getChildIds().add(nodeId);
+        node.setUpdatedAt(LocalDateTime.now());
+        repository.save(path, workspace);
     }
 
     private NamNode findParent(UUID nodeId) {
