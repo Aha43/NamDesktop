@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; margin: 16px; line-height: 1.5;">
+
+<h3>Blocked Actions</h3>
+
+<p>An action can be marked as <b>blocked by</b> one or more other actions.
+A blocked action is held out of your Next Actions and Backlog lists until every
+blocker is resolved — keeping your active lists clean and honest.</p>
+
+<p>When you mark a blocking action as done, the blocked action automatically
+becomes available again and reappears in the appropriate list.</p>
+
+<h4>The Blocked panel</h4>
+<p>The <b>Blocked</b> entry in the sidebar shows all currently blocked actions,
+grouped by their blockers. Use it for a quick overview of what's being held up
+and why. Clicking a blocker opens its action dialog so you can work on it directly.</p>
+
+<h4>Adding a blocking relationship</h4>
+<p>Open the action dialog (double-click the action or press Enter).
+The <b>Blocked by</b> section shows a search field — type to find the action that
+must be done first, then select it. You can add as many blockers as needed.</p>
+
+<h4>Removing a blocking relationship</h4>
+<p>Open the action dialog and find the blocker in the <b>Blocked by</b> list.
+Click the remove button next to it to clear the relationship.</p>
+
+<h4>Cycle detection</h4>
+<p>The app prevents circular blocking chains — if A is blocked by B, you cannot
+then mark B as blocked by A. Any relationship that would create a cycle is rejected.</p>
+
+</body>
+</html>

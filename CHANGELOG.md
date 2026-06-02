@@ -8,6 +8,23 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Help: sidebar reorganised into named sections (Tutorial, Daily workflow, Projects, Finding work, App, Superpower, Background) with visual separators and logical reading order. AI assistant spotlighted in its own section and given dedicated framing in Getting Started. Closes #324.
+- Help: Search, Tag management, Keyboard shortcuts, and Settings reference articles — four short articles covering features that had no documentation. All added to HelpPanel sidebar; Keyboard shortcuts linked from Getting Started. Closes #323.
+- Help: Blocked actions concept article — explains blocking relationships, the Blocked panel, how to add/remove blockers in the action dialog, and cycle detection. Added to HelpPanel sidebar; cross-linked from Next Actions and Getting Started. Closes #322.
+- Help: Resources concept article — explains the four attachment types (URI, File, Email, Text), how to add and remove resources via the action/project dialog, and the paperclip indicator in list views. Added to HelpPanel sidebar; cross-linked from Projects, Project Workbench, and Getting Started. Closes #321.
+- Help: Saved Views concept article — explains what Saved Views are, how to create them, the next-only toggle, and how they differ from the session-only Tag filter panel. Added to HelpPanel sidebar; cross-linked from the Tag filter article. Closes #320.
+- Help: Templates concept article — explains what templates are, how to create one from an existing project, how to apply a template, and when they are useful. Added to the HelpPanel sidebar; cross-linked from Projects and Project Workbench articles. Closes #319.
+
+### Changed
+
+- Help: GTD tone audit — all articles now lead with plain language; GTD references demoted to brief italic asides where they appear. Getting Started no longer frames GTD as a prerequisite. Projects article opens with a plain definition. GTD article reframed as "the thinking behind NAM" for the curious. Closes #318.
+
+### Added
+
+- Help: pop-out button (top-right of help panel) opens help in a non-modal floating dialog so the user can read and use the app simultaneously. F1 / Help menu raises the floating dialog when already open. Dialog position and size are persisted in settings. Closes #317.
+
+- Project Workbench power mode: Rename, Edit description, and Delete buttons for the current project moved from the "This project" section header to the breadcrumb toolbar (upper right, next to the pencil). Sub-project section headers are unchanged. Closes #316.
+
 - Move to…: actions can now be moved to the free (standalone) actions area via a "(Free action)" entry at the top of the picker — analogous to moving a project to top-level. MCP `move_node` also accepts `nextActionsNodeId` as target, and omitting `new_parent_id` for an action now moves it to free actions instead of returning an error. Closes #314.
 
 ### Fixed

@@ -33,6 +33,10 @@ public final class AppSettings {
     private boolean welcomed         = false;
     private boolean backlogFreeOnly  = true;
     private boolean powerMode        = false;
+    private Integer helpDialogX      = null;
+    private Integer helpDialogY      = null;
+    private int     helpDialogWidth  = 560;
+    private int     helpDialogHeight = 700;
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -58,6 +62,14 @@ public final class AppSettings {
     public void    setBacklogFreeOnly(boolean v)     { this.backlogFreeOnly = v; }
     public boolean isPowerMode()                     { return powerMode; }
     public void    setPowerMode(boolean v)           { this.powerMode = v; }
+    public Integer getHelpDialogX()                  { return helpDialogX; }
+    public void    setHelpDialogX(Integer v)         { this.helpDialogX = v; }
+    public Integer getHelpDialogY()                  { return helpDialogY; }
+    public void    setHelpDialogY(Integer v)         { this.helpDialogY = v; }
+    public int     getHelpDialogWidth()              { return helpDialogWidth > 0 ? helpDialogWidth : 560; }
+    public void    setHelpDialogWidth(int v)         { this.helpDialogWidth = v; }
+    public int     getHelpDialogHeight()             { return helpDialogHeight > 0 ? helpDialogHeight : 700; }
+    public void    setHelpDialogHeight(int v)        { this.helpDialogHeight = v; }
 
     public static AppSettings load() {
         try {
@@ -76,6 +88,10 @@ public final class AppSettings {
                 s.setWelcomed(dto.welcomed != null && dto.welcomed);
                 s.setBacklogFreeOnly(dto.backlogFreeOnly == null || dto.backlogFreeOnly);
                 s.setPowerMode(dto.powerMode != null && dto.powerMode);
+                s.setHelpDialogX(dto.helpDialogX);
+                s.setHelpDialogY(dto.helpDialogY);
+                if (dto.helpDialogWidth  != null) s.setHelpDialogWidth(dto.helpDialogWidth);
+                if (dto.helpDialogHeight != null) s.setHelpDialogHeight(dto.helpDialogHeight);
                 return s;
             }
         } catch (Exception e) {
@@ -99,6 +115,10 @@ public final class AppSettings {
         dto.welcomed         = this.welcomed;
         dto.backlogFreeOnly  = this.backlogFreeOnly;
         dto.powerMode        = this.powerMode;
+        dto.helpDialogX      = this.helpDialogX;
+        dto.helpDialogY      = this.helpDialogY;
+        dto.helpDialogWidth  = this.helpDialogWidth;
+        dto.helpDialogHeight = this.helpDialogHeight;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -115,6 +135,10 @@ public final class AppSettings {
         public String  lastProjectId;
         public Boolean welcomed;
         public Boolean backlogFreeOnly;
-        public Boolean powerMode;
+        public Boolean  powerMode;
+        public Integer  helpDialogX;
+        public Integer  helpDialogY;
+        public Integer  helpDialogWidth;
+        public Integer  helpDialogHeight;
     }
 }
