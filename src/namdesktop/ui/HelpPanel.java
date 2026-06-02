@@ -32,7 +32,11 @@ public final class HelpPanel extends JPanel {
             new Concept("Templates",         "templates"),
             new Concept("Saved Views",       "saved-views"),
             new Concept("Resources",         "resources"),
-            new Concept("Blocked actions",   "blocked")
+            new Concept("Blocked actions",   "blocked"),
+            new Concept("Search",            "search"),
+            new Concept("Tag management",    "tag-management"),
+            new Concept("Keyboard shortcuts","keyboard-shortcuts"),
+            new Concept("Settings",          "settings")
     );
 
     private final JEditorPane mainPane;
