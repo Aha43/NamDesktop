@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Help: GTD tone audit — all articles now lead with plain language; GTD references demoted to brief italic asides where they appear. Getting Started no longer frames GTD as a prerequisite. Projects article opens with a plain definition. GTD article reframed as "the thinking behind NAM" for the curious. Closes #318.
+
 ### Added
 
 - Help: pop-out button (top-right of help panel) opens help in a non-modal floating dialog so the user can read and use the app simultaneously. F1 / Help menu raises the floating dialog when already open. Dialog position and size are persisted in settings. Closes #317.
