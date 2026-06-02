@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Help: sidebar reorganised into named sections (Tutorial, Daily workflow, Projects, Finding work, App, Superpower, Background) with visual separators and logical reading order. AI assistant spotlighted in its own section and given dedicated framing in Getting Started. Closes #324.
 - Help: Search, Tag management, Keyboard shortcuts, and Settings reference articles — four short articles covering features that had no documentation. All added to HelpPanel sidebar; Keyboard shortcuts linked from Getting Started. Closes #323.
 - Help: Blocked actions concept article — explains blocking relationships, the Blocked panel, how to add/remove blockers in the action dialog, and cycle detection. Added to HelpPanel sidebar; cross-linked from Next Actions and Getting Started. Closes #322.
 - Help: Resources concept article — explains the four attachment types (URI, File, Email, Text), how to add and remove resources via the action/project dialog, and the paperclip indicator in list views. Added to HelpPanel sidebar; cross-linked from Projects, Project Workbench, and Getting Started. Closes #321.

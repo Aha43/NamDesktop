@@ -13,30 +13,45 @@ import java.util.List;
 
 public final class HelpPanel extends JPanel {
 
-    private record Concept(String title, String slug) {}
+    private sealed interface Item permits Entry, SectionHeader {}
+    private record Entry(String title, String slug) implements Item {}
+    private record SectionHeader(String label)      implements Item {}
 
-    private static final List<Concept> CONCEPTS = List.of(
-            new Concept("Getting started",   "tutorials/getting-started"),
-            new Concept("GTD basics",        "gtd"),
-            new Concept("Inbox",             "inbox"),
-            new Concept("Next Actions",      "next-actions"),
-            new Concept("Backlog",           "backlog"),
-            new Concept("Done",              "done"),
-            new Concept("Projects",          "projects"),
-            new Concept("Project Workbench", "workbench"),
-            new Concept("Tag filter",        "contexts"),
-            new Concept("Goal Board",        "mission-control"),
-            new Concept("Focus mode",        "focus-mode"),
-            new Concept("Git sync",          "git-sync"),
-            new Concept("AI assistant",      "ai-assistant"),
-            new Concept("Templates",         "templates"),
-            new Concept("Saved Views",       "saved-views"),
-            new Concept("Resources",         "resources"),
-            new Concept("Blocked actions",   "blocked"),
-            new Concept("Search",            "search"),
-            new Concept("Tag management",    "tag-management"),
-            new Concept("Keyboard shortcuts","keyboard-shortcuts"),
-            new Concept("Settings",          "settings")
+    private static final List<Item> ITEMS = List.of(
+            new SectionHeader("Tutorial"),
+            new Entry("Getting started",    "tutorials/getting-started"),
+
+            new SectionHeader("Daily workflow"),
+            new Entry("Inbox",              "inbox"),
+            new Entry("Next Actions",       "next-actions"),
+            new Entry("Backlog",            "backlog"),
+            new Entry("Done",               "done"),
+
+            new SectionHeader("Projects"),
+            new Entry("Projects",           "projects"),
+            new Entry("Project Workbench",  "workbench"),
+            new Entry("Templates",          "templates"),
+            new Entry("Blocked actions",    "blocked"),
+            new Entry("Resources",          "resources"),
+
+            new SectionHeader("Finding work"),
+            new Entry("Tag filter",         "contexts"),
+            new Entry("Saved Views",        "saved-views"),
+            new Entry("Search",             "search"),
+            new Entry("Goal Board",         "mission-control"),
+
+            new SectionHeader("App"),
+            new Entry("Focus mode",         "focus-mode"),
+            new Entry("Settings",           "settings"),
+            new Entry("Keyboard shortcuts", "keyboard-shortcuts"),
+            new Entry("Tag management",     "tag-management"),
+            new Entry("Git sync",           "git-sync"),
+
+            new SectionHeader("Superpower"),
+            new Entry("AI assistant",       "ai-assistant"),
+
+            new SectionHeader("Background"),
+            new Entry("GTD basics",         "gtd")
     );
 
     private final JEditorPane mainPane;
@@ -61,16 +76,17 @@ public final class HelpPanel extends JPanel {
         contentSplit.setBorder(null);
         contentSplit.setDividerSize(4);
 
-        var listModel = new DefaultListModel<Concept>();
-        CONCEPTS.forEach(listModel::addElement);
+        var listModel = new DefaultListModel<Item>();
+        ITEMS.forEach(listModel::addElement);
         var conceptList = new JList<>(listModel);
-        conceptList.setCellRenderer(new ConceptRenderer());
+        conceptList.setCellRenderer(new ItemRenderer());
         conceptList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        conceptList.setBorder(new EmptyBorder(4, 4, 4, 4));
+        conceptList.setBorder(new EmptyBorder(0, 0, 4, 0));
         conceptList.addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
-            var c = conceptList.getSelectedValue();
-            if (c != null) loadMain(c.slug());
+            var selected = conceptList.getSelectedValue();
+            if (selected instanceof Entry entry) loadMain(entry.slug());
+            else if (selected instanceof SectionHeader) conceptList.clearSelection();
         });
 
         var listScroll = new JScrollPane(conceptList);
@@ -97,7 +113,10 @@ public final class HelpPanel extends JPanel {
 
         SwingUtilities.invokeLater(() -> contentSplit.setDividerLocation(1.0));
 
-        conceptList.setSelectedIndex(0);
+        // Select "Getting started" — first Entry after the opening header
+        for (int i = 0; i < listModel.size(); i++) {
+            if (listModel.get(i) instanceof Entry) { conceptList.setSelectedIndex(i); break; }
+        }
     }
 
     public void setOnPopOut(Runnable r) {
@@ -181,12 +200,25 @@ public final class HelpPanel extends JPanel {
         return "<html><body style='font-family:sans-serif;margin:16px'><p><i>" + msg + "</i></p></body></html>";
     }
 
-    private static final class ConceptRenderer extends DefaultListCellRenderer {
+    private static final class ItemRenderer extends DefaultListCellRenderer {
         @Override
         public Component getListCellRendererComponent(
                 JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            if (value instanceof SectionHeader h) {
+                var label = new JLabel(h.label().toUpperCase());
+                label.setFont(label.getFont().deriveFont(Font.BOLD, 9.5f));
+                label.setForeground(UIManager.getColor("Label.disabledForeground"));
+                label.setOpaque(true);
+                label.setBackground(list.getBackground());
+                label.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createMatteBorder(index == 0 ? 0 : 1, 0, 0, 0,
+                                UIManager.getColor("Separator.foreground")),
+                        BorderFactory.createEmptyBorder(8, 6, 2, 4)));
+                return label;
+            }
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-            if (value instanceof Concept c) setText(c.title());
+            if (value instanceof Entry entry) setText(entry.title());
+            setBorder(BorderFactory.createEmptyBorder(2, 14, 2, 4));
             return this;
         }
     }
