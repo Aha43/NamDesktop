@@ -370,8 +370,6 @@ No dedicated test needed. Tag-setting is covered by the `update_node` test above
 
 ### move_node — action between projects *(Closes #309)*
 
-> **Known gap:** Checkpoint silently drops moves until #313 is fixed (`diff()` doesn't track parent/childId changes). Run these tests after #313 is resolved.
-
 **Setup:** `TEST_source_proj` and `TEST_target_proj` exist; `TEST_movable_action` is a child of `TEST_source_proj`.  
 **Action:** `move_node` with `node_id: <TEST_movable_action id>`, `new_parent_id: <TEST_target_proj id>`  
 **Assert:**
@@ -406,6 +404,27 @@ assert b['id'] in a.get('childIds', []), 'TEST_proj_B not nested under TEST_proj
 print('PASS')
 "
 ```
+
+---
+
+### move_node — detach action to free actions area *(Closes #314 MCP side)*
+
+**Setup:** `TEST_detach_proj` exists; `TEST_detach_action` is a child of it.  
+**Action:** `move_node` with `node_id: <TEST_detach_action id>` — omit `new_parent_id`  
+**Assert:**
+```bash
+python3 -c "
+import json
+ws = json.load(open('$WS'))
+next_id = ws['nextActionsNodeId']
+proj = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_detach_proj')
+act  = next(n for n in ws['nodes'].values() if n['title'] == 'TEST_detach_action')
+assert act['id'] in ws['nodes'][next_id].get('childIds', []), 'action not in free actions area'
+assert act['id'] not in proj.get('childIds', []), 'action still in project'
+print('PASS')
+"
+```
+**Cleanup:** Delete `TEST_detach_action`, then `TEST_detach_proj`.
 
 ---
 
