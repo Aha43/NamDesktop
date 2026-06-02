@@ -44,5 +44,6 @@ An epic is complete when:
 | `cloud-sync` | Cloud database sync and remote persistence |
 | `branding` | Logo, icon, visual identity |
 | `ux-review-1` | Findings from UX review 1 (2026-05-27) |
+| `help` | Help system content, layout, and UX |
 
 When a new feature area appears, create a label in GitHub and add a row here.
