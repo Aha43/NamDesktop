@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Move to…: actions can now be moved to the free (standalone) actions area via a "(Free action)" entry at the top of the picker — analogous to moving a project to top-level. MCP `move_node` also accepts `nextActionsNodeId` as target, and omitting `new_parent_id` for an action now moves it to free actions instead of returning an error. Closes #314.
+
 ### Fixed
 
 - Monitoring mode: `move_node` MCP changes are no longer silently dropped at checkpoint. `MonitoringMode.diff()` now detects when an existing node's parent differs between baseline and external and counts it as a `moved` change; `DiffSummary.describe()` surfaces "N node(s) moved" in the checkpoint dialog. Closes #313.

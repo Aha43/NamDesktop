@@ -904,18 +904,16 @@ public final class NamMcpServer {
 
         UUID newParentId;
         if (newParentStr.isEmpty()) {
-            if (!node.isProject()) return textResult("Error: actions cannot be moved to the top-level project area. Specify a project as the target.", true);
-            newParentId = ws.getProjectsNodeId();
+            newParentId = node.isProject() ? ws.getProjectsNodeId() : ws.getNextActionsNodeId();
         } else {
             try { newParentId = UUID.fromString(newParentStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid new_parent_id UUID.", true); }
             var newParent = ws.getNode(newParentId).orElse(null);
             if (newParent == null) return textResult("Error: no node found with new_parent_id " + newParentStr, true);
-            if (structuralIds.contains(newParentId) && !newParentId.equals(ws.getProjectsNodeId()))
+            var validStructural = node.isProject() ? ws.getProjectsNodeId() : ws.getNextActionsNodeId();
+            if (structuralIds.contains(newParentId) && !newParentId.equals(validStructural))
                 return textResult("Error: invalid target parent.", true);
-            if (!node.isProject() && newParentId.equals(ws.getProjectsNodeId()))
-                return textResult("Error: actions cannot be moved to the top-level project area. Specify a project as the target.", true);
-            if (!node.isProject() && !newParent.isProject())
-                return textResult("Error: actions can only be moved into project nodes. Use 'Make project' on the target node first.", true);
+            if (!node.isProject() && !newParent.isProject() && !newParentId.equals(ws.getNextActionsNodeId()))
+                return textResult("Error: actions can only be moved into project nodes or the free actions area. Use 'Make project' on the target node first.", true);
         }
 
         if (nodeId.equals(newParentId)) return textResult("Error: a node cannot be its own parent.", true);
@@ -927,7 +925,10 @@ public final class NamMcpServer {
             w.getNodes().values().forEach(n -> n.getChildIds().remove(nodeId));
             w.getNode(finalNewParentId).ifPresent(p -> p.getChildIds().add(nodeId));
         });
-        var parentTitle = newParentId.equals(ws.getProjectsNodeId()) ? "top-level projects" : ws.getNode(newParentId).get().getTitle();
+        String parentTitle;
+        if (newParentId.equals(ws.getProjectsNodeId()))       parentTitle = "top-level projects";
+        else if (newParentId.equals(ws.getNextActionsNodeId())) parentTitle = "free actions";
+        else                                                    parentTitle = ws.getNode(newParentId).get().getTitle();
         return textResult("Moved \"" + node.getTitle() + "\" to \"" + parentTitle + "\".", false);
     }
 

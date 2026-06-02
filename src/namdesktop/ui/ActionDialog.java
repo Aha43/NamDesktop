@@ -252,7 +252,7 @@ public final class ActionDialog extends NodeDialog {
     }
 
     private void moveTo(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
-        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, false);
+        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, "(Free action)", workspace.getNextActionsNodeId());
         if (picked == null) return;
         try {
             service.moveNode(nodeId, picked);

@@ -108,7 +108,7 @@ public final class ProjectDialog extends NodeDialog {
     }
 
     private void moveTo(Window parent, UUID nodeId) {
-        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, true);
+        var picked = MoveToDialog.pickProject(parent, nodeId, workspace, "(Top level)", workspace.getProjectsNodeId());
         if (picked == null) return;
         try {
             service.moveNode(nodeId, picked);

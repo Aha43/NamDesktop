@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public final class MoveToDialog {
 
@@ -20,20 +19,22 @@ public final class MoveToDialog {
     /**
      * Shows a project-picker dialog and returns the chosen parent UUID, or null if cancelled.
      *
-     * @param includeTopLevel when true, a "(Top level)" option is prepended so the user can
-     *                        reparent a project to the root projects area. False for actions,
-     *                        which must always live under a specific project.
+     * @param escapeLabel  label for an escape-hatch entry prepended to the list (e.g. "(Top level)"
+     *                     or "(Free action)"), or null for no escape hatch
+     * @param escapeTarget UUID for the escape-hatch entry (e.g. projectsNodeId or nextActionsNodeId)
      */
-    public static UUID pickProject(Window parent, UUID nodeId, NamWorkspace workspace, boolean includeTopLevel) {
+    public static UUID pickProject(Window parent, UUID nodeId, NamWorkspace workspace,
+                                   String escapeLabel, UUID escapeTarget) {
         var excluded = Set.copyOf(workspace.collectSubtree(nodeId));
         var entries  = new ArrayList<Entry>();
 
-        if (includeTopLevel)
-            entries.add(new Entry(workspace.getProjectsNodeId(), "(Top level)"));
+        if (escapeLabel != null)
+            entries.add(new Entry(escapeTarget, escapeLabel));
 
         collectProjects(workspace, workspace.getProjectsNodeId(), excluded, "", entries);
 
-        if (entries.isEmpty() || (entries.size() == 1 && includeTopLevel)) {
+        boolean onlyEscape = escapeLabel != null && entries.size() == 1;
+        if (entries.isEmpty() || onlyEscape) {
             JOptionPane.showMessageDialog(parent, "No other projects available to move to.",
                     "Move to…", JOptionPane.INFORMATION_MESSAGE);
             return null;
