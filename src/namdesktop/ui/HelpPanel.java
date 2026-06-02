@@ -31,7 +31,8 @@ public final class HelpPanel extends JPanel {
             new Concept("AI assistant",      "ai-assistant"),
             new Concept("Templates",         "templates"),
             new Concept("Saved Views",       "saved-views"),
-            new Concept("Resources",         "resources")
+            new Concept("Resources",         "resources"),
+            new Concept("Blocked actions",   "blocked")
     );
 
     private final JEditorPane mainPane;

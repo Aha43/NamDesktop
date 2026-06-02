@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Help: Blocked actions concept article — explains blocking relationships, the Blocked panel, how to add/remove blockers in the action dialog, and cycle detection. Added to HelpPanel sidebar; cross-linked from Next Actions and Getting Started. Closes #322.
 - Help: Resources concept article — explains the four attachment types (URI, File, Email, Text), how to add and remove resources via the action/project dialog, and the paperclip indicator in list views. Added to HelpPanel sidebar; cross-linked from Projects, Project Workbench, and Getting Started. Closes #321.
 - Help: Saved Views concept article — explains what Saved Views are, how to create them, the next-only toggle, and how they differ from the session-only Tag filter panel. Added to HelpPanel sidebar; cross-linked from the Tag filter article. Closes #320.
 - Help: Templates concept article — explains what templates are, how to create one from an existing project, how to apply a template, and when they are useful. Added to the HelpPanel sidebar; cross-linked from Projects and Project Workbench articles. Closes #319.
