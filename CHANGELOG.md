@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Help: Templates concept article — explains what templates are, how to create one from an existing project, how to apply a template, and when they are useful. Added to the HelpPanel sidebar; cross-linked from Projects and Project Workbench articles. Closes #319.
+
 ### Changed
 
 - Help: GTD tone audit — all articles now lead with plain language; GTD references demoted to brief italic asides where they appear. Getting Started no longer frames GTD as a prerequisite. Projects article opens with a plain definition. GTD article reframed as "the thinking behind NAM" for the curious. Closes #318.
