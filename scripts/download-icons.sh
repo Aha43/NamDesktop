@@ -42,6 +42,8 @@ ICONS=(
   paperclip
   arrows-transfer-up
   external-link
+  clock-up
+  clock-down
 )
 
 mkdir -p "$ICONS_DIR"

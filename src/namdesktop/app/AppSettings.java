@@ -31,9 +31,12 @@ public final class AppSettings {
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
     private boolean welcomed         = false;
-    private boolean backlogFreeOnly  = true;
-    private boolean powerMode        = false;
-    private Integer helpDialogX      = null;
+    private boolean backlogFreeOnly      = true;
+    private boolean powerMode            = false;
+    private String  inboxSortOrder       = "NONE";
+    private String  nextActionsSortOrder = "NONE";
+    private String  backlogSortOrder     = "NONE";
+    private Integer helpDialogX          = null;
     private Integer helpDialogY      = null;
     private int     helpDialogWidth  = 560;
     private int     helpDialogHeight = 700;
@@ -60,9 +63,15 @@ public final class AppSettings {
     public void    setWelcomed(boolean v)            { this.welcomed = v; }
     public boolean isBacklogFreeOnly()               { return backlogFreeOnly; }
     public void    setBacklogFreeOnly(boolean v)     { this.backlogFreeOnly = v; }
-    public boolean isPowerMode()                     { return powerMode; }
-    public void    setPowerMode(boolean v)           { this.powerMode = v; }
-    public Integer getHelpDialogX()                  { return helpDialogX; }
+    public boolean isPowerMode()                          { return powerMode; }
+    public void    setPowerMode(boolean v)                { this.powerMode = v; }
+    public String  getInboxSortOrder()                    { return inboxSortOrder != null ? inboxSortOrder : "NONE"; }
+    public void    setInboxSortOrder(String v)            { this.inboxSortOrder = v != null ? v : "NONE"; }
+    public String  getNextActionsSortOrder()              { return nextActionsSortOrder != null ? nextActionsSortOrder : "NONE"; }
+    public void    setNextActionsSortOrder(String v)      { this.nextActionsSortOrder = v != null ? v : "NONE"; }
+    public String  getBacklogSortOrder()                  { return backlogSortOrder != null ? backlogSortOrder : "NONE"; }
+    public void    setBacklogSortOrder(String v)          { this.backlogSortOrder = v != null ? v : "NONE"; }
+    public Integer getHelpDialogX()                       { return helpDialogX; }
     public void    setHelpDialogX(Integer v)         { this.helpDialogX = v; }
     public Integer getHelpDialogY()                  { return helpDialogY; }
     public void    setHelpDialogY(Integer v)         { this.helpDialogY = v; }
@@ -88,6 +97,9 @@ public final class AppSettings {
                 s.setWelcomed(dto.welcomed != null && dto.welcomed);
                 s.setBacklogFreeOnly(dto.backlogFreeOnly == null || dto.backlogFreeOnly);
                 s.setPowerMode(dto.powerMode != null && dto.powerMode);
+                if (dto.inboxSortOrder       != null) s.setInboxSortOrder(dto.inboxSortOrder);
+                if (dto.nextActionsSortOrder != null) s.setNextActionsSortOrder(dto.nextActionsSortOrder);
+                if (dto.backlogSortOrder     != null) s.setBacklogSortOrder(dto.backlogSortOrder);
                 s.setHelpDialogX(dto.helpDialogX);
                 s.setHelpDialogY(dto.helpDialogY);
                 if (dto.helpDialogWidth  != null) s.setHelpDialogWidth(dto.helpDialogWidth);
@@ -113,9 +125,12 @@ public final class AppSettings {
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
         dto.welcomed         = this.welcomed;
-        dto.backlogFreeOnly  = this.backlogFreeOnly;
-        dto.powerMode        = this.powerMode;
-        dto.helpDialogX      = this.helpDialogX;
+        dto.backlogFreeOnly      = this.backlogFreeOnly;
+        dto.powerMode            = this.powerMode;
+        dto.inboxSortOrder       = this.inboxSortOrder;
+        dto.nextActionsSortOrder = this.nextActionsSortOrder;
+        dto.backlogSortOrder     = this.backlogSortOrder;
+        dto.helpDialogX          = this.helpDialogX;
         dto.helpDialogY      = this.helpDialogY;
         dto.helpDialogWidth  = this.helpDialogWidth;
         dto.helpDialogHeight = this.helpDialogHeight;
@@ -136,6 +151,9 @@ public final class AppSettings {
         public Boolean welcomed;
         public Boolean backlogFreeOnly;
         public Boolean  powerMode;
+        public String   inboxSortOrder;
+        public String   nextActionsSortOrder;
+        public String   backlogSortOrder;
         public Integer  helpDialogX;
         public Integer  helpDialogY;
         public Integer  helpDialogWidth;

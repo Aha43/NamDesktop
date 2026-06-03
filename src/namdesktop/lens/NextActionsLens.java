@@ -33,7 +33,7 @@ public final class NextActionsLens {
                             parent != null ? parent.getTitle() : null,
                             parent != null ? parent.getId() : null,
                             isSubProject, projectPath, List.copyOf(ownTags), inherited,
-                            !n.getResources().isEmpty());
+                            !n.getResources().isEmpty(), n.getUpdatedAt(), n.getCreatedAt());
                 })
                 .toList();
     }
