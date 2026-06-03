@@ -1,72 +1,105 @@
-# Feature: Time and Age (concept in progress)
+# Feature: Time and Age
 
-Status: **exploratory** — shape is clear enough for a first issue set, but no issues created yet. Waiting for discussion to settle on visual treatment details.
+Status: **A sprint shipped** — #326 and #327 merged on `feature/time-a-sprint`. B sprint (due dates) follows after merge to main.
 
 ## Motivation
 
-NAM currently has no time awareness. The first real pull from use is **staleness** — not scheduling or deadlines, but the ability to see what has been sitting ignored. An inbox that grows old means processing is being skipped. A next action that hasn't been touched in weeks may not really be next. A backlog item from three months ago deserves a look.
+NAM currently has no time awareness. The first pull from real use is **staleness** — not scheduling, but the ability to see what has been sitting ignored. An inbox that grows old means processing is being skipped. A next action that hasn't been touched in weeks may not really be next.
 
-Time enters as a quiet observer first, not as a scheduling demand. No date pickers, no due dates, no user burden.
+Due pressure is the second pull: some work has deadlines. NAM should understand that pressure and surface it without turning into a calendar.
 
-## What is settled
+Time enters as a quiet observer first, then as optional pressure. No reminders, no calendar grid, no recurrence. NAM understands due dates and aging work. Calendar scheduling remains an integration concern.
 
-### Timestamps on NamNode
+## Scope
 
-Three fields added to `NamNode`:
+Six issues in two groups:
+
+| Issue | # | Title |
+|---|---|---|
+| A1 | #326 | Age indicator column on Inbox, Next Actions, Backlog rows |
+| A2 | #327 | FIFO/LIFO sort toggle for Inbox, Next Actions, Backlog |
+| B1 | #328 | Add `dueAt` (LocalDate) to NamNode — model + persistence |
+| B2 | #329 | Due date field in ActionDialog |
+| B3 | #330 | Due hints column in Next Actions, Backlog, Context, SavedView panels |
+| B4 | #331 | Due Actions panel: Overdue / Today / This week / Later |
+
+## Out of scope
+
+- Calendar grid
+- Recurrence
+- Reminders / notifications
+- Time blocking
+- External calendar sync
+- `completedAt` — `statusChangedAt` at DONE covers v1; defer a separate `completedAt` field
+- Due dates on projects (actions only in v1)
+- Keyboard date shortcuts ("tomorrow", "next friday") in ActionDialog
+- Snooze / dismiss / reschedule from Due Actions panel
+- Sorting by due date within Next Actions, Backlog, Context panels (handled by the dedicated panel)
+- Age / due hints in Context, SavedView, Done, workbench panels for v1 (except Due column in B3)
+
+## What is already implemented
+
+Three timestamp fields on `NamNode` as `LocalDateTime`:
 
 | Field | Set when | Null means |
 |---|---|---|
-| `createdAt` | Node first created | Pre-timestamps data — treat as unknown, never as infinitely old |
+| `createdAt` | Node first created | Pre-timestamp data — treat as unknown |
 | `updatedAt` | Any mutation OR node viewed/opened in a dialog | Unknown — not stale |
 | `statusChangedAt` | Status transition only (NEXT/BACKLOG/DONE) | Never had a status change recorded |
 
-**"Seen" counts as a touch.** Opening a node's dialog sets `updatedAt`. Staleness means "haven't even looked at it" — not just "haven't edited it."
+**"Seen" counts as a touch.** Opening a node's dialog sets `updatedAt`. Staleness means "haven't even looked at it."
 
-**Null handling.** Existing nodes have no timestamps. Missing fields deserialise as `null`. Null is treated as unknown throughout — nodes with null timestamps do not appear in staleness-based views and show no age indicator. Never backfill or guess.
+**Null handling.** Existing nodes have no timestamps. Missing fields deserialise as `null`. Null is treated as unknown throughout — no age indicator shown, no staleness assumption. Never backfill or guess.
 
-### Age indicator on rows
+## Design decisions
 
-A small relative age label on each row in Inbox, Next Actions, and Backlog panels:
+### Age indicator placement — narrow "Age" column
 
-- Format: relative — `3d`, `2w`, `4m` — based on `updatedAt`, falling back to `createdAt` if `updatedAt` is null, blank if both null
-- Visually subtle — muted color, small size, does not compete with title or status badge
-- Inbox age carries slightly more visual weight than Next Actions / Backlog — an old inbox signals a processing failure, which is more urgent than a stale next action
+A narrow column labeled "Age", positioned between title and tags. Right-aligned value. Consistent with the existing "Status" column pattern; makes future sorting possible.
 
-### Sort by age — FIFO / LIFO toggle
+Inline-in-title was rejected: mixes signal with content, harder to scan.
 
-Each of the three panels (Inbox, Next Actions, Backlog) gets a sort mode toggle:
+### Age format and color
 
-- **FIFO** — oldest first; process in order, clear the backlog from the bottom
-- **LIFO** — newest first; deal with what is fresh
+- Format: `3d`, `2w`, `4m`, `1y` — based on `updatedAt`, falling back to `createdAt`; blank if both null
+- Color: muted (FlatLaf secondary/disabled text) for Next Actions and Backlog
+- Inbox: items >7 days get amber — a processing failure signal, warrants slightly more emphasis
 
-Toggle is intentional (not just a column header click) — it represents a processing strategy choice, not a casual sort. Persisted per panel in `AppSettings` so it survives restart.
+### FIFO/LIFO toggle
 
-### Why these three panels
+Icon button in each panel toolbar. Tooltip: "Oldest first" / "Newest first". Sort key: `updatedAt` → fallback `createdAt`; nodes with no timestamps sort last. Persisted per panel in AppSettings. Default: no sort applied (existing behavior preserved on first run).
 
-| Panel | Age meaning |
-|---|---|
-| Inbox | Processing failure signal — inbox should not accumulate |
-| Next Actions | Commitment health — old next actions may not really be next |
-| Backlog | Forgotten pile — oldest-first sort surfaces what has been ignored longest |
+Toggle is intentional (not a column header click) — it represents a processing strategy choice.
 
-Context, Saved Views, Done, and the workbench do not show age in v1 — can be added later if use reveals a need.
+### `dueAt` field type — `LocalDate`
 
-## Future directions (not in scope now)
+Date only. GTD due pressure is date-level ("due Friday"), not clock-level. Avoids timezone complexity. Can upgrade to `LocalDateTime` if reminders ever enter scope.
 
-- Staleness lens: a dedicated view showing everything not touched in N days across all panels
-- Scheduling: deferred-until, due dates — time as a filter, not just an observer
-- Velocity: `statusChangedAt` enables "how long did this action take" — useful for estimation later
-- Age on project nodes in the workbench
+### Due column in action list panels
+
+Narrow "Due" column in Next Actions, Backlog, Context, SavedView panels. Blank when no `dueAt`. Color-coded:
+
+| State | Display | Color |
+|---|---|---|
+| Overdue | `2d ago` or short date | Red |
+| Today | `Today` | Amber |
+| This week (≤7 days) | Day name e.g. `Fri` | Muted blue |
+| Later | Short date e.g. `Jul 3` | Default text |
+
+Inline-in-title was rejected: same reasoning as Age column.
+
+### Due Actions panel
+
+New lens (`DueLens`) + panel. Scope: non-DONE, non-project nodes where `dueAt != null`. Four sections: Overdue, Today, This week, Later. Empty sections hidden. Rows use the same action row style as Next Actions (badge + title + project path + tags). Sorted by date within each section. No manual ordering.
+
+Nav position: "Due" — after Backlog, before Done.
 
 ## Open questions
 
-| Question | Notes |
-|---|---|
-| Exact visual treatment of age indicator | Size, color, placement relative to status badge and title — needs UX decision before dev chat |
-| FIFO/LIFO toggle UI | Button, icon, or labelled toggle in panel toolbar — TBD |
-| Threshold for visual emphasis | At what age does an indicator change weight — e.g. inbox items over 7 days get amber? Or keep it neutral throughout? |
+None remaining. All design decisions resolved.
 
 ## Dependencies
 
-- No dependency on other feature epics — can be implemented independently
-- Timestamps should be added early; age display and sorting can follow in subsequent issues
+- B1 must land before B2, B3, B4
+- A1 and A2 are independent of Group B
+- No dependency on other feature epics
