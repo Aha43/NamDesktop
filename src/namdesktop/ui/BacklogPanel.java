@@ -104,7 +104,7 @@ public final class BacklogPanel extends JPanel {
 
         var clockUpIcon   = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
         var clockDownIcon = new FlatSVGIcon(BacklogPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
-        var sortBtn = new JToggleButton(clockUpIcon);
+        var sortBtn = UiHelper.iconToggleButton(backlogSortLabel(sortOrder), clockUpIcon);
         sortBtn.setSelected(!sortOrder.equals("NONE"));
         sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
         sortBtn.setToolTipText(backlogSortTooltip(sortOrder));
@@ -113,6 +113,7 @@ public final class BacklogPanel extends JPanel {
             sortBtn.setSelected(!sortOrder.equals("NONE"));
             sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
             sortBtn.setToolTipText(backlogSortTooltip(sortOrder));
+            UiHelper.updateButtonLabel(sortBtn, backlogSortLabel(sortOrder));
             AppSettings.getInstance().setBacklogSortOrder(sortOrder);
             try { AppSettings.getInstance().save(); } catch (java.io.IOException ignored) {}
             refresh();
@@ -437,6 +438,10 @@ public final class BacklogPanel extends JPanel {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private static String backlogSortLabel(String order) {
+        return switch (order) { case "FIFO" -> "Oldest"; case "LIFO" -> "Newest"; default -> "Sort"; };
     }
 
     private static String backlogSortTooltip(String order) {

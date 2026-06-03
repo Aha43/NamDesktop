@@ -86,7 +86,7 @@ public final class NextActionsPanel extends JPanel {
 
         var clockUpIcon   = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
         var clockDownIcon = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
-        var sortBtn = new JToggleButton(clockUpIcon);
+        var sortBtn = UiHelper.iconToggleButton(nextActionsSortLabel(sortOrder), clockUpIcon);
         sortBtn.setSelected(!sortOrder.equals("NONE"));
         sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
         sortBtn.setToolTipText(nextActionsSortTooltip(sortOrder));
@@ -95,6 +95,7 @@ public final class NextActionsPanel extends JPanel {
             sortBtn.setSelected(!sortOrder.equals("NONE"));
             sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
             sortBtn.setToolTipText(nextActionsSortTooltip(sortOrder));
+            UiHelper.updateButtonLabel(sortBtn, nextActionsSortLabel(sortOrder));
             AppSettings.getInstance().setNextActionsSortOrder(sortOrder);
             try { AppSettings.getInstance().save(); } catch (java.io.IOException ignored) {}
             refresh();
@@ -371,6 +372,10 @@ public final class NextActionsPanel extends JPanel {
 
     private void showError(String message) {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
+    }
+
+    private static String nextActionsSortLabel(String order) {
+        return switch (order) { case "FIFO" -> "Oldest"; case "LIFO" -> "Newest"; default -> "Sort"; };
     }
 
     private static String nextActionsSortTooltip(String order) {

@@ -58,6 +58,13 @@ public final class UiHelper {
         return btn;
     }
 
+    /** Updates a denseable button's label in both the stored property and the visible text. */
+    public static void updateButtonLabel(AbstractButton btn, String label) {
+        btn.putClientProperty(PROP_LABEL, label);
+        var settings = AppSettings.getInstance();
+        if (settings == null || !settings.isDense()) btn.setText(label);
+    }
+
     /** Always icon-only regardless of dense mode — use for compact inline contexts like breadcrumbs. */
     public static JButton iconOnlyButton(String label, Icon icon) {
         var btn = new JButton("", icon);

@@ -94,7 +94,7 @@ public final class InboxPanel extends JPanel {
         toolbar.add(Box.createHorizontalGlue());
         var clockUpIcon   = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
         var clockDownIcon = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
-        var sortBtn = new JToggleButton(clockUpIcon);
+        var sortBtn = UiHelper.iconToggleButton(sortLabel(sortOrder), clockUpIcon);
         sortBtn.setSelected(!sortOrder.equals("NONE"));
         sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
         sortBtn.setToolTipText(sortTooltip(sortOrder));
@@ -103,6 +103,7 @@ public final class InboxPanel extends JPanel {
             sortBtn.setSelected(!sortOrder.equals("NONE"));
             sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
             sortBtn.setToolTipText(sortTooltip(sortOrder));
+            UiHelper.updateButtonLabel(sortBtn, sortLabel(sortOrder));
             AppSettings.getInstance().setInboxSortOrder(sortOrder);
             try { AppSettings.getInstance().save(); } catch (IOException ignored) {}
             refresh();
@@ -128,6 +129,10 @@ public final class InboxPanel extends JPanel {
         }
         tableModel.setRows(rows);
         UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
+    }
+
+    private static String sortLabel(String order) {
+        return switch (order) { case "FIFO" -> "Oldest"; case "LIFO" -> "Newest"; default -> "Sort"; };
     }
 
     private static String sortTooltip(String order) {
