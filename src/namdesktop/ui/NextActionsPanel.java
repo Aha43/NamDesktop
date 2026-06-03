@@ -17,6 +17,8 @@ import javax.swing.table.TableColumn;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -41,6 +43,7 @@ public final class NextActionsPanel extends JPanel {
     private boolean statusColumnVisible = true;
     private MoonCardPanel moonCardPanel;
     private boolean showBlocked = false;
+    private String sortOrder;
 
     public NextActionsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -48,6 +51,7 @@ public final class NextActionsPanel extends JPanel {
         this.service       = service;
         this.onOpenProject = onOpenProject;
         this.tableModel    = new NextActionsTableModel();
+        this.sortOrder     = AppSettings.getInstance().getNextActionsSortOrder();
 
         upButton   = UiHelper.iconButton("Move up",
                 new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/arrow-up.svg")).derive(16, 16));
@@ -80,12 +84,30 @@ public final class NextActionsPanel extends JPanel {
             refresh();
         });
 
+        var clockUpIcon   = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
+        var clockDownIcon = new FlatSVGIcon(NextActionsPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
+        var sortBtn = UiHelper.iconToggleButton(nextActionsSortLabel(sortOrder), clockUpIcon);
+        sortBtn.setSelected(!sortOrder.equals("NONE"));
+        sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
+        sortBtn.setToolTipText(nextActionsSortTooltip(sortOrder));
+        sortBtn.addActionListener(e -> {
+            sortOrder = switch (sortOrder) { case "NONE" -> "FIFO"; case "FIFO" -> "LIFO"; default -> "NONE"; };
+            sortBtn.setSelected(!sortOrder.equals("NONE"));
+            sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
+            sortBtn.setToolTipText(nextActionsSortTooltip(sortOrder));
+            UiHelper.updateButtonLabel(sortBtn, nextActionsSortLabel(sortOrder));
+            AppSettings.getInstance().setNextActionsSortOrder(sortOrder);
+            try { AppSettings.getInstance().save(); } catch (java.io.IOException ignored) {}
+            refresh();
+        });
+
         toolbar = new JToolBar();
         toolbar.setFloatable(false);
         toolbar.add(addButton);
         toolbar.add(upButton);
         toolbar.add(downButton);
         toolbar.add(Box.createHorizontalGlue());
+        toolbar.add(sortBtn);
         toolbar.add(showBlockedBtn);
         toolbar.add(moonButton);
         add(toolbar, BorderLayout.NORTH);
@@ -208,15 +230,18 @@ public final class NextActionsPanel extends JPanel {
         var actionEditor = new DefaultCellEditor(new JTextField());
         actionEditor.setClickCountToStart(99);
         table.getColumn("Action").setCellEditor(actionEditor);
+        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.ageRenderer(false));
+        table.getColumnModel().getColumn(2).setPreferredWidth(50);
+        table.getColumnModel().getColumn(2).setMaxWidth(50);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
-        statusColumn = table.getColumnModel().getColumn(3);
+        statusColumn = table.getColumnModel().getColumn(4);
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
-        table.getColumnModel().getColumn(2).setPreferredWidth(110);
-        table.getColumnModel().getColumn(3).setPreferredWidth(70);
-        table.getColumnModel().getColumn(3).setMaxWidth(70);
-        table.getColumnModel().getColumn(4).setCellRenderer(UiHelper.paperclipRenderer());
-        table.getColumnModel().getColumn(4).setPreferredWidth(18);
-        table.getColumnModel().getColumn(4).setMaxWidth(18);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(4).setPreferredWidth(70);
+        table.getColumnModel().getColumn(4).setMaxWidth(70);
+        table.getColumnModel().getColumn(5).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(5).setPreferredWidth(18);
+        table.getColumnModel().getColumn(5).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
@@ -263,6 +288,17 @@ public final class NextActionsPanel extends JPanel {
         var displayIds = showBlocked
                 ? currentOrder
                 : currentOrder.stream().filter(id -> !service.isBlocked(id)).toList();
+        if (!sortOrder.equals("NONE")) {
+            Comparator<LocalDateTime> dir = sortOrder.equals("FIFO")
+                    ? Comparator.naturalOrder() : Comparator.reverseOrder();
+            Comparator<UUID> cmp = Comparator.comparing(
+                    id -> { var r = rowById.get(id); return r.updatedAt() != null ? r.updatedAt() : r.createdAt(); },
+                    Comparator.nullsLast(dir));
+            displayIds = displayIds.stream().sorted(cmp).toList();
+        }
+        var sortActive = !sortOrder.equals("NONE");
+        upButton.setVisible(!sortActive);
+        downButton.setVisible(!sortActive);
         tableModel.setRows(displayIds.stream().map(rowById::get).toList());
         if (moonCardPanel == null)
             deckCards.show(deckWrapper, displayIds.isEmpty() ? "empty" : "table");
@@ -338,6 +374,14 @@ public final class NextActionsPanel extends JPanel {
         JOptionPane.showMessageDialog(this, message, "Error", JOptionPane.ERROR_MESSAGE);
     }
 
+    private static String nextActionsSortLabel(String order) {
+        return switch (order) { case "FIFO" -> "Oldest"; case "LIFO" -> "Newest"; default -> "Sort"; };
+    }
+
+    private static String nextActionsSortTooltip(String order) {
+        return switch (order) { case "FIFO" -> "Newest first"; case "LIFO" -> "Remove sort"; default -> "Oldest first"; };
+    }
+
     private void enterDeckMode() {
         var cards = new java.util.ArrayList<MoonCardPanel.Card>();
         for (int i = 0; i < tableModel.getRowCount(); i++) {
@@ -367,7 +411,7 @@ public final class NextActionsPanel extends JPanel {
 
     private final class NextActionsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Status", ""};
+        private static final String[] COLUMNS = {"Action", "Project", "Age", "Tags", "Status", ""};
         private List<NextActionItemRow> rows = List.of();
 
         void setRows(List<NextActionItemRow> rows) {
@@ -403,19 +447,21 @@ public final class NextActionsPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.projectPath() != null ? r.projectPath() : "";
-                case 2 -> new String[]{
+                case 2 -> UiHelper.ageDays(r.updatedAt(), r.createdAt());
+                case 3 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
-                case 3 -> r.status();
-                case 4 -> r.hasResources();
+                case 4 -> r.status();
+                case 5 -> r.hasResources();
                 default -> null;
             };
         }
 
         @Override
         public Class<?> getColumnClass(int col) {
-            if (col == 2) return String[].class;
-            if (col == 4) return Boolean.class;
+            if (col == 2) return Long.class;
+            if (col == 3) return String[].class;
+            if (col == 5) return Boolean.class;
             return String.class;
         }
     }

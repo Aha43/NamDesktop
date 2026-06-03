@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.app.AppSettings;
 import namdesktop.lens.InboxItemRow;
 import namdesktop.lens.InboxLens;
 import namdesktop.model.NamWorkspace;
@@ -15,6 +16,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 
 public final class InboxPanel extends JPanel {
@@ -25,12 +28,14 @@ public final class InboxPanel extends JPanel {
     private JTable table;
     private JButton processButton;
     private JPanel tableCard;
+    private String sortOrder;
 
     public InboxPanel(NamWorkspace workspace, NamWorkspaceService service) {
         super(new BorderLayout());
         this.workspace  = workspace;
         this.service    = service;
         this.tableModel = new InboxTableModel();
+        this.sortOrder  = AppSettings.getInstance().getInboxSortOrder();
 
         table = new JTable(tableModel) {
             @Override
@@ -43,9 +48,12 @@ public final class InboxPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
-        table.getColumnModel().getColumn(1).setCellRenderer(UiHelper.paperclipRenderer());
-        table.getColumnModel().getColumn(1).setPreferredWidth(18);
-        table.getColumnModel().getColumn(1).setMaxWidth(18);
+        table.getColumnModel().getColumn(1).setCellRenderer(UiHelper.ageRenderer(true));
+        table.getColumnModel().getColumn(1).setPreferredWidth(50);
+        table.getColumnModel().getColumn(1).setMaxWidth(50);
+        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(2).setPreferredWidth(18);
+        table.getColumnModel().getColumn(2).setMaxWidth(18);
         table.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
@@ -83,6 +91,24 @@ public final class InboxPanel extends JPanel {
         addButton.setToolTipText("Add new inbox item (" + modifier + "+I)");
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
+        toolbar.add(Box.createHorizontalGlue());
+        var clockUpIcon   = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
+        var clockDownIcon = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
+        var sortBtn = UiHelper.iconToggleButton(sortLabel(sortOrder), clockUpIcon);
+        sortBtn.setSelected(!sortOrder.equals("NONE"));
+        sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
+        sortBtn.setToolTipText(sortTooltip(sortOrder));
+        sortBtn.addActionListener(e -> {
+            sortOrder = switch (sortOrder) { case "NONE" -> "FIFO"; case "FIFO" -> "LIFO"; default -> "NONE"; };
+            sortBtn.setSelected(!sortOrder.equals("NONE"));
+            sortBtn.setIcon(sortOrder.equals("LIFO") ? clockDownIcon : clockUpIcon);
+            sortBtn.setToolTipText(sortTooltip(sortOrder));
+            UiHelper.updateButtonLabel(sortBtn, sortLabel(sortOrder));
+            AppSettings.getInstance().setInboxSortOrder(sortOrder);
+            try { AppSettings.getInstance().save(); } catch (IOException ignored) {}
+            refresh();
+        });
+        toolbar.add(sortBtn);
 
         tableCard = UiHelper.tableCard(new JScrollPane(table), "Nothing captured yet. Use + to add something.");
         add(toolbar,    BorderLayout.NORTH);
@@ -92,8 +118,25 @@ public final class InboxPanel extends JPanel {
     public void triggerAdd() { addItem(); }
 
     public void refresh() {
-        tableModel.setRows(new InboxLens().items(workspace));
+        var rows = new InboxLens().items(workspace);
+        if (!sortOrder.equals("NONE")) {
+            var cmp = Comparator.comparing(
+                    (InboxItemRow r) -> r.updatedAt() != null ? r.updatedAt() : r.createdAt(),
+                    Comparator.nullsLast(sortOrder.equals("FIFO")
+                            ? Comparator.<LocalDateTime>naturalOrder()
+                            : Comparator.<LocalDateTime>reverseOrder()));
+            rows = rows.stream().sorted(cmp).toList();
+        }
+        tableModel.setRows(rows);
         UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
+    }
+
+    private static String sortLabel(String order) {
+        return switch (order) { case "FIFO" -> "Oldest"; case "LIFO" -> "Newest"; default -> "Sort"; };
+    }
+
+    private static String sortTooltip(String order) {
+        return switch (order) { case "FIFO" -> "Newest first"; case "LIFO" -> "Remove sort"; default -> "Oldest first"; };
     }
 
     private void showMenu(MouseEvent e) {
@@ -258,7 +301,7 @@ public final class InboxPanel extends JPanel {
 
     private static final class InboxTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", ""};
+        private static final String[] COLUMNS = {"Title", "Age", ""};
         private List<InboxItemRow> rows = List.of();
 
         void setRows(List<InboxItemRow> rows) {
@@ -273,14 +316,19 @@ public final class InboxPanel extends JPanel {
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
 
         @Override
-        public Class<?> getColumnClass(int col) { return col == 1 ? Boolean.class : String.class; }
+        public Class<?> getColumnClass(int col) {
+            if (col == 1) return Long.class;
+            if (col == 2) return Boolean.class;
+            return String.class;
+        }
 
         @Override
         public Object getValueAt(int row, int col) {
             var r = rows.get(row);
             return switch (col) {
                 case 0 -> r.title();
-                case 1 -> r.hasResources();
+                case 1 -> UiHelper.ageDays(r.updatedAt(), r.createdAt());
+                case 2 -> r.hasResources();
                 default -> null;
             };
         }

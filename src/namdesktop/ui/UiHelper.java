@@ -12,6 +12,9 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -53,6 +56,13 @@ public final class UiHelper {
         btn.putClientProperty(PROP_DENSEABLE, Boolean.TRUE);
         btn.putClientProperty(PROP_LABEL, label);
         return btn;
+    }
+
+    /** Updates a denseable button's label in both the stored property and the visible text. */
+    public static void updateButtonLabel(AbstractButton btn, String label) {
+        btn.putClientProperty(PROP_LABEL, label);
+        var settings = AppSettings.getInstance();
+        if (settings == null || !settings.isDense()) btn.setText(label);
     }
 
     /** Always icon-only regardless of dense mode — use for compact inline contexts like breadcrumbs. */
@@ -204,6 +214,48 @@ public final class UiHelper {
             public void columnMarginChanged(javax.swing.event.ChangeEvent e) {}
             public void columnSelectionChanged(javax.swing.event.ListSelectionEvent e) {}
         });
+    }
+
+    /** Days since the best available touch timestamp; null if both timestamps are null. */
+    public static Long ageDays(LocalDateTime updatedAt, LocalDateTime createdAt) {
+        var ref = updatedAt != null ? updatedAt : createdAt;
+        if (ref == null) return null;
+        return ChronoUnit.DAYS.between(ref.toLocalDate(), LocalDate.now());
+    }
+
+    /** Formats days as "3d", "2w", "4m", "1y", or "" when null. */
+    public static String ageText(Long days) {
+        if (days == null) return "";
+        if (days < 7)   return days + "d";
+        if (days < 30)  return (days / 7) + "w";
+        if (days < 365) return (days / 30) + "m";
+        return (days / 365) + "y";
+    }
+
+    /**
+     * Right-aligned age cell renderer.
+     * Muted foreground normally; amber for inbox rows older than 7 days when inboxStyle is true.
+     */
+    public static TableCellRenderer ageRenderer(boolean inboxStyle) {
+        return new DefaultTableCellRenderer() {
+            private static final Color AMBER = new Color(180, 120, 0);
+            { setHorizontalAlignment(SwingConstants.RIGHT); }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                super.getTableCellRendererComponent(t, null, sel, foc, row, col);
+                Long days = val instanceof Long l ? l : null;
+                setText(ageText(days));
+                if (!sel) {
+                    if (inboxStyle && days != null && days > 7)
+                        setForeground(AMBER);
+                    else
+                        setForeground(UIManager.getColor("Label.disabledForeground"));
+                }
+                return this;
+            }
+        };
     }
 
     public static void applyDense(boolean dense) {

@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Age indicator column on Inbox, Next Actions, and Backlog rows: narrow "Age" column between title and tags showing relative age (`3d`, `2w`, `4m`, `1y`) based on `updatedAt` falling back to `createdAt`; blank when both are null. Inbox items older than 7 days shown in amber; all other panels use muted text. Closes #326.
+- FIFO/LIFO sort toggle on Inbox, Next Actions, and Backlog toolbars: clock-up/clock-down button cycles through no sort → oldest first (FIFO) → newest first (LIFO). Null-timestamp items sort last in both directions. Sort persisted per panel in settings. Up/down ordering buttons hidden when sort is active. Closes #327.
+
+### Added
+
 - Help: sidebar reorganised into named sections (Tutorial, Daily workflow, Projects, Finding work, App, Superpower, Background) with visual separators and logical reading order. AI assistant spotlighted in its own section and given dedicated framing in Getting Started. Closes #324.
 - Help: Search, Tag management, Keyboard shortcuts, and Settings reference articles — four short articles covering features that had no documentation. All added to HelpPanel sidebar; Keyboard shortcuts linked from Getting Started. Closes #323.
 - Help: Blocked actions concept article — explains blocking relationships, the Blocked panel, how to add/remove blockers in the action dialog, and cycle detection. Added to HelpPanel sidebar; cross-linked from Next Actions and Getting Started. Closes #322.

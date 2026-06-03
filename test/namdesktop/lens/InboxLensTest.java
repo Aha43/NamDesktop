@@ -6,6 +6,7 @@ import namdesktop.model.NodeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -50,6 +51,34 @@ class InboxLensTest {
 
         var rows = lens.items(workspace);
         assertEquals(NodeStatus.DONE, rows.get(0).status());
+    }
+
+    @Test
+    void items_propagatesTimestamps() {
+        var node = new NamNode(UUID.randomUUID(), "Stamped item");
+        var updated = LocalDateTime.of(2026, 1, 10, 9, 0);
+        var created = LocalDateTime.of(2026, 1, 1, 8, 0);
+        node.setUpdatedAt(updated);
+        node.setCreatedAt(created);
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(workspace.getInboxNodeId()).orElseThrow()
+                .getChildIds().add(node.getId());
+
+        var row = lens.items(workspace).get(0);
+        assertEquals(updated, row.updatedAt());
+        assertEquals(created, row.createdAt());
+    }
+
+    @Test
+    void items_timestampsAreNullWhenNotSet() {
+        var node = new NamNode(UUID.randomUUID(), "No stamp");
+        workspace.getNodes().put(node.getId(), node);
+        workspace.getNode(workspace.getInboxNodeId()).orElseThrow()
+                .getChildIds().add(node.getId());
+
+        var row = lens.items(workspace).get(0);
+        assertNull(row.updatedAt());
+        assertNull(row.createdAt());
     }
 
     @Test

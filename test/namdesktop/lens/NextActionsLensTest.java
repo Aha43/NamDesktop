@@ -6,6 +6,7 @@ import namdesktop.model.NodeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,6 +39,32 @@ class NextActionsLensTest {
         assertEquals(NodeStatus.NEXT, rows.get(0).status());
         assertEquals(node.getId(),    rows.get(0).id());
         assertNull(rows.get(0).parentTitle());
+    }
+
+    @Test
+    void items_propagatesTimestamps() {
+        var node = new NamNode(UUID.randomUUID(), "Stamped action");
+        node.setStatus(NodeStatus.NEXT);
+        var updated = LocalDateTime.of(2026, 3, 5, 12, 0);
+        var created = LocalDateTime.of(2026, 3, 1, 8, 0);
+        node.setUpdatedAt(updated);
+        node.setCreatedAt(created);
+        workspace.getNodes().put(node.getId(), node);
+
+        var row = lens.items(workspace).get(0);
+        assertEquals(updated, row.updatedAt());
+        assertEquals(created, row.createdAt());
+    }
+
+    @Test
+    void items_timestampsAreNullWhenNotSet() {
+        var node = new NamNode(UUID.randomUUID(), "No stamp");
+        node.setStatus(NodeStatus.NEXT);
+        workspace.getNodes().put(node.getId(), node);
+
+        var row = lens.items(workspace).get(0);
+        assertNull(row.updatedAt());
+        assertNull(row.createdAt());
     }
 
     @Test
