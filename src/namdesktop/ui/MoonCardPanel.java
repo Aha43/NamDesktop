@@ -161,6 +161,7 @@ public final class MoonCardPanel extends JPanel {
 
     private void markDoneAndAdvance() {
         if (cards.isEmpty()) return;
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         var card = cards.get(index);
         try {
             service.markDone(card.id());

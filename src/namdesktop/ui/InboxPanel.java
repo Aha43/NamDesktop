@@ -169,6 +169,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void process(InboxItemRow row) {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         var result = ProcessInboxDialog.show(parent(), row.title());
         try {
             switch (result) {
@@ -213,6 +214,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void addItem() {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         var area = new JTextArea(4, 32);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
@@ -259,6 +261,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void rename(InboxItemRow row) {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         var title = (String) JOptionPane.showInputDialog(
                 parent(), "Enter new title:", "Rename",
                 JOptionPane.PLAIN_MESSAGE, null, null, row.title());
@@ -272,6 +275,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void markDone(InboxItemRow row) {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         try {
             service.markDone(row.id());
             refresh();
@@ -281,6 +285,7 @@ public final class InboxPanel extends JPanel {
     }
 
     private void delete(InboxItemRow row) {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         try {
             service.deleteLeaf(row.id());
             refresh();
