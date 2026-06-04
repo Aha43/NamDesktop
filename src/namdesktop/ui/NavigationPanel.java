@@ -16,10 +16,12 @@ public final class NavigationPanel extends JPanel {
     private final List<NavigationEntry> staticEntries;
     private final DefaultListModel<NavigationEntry> model;
     private final JList<NavigationEntry> list;
+    private final Consumer<NavigationEntry> onSelect;
 
     public NavigationPanel(List<NavigationEntry> staticEntries, Consumer<NavigationEntry> onSelect) {
         setLayout(new BorderLayout());
         this.staticEntries = List.copyOf(staticEntries);
+        this.onSelect = onSelect;
         this.model = new DefaultListModel<>();
         staticEntries.forEach(model::addElement);
 

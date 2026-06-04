@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class ProjectWorkbenchPanel extends JPanel {
 
@@ -30,6 +31,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private final NamWorkspaceService service;
     private final String            backLabel;
     private final Runnable          onNavigateToProjects;
+    private       Consumer<UUID>    onInternalNavigate  = id -> {};
     private       UUID              currentProjectId;
     private       UUID              parentProjectId;
     private       UUID              pendingSelection;
@@ -61,6 +63,19 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     public void refresh() { rebuild(); }
+
+    /** Called with the new project ID on every internal breadcrumb/card navigation. */
+    public void setOnInternalNavigate(Consumer<UUID> cb) {
+        onInternalNavigate = cb != null ? cb : id -> {};
+    }
+
+    /** Repositions the panel to show a specific project without firing onInternalNavigate. */
+    public void showProject(UUID projectId) {
+        parentProjectId  = workspace.getParent(projectId).map(n -> n.getId()).orElse(null);
+        currentProjectId = projectId;
+        collapsedSections.clear();
+        rebuild();
+    }
 
     public void triggerAdd() { showAddActionDialog(currentProjectId, null); }
 
@@ -755,6 +770,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private void navigateTo(UUID projectId) {
+        onInternalNavigate.accept(projectId);
         if (mcrMode) mcrReturnId = currentProjectId;
         mcrMode          = projectId.equals(mcrReturnId);
         if (mcrMode) mcrReturnId = null;

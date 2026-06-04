@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Back navigation button (toolbar) and `Cmd+[` keyboard shortcut. Keeps a capped history of up to 20 locations (panel views, project workbenches, saved views). Silently skips deleted projects when popping. Closes #337.
 - Re-clicking an already-selected nav item now always navigates to that section's root view. Previously the `ListSelectionListener` fired no event on re-click, leaving the content area unchanged. Closes #336.
 
 ### Added

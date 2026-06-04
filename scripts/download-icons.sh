@@ -44,6 +44,7 @@ ICONS=(
   external-link
   clock-up
   clock-down
+  arrow-left
 )
 
 mkdir -p "$ICONS_DIR"
