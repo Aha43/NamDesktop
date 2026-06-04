@@ -213,7 +213,7 @@ public final class BacklogPanel extends JPanel {
                         new ActionDialog(SwingUtilities.getWindowAncestor(BacklogPanel.this),
                                 item.id(), workspace, service, false, BacklogPanel.this::refresh).setVisible(true);
                     } else if (e.getClickCount() == 1 && row == lastRow[0]) {
-                        if (table.editCellAt(row, 0)) {
+                        if (MonitoringModeGuard.checkAndConfirm(e.getComponent()) && table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
                             if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
                         }
@@ -234,6 +234,7 @@ public final class BacklogPanel extends JPanel {
         upButton.addActionListener(e -> {
             var row = table.getSelectedRow();
             if (row < 0) return;
+            if (!MonitoringModeGuard.checkAndConfirm(BacklogPanel.this)) return;
             var id = tableModel.getRow(row).id();
             try { pendingSelection = id; service.moveViewItemUp(NamWorkspaceService.VIEW_BACKLOG, id, currentOrder); refresh(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
@@ -241,6 +242,7 @@ public final class BacklogPanel extends JPanel {
         downButton.addActionListener(e -> {
             var row = table.getSelectedRow();
             if (row < 0) return;
+            if (!MonitoringModeGuard.checkAndConfirm(BacklogPanel.this)) return;
             var id = tableModel.getRow(row).id();
             try { pendingSelection = id; service.moveViewItemDown(NamWorkspaceService.VIEW_BACKLOG, id, currentOrder); refresh(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
@@ -407,6 +409,7 @@ public final class BacklogPanel extends JPanel {
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target && !(target == NodeStatus.DONE && service.isBlocked(id)));
             mi.addActionListener(e -> {
+                if (!MonitoringModeGuard.checkAndConfirm(comp)) return;
                 try {
                     switch (target) {
                         case NEXT    -> service.markNext(id);
@@ -429,6 +432,7 @@ public final class BacklogPanel extends JPanel {
     }
 
     private void addAction() {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
         if (title == null || title.isBlank()) return;
         try {
@@ -501,6 +505,7 @@ public final class BacklogPanel extends JPanel {
             var newTitle = value.toString().strip();
             var r = rows.get(row);
             if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            if (!MonitoringModeGuard.checkAndConfirm(null)) return;
             try {
                 pendingSelection = r.id();
                 service.renameNode(r.id(), newTitle);

@@ -191,7 +191,7 @@ public final class NextActionsPanel extends JPanel {
                         new ActionDialog(SwingUtilities.getWindowAncestor(NextActionsPanel.this),
                                 item.id(), workspace, service, true, NextActionsPanel.this::refresh).setVisible(true);
                     } else if (e.getClickCount() == 1 && row == lastRow[0]) {
-                        if (table.editCellAt(row, 0)) {
+                        if (MonitoringModeGuard.checkAndConfirm(e.getComponent()) && table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
                             if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
                         }
@@ -212,6 +212,7 @@ public final class NextActionsPanel extends JPanel {
         upButton.addActionListener(e -> {
             var row = table.getSelectedRow();
             if (row < 0) return;
+            if (!MonitoringModeGuard.checkAndConfirm(NextActionsPanel.this)) return;
             var id = tableModel.getRow(row).id();
             try { pendingSelection = id; service.moveViewItemUp(NamWorkspaceService.VIEW_NEXT_ACTIONS, id, currentOrder); refresh(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
@@ -219,6 +220,7 @@ public final class NextActionsPanel extends JPanel {
         downButton.addActionListener(e -> {
             var row = table.getSelectedRow();
             if (row < 0) return;
+            if (!MonitoringModeGuard.checkAndConfirm(NextActionsPanel.this)) return;
             var id = tableModel.getRow(row).id();
             try { pendingSelection = id; service.moveViewItemDown(NamWorkspaceService.VIEW_NEXT_ACTIONS, id, currentOrder); refresh(); }
             catch (java.io.IOException ex) { showError(ex.getMessage()); }
@@ -328,6 +330,7 @@ public final class NextActionsPanel extends JPanel {
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target && !(target == NodeStatus.DONE && service.isBlocked(id)));
             mi.addActionListener(e -> {
+                if (!MonitoringModeGuard.checkAndConfirm(comp)) return;
                 try {
                     switch (target) {
                         case NEXT    -> service.markNext(id);
@@ -350,6 +353,7 @@ public final class NextActionsPanel extends JPanel {
     }
 
     private void addAction() {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         var area = new JTextArea(5, 28);
         area.setLineWrap(true);
         area.setWrapStyleWord(true);
@@ -435,6 +439,7 @@ public final class NextActionsPanel extends JPanel {
             var newTitle = value.toString().strip();
             var r = rows.get(row);
             if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            if (!MonitoringModeGuard.checkAndConfirm(null)) return;
             try {
                 pendingSelection = r.id();
                 service.renameNode(r.id(), newTitle);

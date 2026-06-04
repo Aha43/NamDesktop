@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Monitoring mode guard: all mutating UI actions (status change, save, delete, rename, reorder, add item/action) prompt before executing when monitoring mode is active. Dialog offers Exit / Continue (don't ask again this session) / Cancel. One "Continue" suppresses further prompts for the rest of the session. Closes #339.
+
+### Added
+
 - `NamMcpServer --direct` mode: pass `--direct` alongside `--workspace` to bypass monitoring mode and write straight to `workspace.json`. Writes a `.namdesktop-direct` PID sentinel on startup; deletes it on clean exit via shutdown hook. `get_monitoring_status` reports direct mode. Swing app warns on startup if a live direct-mode server is detected; silently cleans up stale sentinels. Closes #334.
 
 ### Added

@@ -136,6 +136,7 @@ public class NodeDialog extends JDialog {
 
     private void setStatus(NodeStatus status) {
         if (status == currentStatus) return;
+        if (!MonitoringModeGuard.checkAndConfirm(this)) { syncStatusButtons(); return; }
         try {
             switch (status) {
                 case BACKLOG -> service.markBacklog(nodeId);
@@ -167,6 +168,7 @@ public class NodeDialog extends JDialog {
     }
 
     protected void doDelete() {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         try {
             service.deleteLeaf(nodeId);
             notifyChanged();
@@ -182,6 +184,7 @@ public class NodeDialog extends JDialog {
     }
 
     private void save() {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         var newTitle = titleField.getText().strip();
         if (newTitle.isEmpty()) {
             JOptionPane.showMessageDialog(this, "Title cannot be blank.", "Error", JOptionPane.ERROR_MESSAGE);

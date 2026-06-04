@@ -389,6 +389,7 @@ public final class MainFrame extends JFrame {
         setSize(900, 600);
 
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
+        MonitoringModeGuard.configure(workspacePath, this::exitMonitoringMode);
     }
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }

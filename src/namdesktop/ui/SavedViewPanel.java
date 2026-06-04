@@ -152,7 +152,7 @@ public final class SavedViewPanel extends JPanel {
                         new ActionDialog(SwingUtilities.getWindowAncestor(SavedViewPanel.this),
                                 item.id(), workspace, service, true, SavedViewPanel.this::refresh).setVisible(true);
                     } else if (e.getClickCount() == 1 && row == lastRow[0]) {
-                        if (table.editCellAt(row, 0)) {
+                        if (MonitoringModeGuard.checkAndConfirm(e.getComponent()) && table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
                             if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
                         }
@@ -190,6 +190,7 @@ public final class SavedViewPanel extends JPanel {
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target);
             mi.addActionListener(e -> {
+                if (!MonitoringModeGuard.checkAndConfirm(comp)) return;
                 try {
                     switch (target) {
                         case NEXT    -> service.markNext(id);
@@ -245,6 +246,7 @@ public final class SavedViewPanel extends JPanel {
     }
 
     private void addTaggedAction() {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
         var title = JOptionPane.showInputDialog(this, "Action title:", "Add action", JOptionPane.PLAIN_MESSAGE);
         if (title == null || title.isBlank()) return;
         try {
@@ -298,6 +300,7 @@ public final class SavedViewPanel extends JPanel {
             var newTitle = value.toString().strip();
             var r = rows.get(row);
             if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
+            if (!MonitoringModeGuard.checkAndConfirm(null)) return;
             try {
                 service.renameNode(r.id(), newTitle);
                 SavedViewPanel.this.refresh();

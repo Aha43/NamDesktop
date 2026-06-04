@@ -163,6 +163,7 @@ public final class BlockedPanel extends JPanel {
             var mi     = new JMenuItem((current == target ? "✓ " : "  ") + letter + "  " + label);
             mi.setEnabled(current != target && target != NodeStatus.DONE);
             mi.addActionListener(e -> {
+                if (!MonitoringModeGuard.checkAndConfirm(comp)) return;
                 try {
                     switch (target) {
                         case NEXT    -> service.markNext(id);
