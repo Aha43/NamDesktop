@@ -191,6 +191,7 @@ public class NodeDialog extends JDialog {
             if (!newTitle.equals(originalTitle)) service.renameNode(nodeId, newTitle);
             service.updateDescription(nodeId, descriptionArea.getText());
             service.updateTags(nodeId, parseTags(tagsField.getText()));
+            onSave();
             notifyChanged();
             dispose();
         } catch (IOException e) {
@@ -198,6 +199,8 @@ public class NodeDialog extends JDialog {
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
+
+    protected void onSave() throws IOException {}
 
     private static List<String> parseTags(String text) {
         var result = new ArrayList<String>();
