@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `dueAt` (`LocalDate`) field on `NamNode` — optional deadline pressure on actions. Serialised as ISO date string; absent from JSON when null; existing nodes load with null (no migration needed). `NamWorkspaceService.setDueDate()` sets or clears the field and touches `updatedAt`. Closes #328.
+
+### Added
+
 - Age indicator column on Inbox, Next Actions, and Backlog rows: narrow "Age" column between title and tags showing relative age (`3d`, `2w`, `4m`, `1y`) based on `updatedAt` falling back to `createdAt`; blank when both are null. Inbox items older than 7 days shown in amber; all other panels use muted text. Closes #326.
 - FIFO/LIFO sort toggle on Inbox, Next Actions, and Backlog toolbars: clock-up/clock-down button cycles through no sort → oldest first (FIFO) → newest first (LIFO). Null-timestamp items sort last in both directions. Sort persisted per panel in settings. Up/down ordering buttons hidden when sort is active. Closes #327.
 
