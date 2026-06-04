@@ -1,6 +1,9 @@
 APP_NAME   := NamDesktop
 MAIN_CLASS := namdesktop.app.NamDesktopMain
+MCP_CLASS  := namdesktop.mcp.NamMcpServer
 MAIN_JAR   := $(APP_NAME).jar
+WORKSPACE      := $(HOME)/.namdesktop/workspace.json
+WORKSPACE_DEV  := $(HOME)/.namdesktop/dev/workspace.json
 
 SRC_DIR      := src
 LIB_DIR      := lib
@@ -15,19 +18,24 @@ TEST_SOURCES := $(shell find test -name "*.java" 2>/dev/null)
 
 JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
 
-.PHONY: clean classes jar app run all test e2e help
+.PHONY: clean classes jar app run all test e2e help mcp mcp-direct mcp-direct-dev
 
 all: app
 
 help:
 	@echo "Usage: make <target>"
 	@echo ""
-	@echo "  all       Build the app (default)"
-	@echo "  run       Build and launch the app (prod mode)"
-	@echo "  run-dev   Build and launch the app (dev mode — separate workspace)"
-	@echo "  e2e       Build and run the e2e regression suite"
-	@echo "  test      Compile and run unit tests"
-	@echo "  clean     Delete build output"
+	@echo "  all         Build the app (default)"
+	@echo "  run         Build and launch the app (prod mode)"
+	@echo "  run-dev     Build and launch the app (dev mode — separate workspace)"
+	@echo "  mcp         Build and start MCP server (hybrid mode — requires Swing monitoring mode)"
+	@echo "  mcp-direct      Build and start MCP server in direct mode (AI-only, no Swing app needed)"
+	@echo "  mcp-direct-dev  Same, using the dev workspace (~/.namdesktop/dev/)"
+	@echo "  e2e         Build and run the e2e regression suite"
+	@echo "  test        Compile and run unit tests"
+	@echo "  clean       Delete build output"
+	@echo ""
+	@echo "Override workspace path: make mcp-direct WORKSPACE=/path/to/workspace.json"
 	@echo ""
 
 clean:
@@ -68,6 +76,26 @@ run-dev: app
 	java \
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
 		$(MAIN_CLASS) --dev
+
+mcp: app
+	java \
+		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
+		$(MCP_CLASS) \
+		--workspace $(WORKSPACE)
+
+mcp-direct: app
+	java \
+		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
+		$(MCP_CLASS) \
+		--workspace $(WORKSPACE) \
+		--direct
+
+mcp-direct-dev: app
+	java \
+		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
+		$(MCP_CLASS) \
+		--workspace $(WORKSPACE_DEV) \
+		--direct
 
 e2e: app
 	java \

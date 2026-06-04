@@ -36,6 +36,14 @@ A feature issue is complete when:
 - `CHANGELOG.md` is updated
 - Committed with `Closes #<number>` in the message
 
+## Sprint-end checklist (before opening a PR)
+
+Ask these three questions for every sprint before merging:
+
+1. **e2e** — Does the sprint introduce new workspace mutations (new fields written to `workspace.json`, new node operations)? If yes, add steps to `src/e2e.json` and wire any new action/assert types in `NamDemoWiring` / `NamAssertWiring`.
+2. **MCP** — Does the sprint add fields or operations that an AI agent should be able to read or write? If yes, update `NamMcpServer`: add fields to list-tool output, add parameters to write tools, or add new tools entirely.
+3. **Help** — Does the sprint add a new panel or nav entry? Write a new help article and add it to `HelpPanel` sidebar. Does it add new columns or controls to an existing panel? Update that panel's existing article. Add any new concepts to the "What's next?" section of Getting Started.
+
 ## Key conventions
 
 - All Swing work on the EDT (`SwingUtilities.invokeLater`)

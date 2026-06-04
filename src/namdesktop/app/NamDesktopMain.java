@@ -2,6 +2,7 @@ package namdesktop.app;
 
 import namdesktop.demo.NamAssertWiring;
 import namdesktop.demo.NamDemoWiring;
+import namdesktop.mcp.NamMcpServer;
 import namdesktop.model.NamWorkspace;
 import namdesktop.persist.JsonWorkspaceRepository;
 import namdesktop.service.NamWorkspaceService;
@@ -16,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -47,6 +50,8 @@ public final class NamDesktopMain {
         splash.setVisible(true);
         var devMode = splash.isDevMode();
         var workspacePath = devMode ? DEV_WORKSPACE_PATH : WORKSPACE_PATH;
+
+        checkDirectModeSentinel(workspacePath);
 
         var repository  = new JsonWorkspaceRepository();
         var workspace   = loadWorkspace(repository, workspacePath);
@@ -123,6 +128,26 @@ public final class NamDesktopMain {
         icon.paintIcon(null, g, 0, 0);
         g.dispose();
         return img;
+    }
+
+    private static void checkDirectModeSentinel(Path workspacePath) {
+        var sentinel = NamMcpServer.directSentinelPath(workspacePath);
+        if (!Files.exists(sentinel)) return;
+        try {
+            var pidText = Files.readString(sentinel).strip();
+            var pid     = Long.parseLong(pidText);
+            if (ProcessHandle.of(pid).isPresent()) {
+                JOptionPane.showMessageDialog(null,
+                        "<html>NamMcpServer is running in direct mode.<br>" +
+                        "AI and desktop changes will both write to workspace.json<br>" +
+                        "— simultaneous use may cause conflicts.</html>",
+                        "Direct mode active", JOptionPane.WARNING_MESSAGE);
+            } else {
+                Files.deleteIfExists(sentinel);
+            }
+        } catch (IOException | NumberFormatException ignored) {
+            try { Files.deleteIfExists(sentinel); } catch (IOException ignored2) {}
+        }
     }
 
     private static NamWorkspace loadWorkspace(JsonWorkspaceRepository repository, Path path) {

@@ -1,7 +1,18 @@
 # External Agent Integration: Monitoring Mode and MCP Server
 
-> Feature design note — ready for implementation.
-> Issue order: #249 first, then #250 and #251 independently.
+> Feature design note — issues #249–#251 shipped. Direct mode (#334) planned 2026-06-04.
+
+## Usage modes
+
+| Mode | How started | MCP writes to | Swing required |
+|---|---|---|---|
+| Classic | `java -jar namdesktop.jar` | — | Yes |
+| Hybrid | Swing app + monitoring mode + `NamMcpServer` | `workspace.external.json` | Yes |
+| AI-only | `NamMcpServer --workspace … --direct` | `workspace.json` | No |
+
+In **hybrid** mode the Swing app is the owner of `workspace.json`; the MCP server writes into a staging file and the app merges on exit. In **AI-only** mode there is no Swing app; the MCP server is the sole writer and operates directly on `workspace.json`.
+
+---
 
 ## Why this direction
 
@@ -117,9 +128,30 @@ No new runtime. Users already have Java.
 - **MCP server in same JAR** — zero extra dependency for users, shared domain model.
 - **Write tools warn, not block** — if monitoring mode is off, MCP tools explain and ask user to enable rather than silently failing.
 
-## Future scope (not in these issues)
+## Direct mode (AI-only) — issue #334
+
+When `--direct` is passed to `NamMcpServer`:
+
+- Monitoring mode check bypassed on all write tools
+- Reads and writes go to `workspacePath` directly (`workspace.json`), not `workspace.external.json`
+- Server writes a `.namdesktop-direct` sentinel in the same directory on startup; content: the server's PID
+- Sentinel deleted on clean exit via a JVM shutdown hook (stale on crash — handled by the Swing app)
+- `get_monitoring_status` tool returns: _"Running in direct mode — writes go straight to workspace.json. No Swing app required."_
+
+**Swing startup guard:**
+- On startup, check for `.namdesktop-direct`
+- Parse PID; call `ProcessHandle.of(pid).isPresent()`
+- If live → show a non-blocking warning dialog: _"NamMcpServer is running in direct mode. AI and desktop changes will both write to workspace.json — simultaneous use may cause conflicts."_
+- If stale (process gone) → silently delete sentinel, proceed normally
+
+**File contract addition:**
+
+| File | Owner | Purpose |
+|---|---|---|
+| `.namdesktop-direct` | `NamMcpServer --direct` | Sentinel written on startup, contains PID. Deleted on clean exit. |
+
+## Future scope
 
 - Cherry-pick individual changes in exit summary
 - `request_monitoring_mode` — MCP triggers NamDesktop to prompt user
-- Additional write tools: node deletion, project creation, structural moves
 - Internal AI (#211–#214) — still viable as a complement
