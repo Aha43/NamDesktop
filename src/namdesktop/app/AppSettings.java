@@ -33,6 +33,7 @@ public final class AppSettings {
     private boolean welcomed         = false;
     private boolean backlogFreeOnly      = true;
     private boolean powerMode            = false;
+    private boolean clickToRename        = true;
     private String  inboxSortOrder       = "NONE";
     private String  nextActionsSortOrder = "NONE";
     private String  backlogSortOrder     = "NONE";
@@ -65,6 +66,8 @@ public final class AppSettings {
     public void    setBacklogFreeOnly(boolean v)     { this.backlogFreeOnly = v; }
     public boolean isPowerMode()                          { return powerMode; }
     public void    setPowerMode(boolean v)                { this.powerMode = v; }
+    public boolean isClickToRename()                      { return clickToRename; }
+    public void    setClickToRename(boolean v)            { this.clickToRename = v; }
     public String  getInboxSortOrder()                    { return inboxSortOrder != null ? inboxSortOrder : "NONE"; }
     public void    setInboxSortOrder(String v)            { this.inboxSortOrder = v != null ? v : "NONE"; }
     public String  getNextActionsSortOrder()              { return nextActionsSortOrder != null ? nextActionsSortOrder : "NONE"; }
@@ -97,6 +100,7 @@ public final class AppSettings {
                 s.setWelcomed(dto.welcomed != null && dto.welcomed);
                 s.setBacklogFreeOnly(dto.backlogFreeOnly == null || dto.backlogFreeOnly);
                 s.setPowerMode(dto.powerMode != null && dto.powerMode);
+                s.setClickToRename(dto.clickToRename == null || dto.clickToRename);
                 if (dto.inboxSortOrder       != null) s.setInboxSortOrder(dto.inboxSortOrder);
                 if (dto.nextActionsSortOrder != null) s.setNextActionsSortOrder(dto.nextActionsSortOrder);
                 if (dto.backlogSortOrder     != null) s.setBacklogSortOrder(dto.backlogSortOrder);
@@ -127,6 +131,7 @@ public final class AppSettings {
         dto.welcomed         = this.welcomed;
         dto.backlogFreeOnly      = this.backlogFreeOnly;
         dto.powerMode            = this.powerMode;
+        dto.clickToRename        = this.clickToRename;
         dto.inboxSortOrder       = this.inboxSortOrder;
         dto.nextActionsSortOrder = this.nextActionsSortOrder;
         dto.backlogSortOrder     = this.backlogSortOrder;
@@ -151,6 +156,7 @@ public final class AppSettings {
         public Boolean welcomed;
         public Boolean backlogFreeOnly;
         public Boolean  powerMode;
+        public Boolean  clickToRename;
         public String   inboxSortOrder;
         public String   nextActionsSortOrder;
         public String   backlogSortOrder;

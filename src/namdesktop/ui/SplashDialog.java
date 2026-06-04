@@ -2,7 +2,6 @@ package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.app.AppInfo;
-import namdesktop.app.AppSettings;
 
 import javax.swing.*;
 import java.awt.*;
@@ -19,7 +18,7 @@ public final class SplashDialog extends JDialog {
 
     private final JCheckBox devModeBox;
 
-    public SplashDialog(AppSettings settings) {
+    public SplashDialog() {
         super((Frame) null, AppInfo.NAME, true);
 
         devModeBox = new JCheckBox("Run in dev mode", Files.exists(DEV_MODE_FLAG));
@@ -39,13 +38,9 @@ public final class SplashDialog extends JDialog {
         });
         getRootPane().setDefaultButton(launchButton);
 
-        var launchTab = new JPanel(new BorderLayout());
-        launchTab.setBorder(BorderFactory.createEmptyBorder(12, 8, 8, 8));
-        launchTab.add(devModeBox, BorderLayout.NORTH);
-
-        var tabs = new JTabbedPane();
-        tabs.addTab("Launch",   launchTab);
-        tabs.addTab("Settings", new SettingsPanel(settings));
+        var devModePanel = new JPanel(new BorderLayout());
+        devModePanel.setBorder(BorderFactory.createEmptyBorder(12, 8, 8, 8));
+        devModePanel.add(devModeBox, BorderLayout.NORTH);
 
         var footer = new JPanel(new FlowLayout(FlowLayout.CENTER));
         footer.add(launchButton);
@@ -60,9 +55,9 @@ public final class SplashDialog extends JDialog {
 
         var content = new JPanel(new BorderLayout(0, 8));
         content.setBorder(BorderFactory.createEmptyBorder(24, 40, 20, 40));
-        content.add(header, BorderLayout.NORTH);
-        content.add(tabs,   BorderLayout.CENTER);
-        content.add(footer, BorderLayout.SOUTH);
+        content.add(header,       BorderLayout.NORTH);
+        content.add(devModePanel, BorderLayout.CENTER);
+        content.add(footer,       BorderLayout.SOUTH);
 
         setContentPane(content);
         setResizable(false);

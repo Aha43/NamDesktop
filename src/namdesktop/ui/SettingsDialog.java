@@ -22,7 +22,7 @@ public final class SettingsDialog extends JDialog {
         add(footer,                                 BorderLayout.SOUTH);
 
         pack();
-        setResizable(false);
+        setResizable(true);
         setLocationRelativeTo(parent);
     }
 }

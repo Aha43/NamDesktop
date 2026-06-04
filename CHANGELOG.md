@@ -6,6 +6,18 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Settings dialog restructured: left sidebar (Appearance / Workspace / Sync) replaces the flat single-column layout. Dialog is now resizable. Closes #344.
+
+### Added
+
+- New setting: **Click to rename** (default on). When off, clicking an already-selected row title no longer triggers inline rename. All other rename paths (Rename button, right-click, double-click, Enter) still work. Affects Next Actions, Backlog, Context, Saved Views, Done, Projects, and Project Workbench. Closes #343.
+
+### Changed
+
+- Splash dialog no longer has a Settings tab. Launch prompt now shows only the dev-mode checkbox and Launch button. Settings remain fully accessible from inside the app. Closes #342.
+
 ### Added
 
 - Back navigation button (toolbar) and `Cmd+[` keyboard shortcut. Keeps a capped history of up to 20 locations (panel views, project workbenches, saved views). Silently skips deleted projects when popping. Closes #337.
