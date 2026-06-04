@@ -11,6 +11,7 @@ import namdesktop.persist.WorkspaceRepository;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -121,6 +122,13 @@ public final class NamWorkspaceService {
     public void renameNode(UUID nodeId, String title) throws IOException {
         var node = require(nodeId);
         node.setTitle(title);
+        node.setUpdatedAt(LocalDateTime.now());
+        repository.save(path, workspace);
+    }
+
+    public void setDueDate(UUID nodeId, LocalDate date) throws IOException {
+        var node = require(nodeId);
+        node.setDueAt(date);
         node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }

@@ -7,6 +7,8 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -17,6 +19,7 @@ public final class ActionDialog extends NodeDialog {
 
     private final Runnable changeCallback;
     private final NamWorkspaceService actionService;
+    private JTextField dueDateField;
 
     public ActionDialog(Window parent, UUID nodeId, NamWorkspace workspace, NamWorkspaceService service) {
         this(parent, nodeId, workspace, service, true, () -> {});
@@ -57,8 +60,14 @@ public final class ActionDialog extends NodeDialog {
                 .sorted()
                 .toList();
 
+        var currentDue = workspace.getNode(nodeId).map(n -> n.getDueAt()).orElse(null);
+        dueDateField = new JTextField(currentDue != null ? currentDue.toString() : "");
+        dueDateField.putClientProperty("JTextField.placeholderText", "No due date");
+        dueDateField.setToolTipText("Due date — e.g. " + LocalDate.now().plusWeeks(1) + " or 26-7-4 (2-digit year, single-digit month/day ok)");
+
         var southPanel = new JPanel();
         southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
+        southPanel.add(buildDueDateRow());
         if (parentNode != null)
             southPanel.add(buildProjectRow(parent, parentNode.getId(), parentNode.getTitle(), workspace, service, onChanged));
         if (!inherited.isEmpty())
@@ -84,8 +93,52 @@ public final class ActionDialog extends NodeDialog {
         southPanel.add(buildResourcesSection(nodeId, workspace, service));
 
         addBelowDescription(southPanel);
-        setSize(500, 620);
+        setSize(500, 650);
         setLocationRelativeTo(parent);
+    }
+
+    private JComponent buildDueDateRow() {
+        var clearBtn = new JButton("Clear");
+        clearBtn.setToolTipText("Remove due date");
+        clearBtn.addActionListener(e -> dueDateField.setText(""));
+
+        var row = new JPanel(new BorderLayout(8, 0));
+        row.setBorder(BorderFactory.createEmptyBorder(4, 4, 2, 4));
+        row.add(new JLabel("Due:"), BorderLayout.WEST);
+        row.add(dueDateField,       BorderLayout.CENTER);
+        row.add(clearBtn,           BorderLayout.EAST);
+        row.setMaximumSize(new Dimension(Integer.MAX_VALUE, row.getPreferredSize().height));
+        return row;
+    }
+
+    @Override
+    protected void onSave() throws IOException {
+        var text = dueDateField.getText().strip();
+        if (text.isEmpty()) {
+            actionService.setDueDate(nodeId, null);
+        } else {
+            try {
+                actionService.setDueDate(nodeId, parseFlexibleDate(text));
+            } catch (DateTimeParseException | IllegalArgumentException e) {
+                throw new IOException("Invalid date — e.g. " + LocalDate.now().plusWeeks(1) + " or 26-7-4");
+            }
+        }
+    }
+
+    /**
+     * Accepts YY or YYYY year, single- or double-digit month/day, separated by - / or .
+     * Examples: "2026-06-15", "26-6-15", "26-1-2", "26-06-2"
+     */
+    private static LocalDate parseFlexibleDate(String text) {
+        var parts = text.strip().split("[-/.]");
+        if (parts.length != 3) throw new IllegalArgumentException("expected 3 parts");
+        var year  = parts[0].strip();
+        var month = parts[1].strip();
+        var day   = parts[2].strip();
+        if (year.length() == 2)  year  = "20" + year;
+        if (month.length() == 1) month = "0"  + month;
+        if (day.length()   == 1) day   = "0"  + day;
+        return LocalDate.parse(year + "-" + month + "-" + day);
     }
 
     private JComponent buildProjectRow(Window parent, UUID projectId, String projectTitle,

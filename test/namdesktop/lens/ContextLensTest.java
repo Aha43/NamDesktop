@@ -6,6 +6,7 @@ import namdesktop.model.NodeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +21,26 @@ class ContextLensTest {
     void setUp() {
         workspace = NamWorkspace.createDefault();
         lens = new ContextLens();
+    }
+
+    @Test
+    void items_propagatesDueAt() {
+        var node = new NamNode(UUID.randomUUID(), "Context action");
+        node.setStatus(NodeStatus.NEXT);
+        var due = LocalDate.of(2026, 9, 1);
+        node.setDueAt(due);
+        workspace.getNodes().put(node.getId(), node);
+
+        assertEquals(due, lens.items(workspace, List.of()).get(0).dueAt());
+    }
+
+    @Test
+    void items_dueAtIsNullWhenNotSet() {
+        var node = new NamNode(UUID.randomUUID(), "No due date");
+        node.setStatus(NodeStatus.NEXT);
+        workspace.getNodes().put(node.getId(), node);
+
+        assertNull(lens.items(workspace, List.of()).get(0).dueAt());
     }
 
     @Test

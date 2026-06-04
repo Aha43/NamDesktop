@@ -10,6 +10,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -168,6 +169,67 @@ class TimestampServiceTest {
         assertNotNull(node.getCreatedAt());
         assertNotNull(node.getUpdatedAt());
         assertNotNull(node.getStatusChangedAt());
+    }
+
+    // --- setDueDate ---
+
+    @Test
+    void setDueDate_setsDueDate() throws IOException {
+        var id   = service.createNextAction("File taxes");
+        var date = LocalDate.of(2026, 6, 30);
+        service.setDueDate(id, date);
+        assertEquals(date, workspace.getNode(id).orElseThrow().getDueAt());
+    }
+
+    @Test
+    void setDueDate_clearsDueDateWhenNull() throws IOException {
+        var id = service.createNextAction("File taxes");
+        service.setDueDate(id, LocalDate.of(2026, 6, 30));
+        service.setDueDate(id, null);
+        assertNull(workspace.getNode(id).orElseThrow().getDueAt());
+    }
+
+    @Test
+    void setDueDate_touchesUpdatedAt() throws IOException {
+        var id     = service.createNextAction("File taxes");
+        var before = workspace.getNode(id).orElseThrow().getUpdatedAt();
+        service.setDueDate(id, LocalDate.of(2026, 7, 1));
+        var after  = workspace.getNode(id).orElseThrow().getUpdatedAt();
+        assertFalse(after.isBefore(before));
+    }
+
+    @Test
+    void dueAt_survivesRoundTrip() throws IOException {
+        var id   = service.createNextAction("Pay rent");
+        var date = LocalDate.of(2026, 8, 1);
+        service.setDueDate(id, date);
+
+        var loaded = repository.load(wsPath);
+        assertEquals(date, loaded.getNode(id).orElseThrow().getDueAt());
+    }
+
+    @Test
+    void dueAt_absentInOldJson_loadsAsNull(@TempDir Path tmpDir) throws IOException {
+        var path = tmpDir.resolve("workspace.json");
+        java.nio.file.Files.writeString(path, """
+                {
+                  "formatVersion" : 1,
+                  "rootNodeId"    : "00000000-0000-0000-0000-000000000001",
+                  "inboxNodeId"   : "00000000-0000-0000-0000-000000000002",
+                  "nodes" : {
+                    "00000000-0000-0000-0000-000000000002" : {
+                      "id" : "00000000-0000-0000-0000-000000000002",
+                      "title" : "Inbox",
+                      "status" : "BACKLOG",
+                      "childIds" : []
+                    }
+                  }
+                }
+                """);
+        var loaded = new JsonWorkspaceRepository().load(path);
+        assertNull(loaded.getNode(
+                java.util.UUID.fromString("00000000-0000-0000-0000-000000000002"))
+                .orElseThrow().getDueAt());
     }
 
     @Test

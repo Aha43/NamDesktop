@@ -25,6 +25,7 @@ public final class MainFrame extends JFrame {
                 new NavigationEntry("context",      "Tag filter",   "Filter your actions by tag"),
                 new NavigationEntry("backlog",      "Backlog",      "Actions deferred for later — not yet the right time"),
                 new NavigationEntry("blocked",      "Blocked",      "Actions waiting on a prerequisite to be done"),
+                new NavigationEntry("due",          "Due",          "Actions with a due date — overdue, today, this week, later"),
                 new NavigationEntry("done",         "Done",         "Completed actions — review and clean up")
         ));
         if (devMode) entries.add(new NavigationEntry("raw-tree", "Raw Tree", "Developer view: raw node tree"));
@@ -44,8 +45,9 @@ public final class MainFrame extends JFrame {
     private final NextActionsPanel nextActionsPanel;
     private final ContextPanel     contextPanel;
     private final BacklogPanel     backlogPanel;
-    private final DonePanel        donePanel;
-    private final BlockedPanel     blockedPanel;
+    private final DonePanel          donePanel;
+    private final BlockedPanel       blockedPanel;
+    private final DueActionsPanel    dueActionsPanel;
     private final SearchPanel      searchPanel;
     private final HelpPanel        helpPanel;
     private final JLabel           demoStatusBar;
@@ -83,8 +85,9 @@ public final class MainFrame extends JFrame {
         this.contextPanel     = new ContextPanel(workspace, service, this::rebuildDynamicNavSections);
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
-        this.blockedPanel     = new BlockedPanel(workspace, service, this::openProjectWorkbench);
-        this.searchPanel      = new SearchPanel(workspace, service);
+        this.blockedPanel       = new BlockedPanel(workspace, service, this::openProjectWorkbench);
+        this.dueActionsPanel    = new DueActionsPanel(workspace, service, this::openProjectWorkbench);
+        this.searchPanel        = new SearchPanel(workspace, service);
         this.helpPanel        = new HelpPanel();
         this.helpPanel.setOnPopOut(this::popOutHelp);
 
@@ -611,7 +614,8 @@ public final class MainFrame extends JFrame {
             case "next-actions"  -> { contentArea.setContent(nextActionsPanel);  nextActionsPanel.refresh(); }
             case "context"       -> { contentArea.setContent(contextPanel);      contextPanel.refresh(); }
             case "backlog"       -> { contentArea.setContent(backlogPanel);      backlogPanel.refresh(); }
-            case "blocked"       -> { contentArea.setContent(blockedPanel);     blockedPanel.refresh(); }
+            case "blocked"       -> { contentArea.setContent(blockedPanel);        blockedPanel.refresh(); }
+            case "due"           -> { contentArea.setContent(dueActionsPanel);   dueActionsPanel.refresh(); }
             case "done"          -> { contentArea.setContent(donePanel);         donePanel.refresh(); }
             case "raw-tree"      -> contentArea.setContent(treePanel);
             default              -> contentArea.setContent(placeholder(entry.title()));
@@ -764,6 +768,7 @@ public final class MainFrame extends JFrame {
         contextPanel.refresh();
         backlogPanel.refresh();
         blockedPanel.refresh();
+        dueActionsPanel.refresh();
         donePanel.refresh();
         rebuildDynamicNavSections();
     }

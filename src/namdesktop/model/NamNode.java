@@ -1,5 +1,6 @@
 package namdesktop.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ public final class NamNode {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime statusChangedAt;
+    private LocalDate dueAt;
 
     public NamNode() {}
 
@@ -62,6 +64,9 @@ public final class NamNode {
 
     public LocalDateTime getStatusChangedAt()              { return statusChangedAt; }
     public void setStatusChangedAt(LocalDateTime t)        { this.statusChangedAt = t; }
+
+    public LocalDate getDueAt()                            { return dueAt; }
+    public void setDueAt(LocalDate dueAt)                  { this.dueAt = dueAt; }
 
     @Override
     public String toString() { return title; }

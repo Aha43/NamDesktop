@@ -8,6 +8,13 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Due Actions panel: "Due" nav entry (after Blocked, before Done) showing all non-done actions with a due date grouped into Overdue (red), Today (amber), This week (muted blue), and Later sections. Empty sections hidden. Rows support status badge, inline rename, project path, tags, and due column. Closes #331.
+- Due hints column in Next Actions, Backlog, Context, and SavedView panels: narrow "Due" column showing overdue (`2d ago`, red), today (`Today`, amber), this week (day name, muted blue), or later (short date, default). Blank when no due date set. Closes #330.
+- Due date field in `ActionDialog`: "Due:" row with ISO date entry (`YYYY-MM-DD`), placeholder text when unset, Clear button, inline error on invalid input. Saves via `setDueDate` on the service. Closes #329.
+- `dueAt` (`LocalDate`) field on `NamNode` — optional deadline pressure on actions. Serialised as ISO date string; absent from JSON when null; existing nodes load with null (no migration needed). `NamWorkspaceService.setDueDate()` sets or clears the field and touches `updatedAt`. Closes #328.
+
+### Added
+
 - Age indicator column on Inbox, Next Actions, and Backlog rows: narrow "Age" column between title and tags showing relative age (`3d`, `2w`, `4m`, `1y`) based on `updatedAt` falling back to `createdAt`; blank when both are null. Inbox items older than 7 days shown in amber; all other panels use muted text. Closes #326.
 - FIFO/LIFO sort toggle on Inbox, Next Actions, and Backlog toolbars: clock-up/clock-down button cycles through no sort → oldest first (FIFO) → newest first (LIFO). Null-timestamp items sort last in both directions. Sort persisted per panel in settings. Up/down ordering buttons hidden when sort is active. Closes #327.
 
