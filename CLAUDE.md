@@ -80,6 +80,14 @@ A feature issue is complete when:
 - all existing tests pass (`make test`)
 - no obvious domain invariant is weakened
 
+### Sprint-end checklist (before opening a PR)
+
+Before merging any sprint branch, ask:
+
+1. **e2e** — New workspace mutations? Add steps to `src/e2e.json`; wire new action/assert handlers in `NamDemoWiring` / `NamAssertWiring` if needed.
+2. **MCP** — New fields or operations an AI agent should see? Update `NamMcpServer`: expose new fields in list tools, accept new params in write tools, or add new tools.
+3. **Help** — New panel or nav entry? Write a new help article and add to `HelpPanel` sidebar. New columns or controls on an existing panel? Update that panel's article. New concept? Link it from Getting Started "What's next?".
+
 Use a dedicated test sprint when:
 - a feature touches core model behaviour
 - the implementation changed more than expected
