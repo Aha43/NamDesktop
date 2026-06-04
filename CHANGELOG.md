@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `NamMcpServer --direct` mode: pass `--direct` alongside `--workspace` to bypass monitoring mode and write straight to `workspace.json`. Writes a `.namdesktop-direct` PID sentinel on startup; deletes it on clean exit via shutdown hook. `get_monitoring_status` reports direct mode. Swing app warns on startup if a live direct-mode server is detected; silently cleans up stale sentinels. Closes #334.
+
+### Added
+
 - Due Actions panel: "Due" nav entry (after Blocked, before Done) showing all non-done actions with a due date grouped into Overdue (red), Today (amber), This week (muted blue), and Later sections. Empty sections hidden. Rows support status badge, inline rename, project path, tags, and due column. Closes #331.
 - Due hints column in Next Actions, Backlog, Context, and SavedView panels: narrow "Due" column showing overdue (`2d ago`, red), today (`Today`, amber), this week (day name, muted blue), or later (short date, default). Blank when no due date set. Closes #330.
 - Due date field in `ActionDialog`: "Due:" row with ISO date entry (`YYYY-MM-DD`), placeholder text when unset, Clear button, inline error on invalid input. Saves via `setDueDate` on the service. Closes #329.

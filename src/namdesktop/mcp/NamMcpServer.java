@@ -38,23 +38,37 @@ public final class NamMcpServer {
             "Please enable monitoring mode first: press Cmd+Shift+M in NamDesktop or click the " +
             "antenna button in the toolbar. Then retry this operation.";
 
-    private final Path workspacePath;
+    private static final String DIRECT_SENTINEL = ".namdesktop-direct";
+
+    private final Path    workspacePath;
+    private final boolean directMode;
     private final JsonWorkspaceRepository repo = new JsonWorkspaceRepository();
 
     public static void main(String[] args) throws IOException {
         Path workspace = null;
-        for (int i = 0; i < args.length - 1; i++) {
-            if ("--workspace".equals(args[i])) workspace = Path.of(args[i + 1]);
+        boolean direct = false;
+        for (int i = 0; i < args.length; i++) {
+            if ("--workspace".equals(args[i]) && i + 1 < args.length) workspace = Path.of(args[++i]);
+            if ("--direct".equals(args[i])) direct = true;
         }
         if (workspace == null) {
             System.err.println("[namdesktop-mcp] --workspace <path> is required");
             System.exit(1);
         }
-        new NamMcpServer(workspace).run();
+        new NamMcpServer(workspace, direct).run();
     }
 
     NamMcpServer(Path workspacePath) {
+        this(workspacePath, false);
+    }
+
+    NamMcpServer(Path workspacePath, boolean directMode) {
         this.workspacePath = workspacePath;
+        this.directMode    = directMode;
+    }
+
+    public static Path directSentinelPath(Path workspacePath) {
+        return workspacePath.resolveSibling(DIRECT_SENTINEL);
     }
 
     // -------------------------------------------------------------------------
@@ -62,6 +76,16 @@ public final class NamMcpServer {
     // -------------------------------------------------------------------------
 
     private void run() throws IOException {
+        if (directMode) {
+            var sentinel = directSentinelPath(workspacePath);
+            Files.createDirectories(sentinel.getParent());
+            Files.writeString(sentinel, String.valueOf(ProcessHandle.current().pid()));
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try { Files.deleteIfExists(sentinel); } catch (IOException ignored) {}
+            }));
+            System.err.println("[namdesktop-mcp] direct mode — writing to " + workspacePath);
+        }
+
         var in  = new BufferedReader(new InputStreamReader(System.in));
         var out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(System.out)), false);
         String line;
@@ -339,9 +363,14 @@ public final class NamMcpServer {
     // -------------------------------------------------------------------------
 
     private Path readPath() {
+        if (directMode) return workspacePath;
         return MonitoringMode.isActive(workspacePath)
                 ? MonitoringMode.externalPath(workspacePath)
                 : workspacePath;
+    }
+
+    private Path writePath() {
+        return directMode ? workspacePath : MonitoringMode.externalPath(workspacePath);
     }
 
     private ObjectNode toolGetContext() throws IOException {
@@ -503,6 +532,8 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolMonitoringStatus() {
+        if (directMode)
+            return textResult("Running in direct mode — writes go straight to workspace.json. No Swing app required.", false);
         var active = MonitoringMode.isActive(workspacePath);
         return textResult(active
                 ? "Monitoring mode is ACTIVE. NamDesktop is watching for changes to workspace.external.json."
@@ -514,7 +545,7 @@ public final class NamMcpServer {
     // -------------------------------------------------------------------------
 
     private ObjectNode toolAddInboxItem(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var title = args.path("title").asText("").strip();
         if (title.isEmpty()) return textResult("Error: title is required.", true);
 
@@ -537,7 +568,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolAddNextAction(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var title = args.path("title").asText("").strip();
         if (title.isEmpty()) return textResult("Error: title is required.", true);
 
@@ -560,7 +591,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolCreateProject(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var title = args.path("title").asText("").strip();
         if (title.isEmpty()) return textResult("Error: title is required.", true);
 
@@ -594,7 +625,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolAddAction(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var title = args.path("title").asText("").strip();
         if (title.isEmpty()) return textResult("Error: title is required.", true);
         var projectIdStr = args.path("project_id").asText("").strip();
@@ -604,7 +635,7 @@ public final class NamMcpServer {
         try { projectId = UUID.fromString(projectIdStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid project_id UUID.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         if (ws.getNode(projectId).isEmpty()) return textResult("Error: no node found with project_id " + projectIdStr, true);
 
         var statusStr = args.path("status").asText("BACKLOG").strip().toUpperCase();
@@ -633,7 +664,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolDeleteNode(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
 
@@ -641,7 +672,7 @@ public final class NamMcpServer {
         try { id = UUID.fromString(idStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
-        var ws   = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws   = repo.load(writePath());
         var node = ws.getNode(id).orElse(null);
         if (node == null) return textResult("Error: no node found with id " + idStr, true);
         if (!node.getChildIds().isEmpty())
@@ -657,7 +688,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolUpdateNode(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
         if (!args.hasNonNull("title") && !args.hasNonNull("description") && !args.hasNonNull("tags"))
@@ -667,7 +698,7 @@ public final class NamMcpServer {
         try { id = UUID.fromString(idStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         if (ws.getNode(id).isEmpty()) return textResult("Error: no node found with id " + idStr, true);
 
         final UUID   finalId   = id;
@@ -691,7 +722,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolSetStatus(JsonNode args, NodeStatus status) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
 
@@ -700,7 +731,7 @@ public final class NamMcpServer {
         catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
         final java.util.UUID finalId = id;
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         var node = ws.getNode(finalId).orElse(null);
         if (node == null) return textResult("Error: no node found with id " + idStr, true);
         var oldStatus = node.getStatus();
@@ -736,7 +767,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolAddResource(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
         var typeStr = args.path("type").asText("").strip().toUpperCase();
@@ -752,7 +783,7 @@ public final class NamMcpServer {
         try { type = ResourceType.valueOf(typeStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid type \"" + typeStr + "\". Use URI, EMAIL, FILE, or TEXT.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         if (ws.getNode(id).isEmpty()) return textResult("Error: no node found with id " + idStr, true);
 
         var desc = args.hasNonNull("description") ? args.path("description").asText().strip() : null;
@@ -766,7 +797,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolRemoveResource(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
         if (!args.hasNonNull("index")) return textResult("Error: index is required.", true);
@@ -777,7 +808,7 @@ public final class NamMcpServer {
         try { id = UUID.fromString(idStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
-        var ws   = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws   = repo.load(writePath());
         var node = ws.getNode(id).orElse(null);
         if (node == null) return textResult("Error: no node found with id " + idStr, true);
         if (index >= node.getResources().size())
@@ -791,7 +822,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolEditResource(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var idStr = args.path("node_id").asText("").strip();
         if (idStr.isEmpty()) return textResult("Error: node_id is required.", true);
         if (!args.hasNonNull("index")) return textResult("Error: index is required.", true);
@@ -804,7 +835,7 @@ public final class NamMcpServer {
         try { id = UUID.fromString(idStr); }
         catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
-        var ws   = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws   = repo.load(writePath());
         var node = ws.getNode(id).orElse(null);
         if (node == null) return textResult("Error: no node found with id " + idStr, true);
         if (index >= node.getResources().size())
@@ -824,7 +855,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolAddBlockedBy(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var nodeIdStr   = args.path("node_id").asText("").strip();
         var blockerStr  = args.path("blocked_by_id").asText("").strip();
         if (nodeIdStr.isEmpty())  return textResult("Error: node_id is required.", true);
@@ -834,7 +865,7 @@ public final class NamMcpServer {
         try { nodeId   = UUID.fromString(nodeIdStr);  } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
         try { blockerId = UUID.fromString(blockerStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid blocked_by_id UUID.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         if (ws.getNode(nodeId).isEmpty())   return textResult("Error: no node found with node_id " + nodeIdStr, true);
         if (ws.getNode(blockerId).isEmpty()) return textResult("Error: no node found with blocked_by_id " + blockerStr, true);
         if (nodeId.equals(blockerId))        return textResult("Error: a node cannot block itself.", true);
@@ -853,7 +884,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolRemoveBlockedBy(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var nodeIdStr  = args.path("node_id").asText("").strip();
         var blockerStr = args.path("blocked_by_id").asText("").strip();
         if (nodeIdStr.isEmpty())  return textResult("Error: node_id is required.", true);
@@ -863,7 +894,7 @@ public final class NamMcpServer {
         try { nodeId    = UUID.fromString(nodeIdStr);  } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
         try { blockerId = UUID.fromString(blockerStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid blocked_by_id UUID.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         if (ws.getNode(nodeId).isEmpty()) return textResult("Error: no node found with node_id " + nodeIdStr, true);
 
         final UUID finalBlockerId = blockerId;
@@ -885,7 +916,7 @@ public final class NamMcpServer {
     }
 
     private ObjectNode toolMoveNode(JsonNode args) throws IOException {
-        if (!MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
+        if (!directMode && !MonitoringMode.isActive(workspacePath)) return textResult(NOT_MONITORING, false);
         var nodeIdStr     = args.path("node_id").asText("").strip();
         var newParentStr  = args.path("new_parent_id").asText("").strip();
         if (nodeIdStr.isEmpty()) return textResult("Error: node_id is required.", true);
@@ -893,7 +924,7 @@ public final class NamMcpServer {
         UUID nodeId;
         try { nodeId = UUID.fromString(nodeIdStr); } catch (IllegalArgumentException e) { return textResult("Error: invalid node_id UUID.", true); }
 
-        var ws = repo.load(MonitoringMode.externalPath(workspacePath));
+        var ws = repo.load(writePath());
         var node = ws.getNode(nodeId).orElse(null);
         if (node == null) return textResult("Error: no node found with node_id " + nodeIdStr, true);
 
@@ -952,30 +983,30 @@ public final class NamMcpServer {
     // -------------------------------------------------------------------------
 
     private String atomicWriteWithResult(java.util.function.Function<NamWorkspace, String> mutate) throws IOException {
-        var extPath = MonitoringMode.externalPath(workspacePath);
-        var tmpPath = workspacePath.resolveSibling("workspace.external.tmp");
-        var ws      = repo.load(extPath);
+        var target  = writePath();
+        var tmpPath = target.resolveSibling(target.getFileName() + ".tmp");
+        var ws      = repo.load(target);
         var error   = mutate.apply(ws);
         if (error != null) return error;
         repo.save(tmpPath, ws);
         try {
-            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tmpPath, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException e) {
-            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(tmpPath, target, StandardCopyOption.REPLACE_EXISTING);
         }
         return null;
     }
 
     private void atomicWrite(java.util.function.Consumer<NamWorkspace> mutate) throws IOException {
-        var extPath = MonitoringMode.externalPath(workspacePath);
-        var tmpPath = workspacePath.resolveSibling("workspace.external.tmp");
-        var ws      = repo.load(extPath);
+        var target  = writePath();
+        var tmpPath = target.resolveSibling(target.getFileName() + ".tmp");
+        var ws      = repo.load(target);
         mutate.accept(ws);
         repo.save(tmpPath, ws);
         try {
-            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            Files.move(tmpPath, target, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException e) {
-            Files.move(tmpPath, extPath, StandardCopyOption.REPLACE_EXISTING);
+            Files.move(tmpPath, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 

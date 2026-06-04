@@ -75,6 +75,46 @@ class NamMcpServerTest {
     }
 
     // -------------------------------------------------------------------------
+    // Direct mode
+    // -------------------------------------------------------------------------
+
+    @Test
+    void directMode_writesDirectlyToWorkspaceJson() throws IOException {
+        MonitoringMode.reject(workspacePath); // monitoring OFF
+        var direct = new NamMcpServer(workspacePath, true);
+        var args   = (ObjectNode) MAPPER.readTree("{\"title\":\"Direct item\"}");
+        var result = direct.callTool("add_inbox_item", args);
+        assertFalse(isError(result));
+
+        var loaded = repo.load(workspacePath);
+        assertTrue(loaded.getInboxItems().stream()
+                .anyMatch(n -> "Direct item".equals(n.getTitle())));
+    }
+
+    @Test
+    void directMode_monitoringStatus_reportsDirect() throws IOException {
+        var direct = new NamMcpServer(workspacePath, true);
+        var result = direct.callTool("get_monitoring_status", MAPPER.createObjectNode());
+        assertTrue(text(result).contains("direct mode"));
+    }
+
+    @Test
+    void directMode_doesNotRequireMonitoringMode() throws IOException {
+        MonitoringMode.reject(workspacePath);
+        var direct = new NamMcpServer(workspacePath, true);
+        var args   = (ObjectNode) MAPPER.readTree("{\"title\":\"No monitoring needed\"}");
+        var result = direct.callTool("add_next_action", args);
+        assertFalse(isError(result));
+    }
+
+    @Test
+    void directSentinelPath_isInWorkspaceDirectory() {
+        var sentinel = NamMcpServer.directSentinelPath(workspacePath);
+        assertEquals(workspacePath.getParent(), sentinel.getParent());
+        assertEquals(".namdesktop-direct", sentinel.getFileName().toString());
+    }
+
+    // -------------------------------------------------------------------------
     // add_inbox_item
     // -------------------------------------------------------------------------
 
