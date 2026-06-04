@@ -25,6 +25,7 @@ public final class HelpPanel extends JPanel {
             new Entry("Inbox",              "inbox"),
             new Entry("Next Actions",       "next-actions"),
             new Entry("Backlog",            "backlog"),
+            new Entry("Due Actions",        "due"),
             new Entry("Done",               "done"),
 
             new SectionHeader("Projects"),
