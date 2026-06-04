@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Re-clicking an already-selected nav item now always navigates to that section's root view. Previously the `ListSelectionListener` fired no event on re-click, leaving the content area unchanged. Closes #336.
+
+### Added
+
 - Monitoring mode guard: all mutating UI actions (status change, save, delete, rename, reorder, add item/action) prompt before executing when monitoring mode is active. Dialog offers Exit / Continue (don't ask again this session) / Cancel. One "Continue" suppresses further prompts for the rest of the session. Closes #339.
 
 ### Added

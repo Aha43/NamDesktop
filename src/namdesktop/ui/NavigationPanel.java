@@ -6,6 +6,8 @@ import namdesktop.model.SavedView;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -40,6 +42,25 @@ public final class NavigationPanel extends JPanel {
             if (selected == null) return;
             if (selected.isDivider() || selected.isSectionHeader()) { list.clearSelection(); return; }
             onSelect.accept(selected);
+        });
+
+        // Re-click support: ListSelectionListener doesn't fire when the item is already selected.
+        // mousePressed records whether the clicked item was already selected before JList processes
+        // the event; mouseClicked then fires onSelect for that re-click case.
+        final boolean[] wasAlreadySelected = {false};
+        final int[]     pressedIdx         = {-1};
+        list.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e) {
+                var idx = list.locationToIndex(e.getPoint());
+                pressedIdx[0]         = idx;
+                wasAlreadySelected[0] = (idx >= 0 && idx == list.getSelectedIndex());
+            }
+            @Override public void mouseClicked(MouseEvent e) {
+                if (!wasAlreadySelected[0] || pressedIdx[0] < 0) return;
+                var entry = model.get(pressedIdx[0]);
+                if (entry.isDivider() || entry.isSectionHeader()) return;
+                onSelect.accept(entry);
+            }
         });
 
         add(new JScrollPane(list), BorderLayout.CENTER);
