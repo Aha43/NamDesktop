@@ -46,7 +46,7 @@ public final class NamDesktopMain {
         AppSettings.setInstance(settings);
         if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
 
-        var splash = new SplashDialog(settings);
+        var splash = new SplashDialog();
         splash.setVisible(true);
         var devMode = splash.isDevMode();
         var workspacePath = devMode ? DEV_WORKSPACE_PATH : WORKSPACE_PATH;

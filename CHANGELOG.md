@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+
+- Splash dialog no longer has a Settings tab. Launch prompt now shows only the dev-mode checkbox and Launch button. Settings remain fully accessible from inside the app. Closes #342.
+
 ### Added
 
 - Back navigation button (toolbar) and `Cmd+[` keyboard shortcut. Keeps a capped history of up to 20 locations (panel views, project workbenches, saved views). Silently skips deleted projects when popping. Closes #337.
