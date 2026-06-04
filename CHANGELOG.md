@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- New setting: **Click to rename** (default on). When off, clicking an already-selected row title no longer triggers inline rename. All other rename paths (Rename button, right-click, double-click, Enter) still work. Affects Next Actions, Backlog, Context, Saved Views, Done, Projects, and Project Workbench. Closes #343.
+
 ### Changed
 
 - Splash dialog no longer has a Settings tab. Launch prompt now shows only the dev-mode checkbox and Launch button. Settings remain fully accessible from inside the app. Closes #342.

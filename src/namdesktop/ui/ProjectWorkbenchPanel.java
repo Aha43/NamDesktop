@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import namdesktop.app.AppSettings;
 import namdesktop.lens.ChildSection;
 import namdesktop.lens.MissionControlLens;
 import namdesktop.lens.MissionControlStation;
@@ -608,7 +609,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 }
                 // Single-click on already-selected title → inline rename
                 if (e.getClickCount() == 1 && idx == lastSelected[0] && bounds != null
-                        && e.getX() >= bounds.x + BADGE_WIDTH) {
+                        && e.getX() >= bounds.x + BADGE_WIDTH
+                        && AppSettings.getInstance().isClickToRename()) {
                     startInlineRename(list, model, idx);
                 }
             }

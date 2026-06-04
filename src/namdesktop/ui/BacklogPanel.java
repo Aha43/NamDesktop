@@ -212,7 +212,7 @@ public final class BacklogPanel extends JPanel {
                         if (table.isEditing()) table.getCellEditor().cancelCellEditing();
                         new ActionDialog(SwingUtilities.getWindowAncestor(BacklogPanel.this),
                                 item.id(), workspace, service, false, BacklogPanel.this::refresh).setVisible(true);
-                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                    } else if (e.getClickCount() == 1 && row == lastRow[0] && AppSettings.getInstance().isClickToRename()) {
                         if (MonitoringModeGuard.checkAndConfirm(e.getComponent()) && table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
                             if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }

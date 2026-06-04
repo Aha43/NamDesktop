@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.app.AppSettings;
 import namdesktop.lens.ContextItemRow;
 import namdesktop.lens.ContextLens;
 import namdesktop.model.NamWorkspace;
@@ -142,7 +143,7 @@ public final class ContextPanel extends JPanel {
                         if (table.isEditing()) table.getCellEditor().cancelCellEditing();
                         new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
                                 item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
-                    } else if (e.getClickCount() == 1 && row == lastRow[0]) {
+                    } else if (e.getClickCount() == 1 && row == lastRow[0] && AppSettings.getInstance().isClickToRename()) {
                         if (MonitoringModeGuard.checkAndConfirm(e.getComponent()) && table.editCellAt(row, 0)) {
                             var ed = table.getEditorComponent();
                             if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }

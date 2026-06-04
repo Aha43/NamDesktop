@@ -94,8 +94,21 @@ public final class SettingsPanel extends JPanel {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(powerBox, gbc);
 
-        // Sync repo URL
+        // Click to rename
         gbc.gridx = 0; gbc.gridy = 5; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
+        add(new JLabel("Click to rename:"), gbc);
+
+        var clickToRenameBox = new JCheckBox("Click on a selected row title to start renaming", settings.isClickToRename());
+        clickToRenameBox.addActionListener(e -> {
+            settings.setClickToRename(clickToRenameBox.isSelected());
+            save(settings);
+        });
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        add(clickToRenameBox, gbc);
+
+        // Sync repo URL
+        gbc.gridx = 0; gbc.gridy = 6; gbc.fill = GridBagConstraints.NONE; gbc.weightx = 0;
         add(new JLabel("Sync repo URL:"), gbc);
 
         var syncUrlField = new JTextField(settings.getSyncRepoUrl(), 30);
@@ -105,7 +118,7 @@ public final class SettingsPanel extends JPanel {
         });
         syncUrlField.addActionListener(e -> saveSyncUrl(settings, syncUrlField));
 
-        gbc.gridx = 1; gbc.gridy = 5; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
+        gbc.gridx = 1; gbc.gridy = 6; gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weightx = 1.0;
         add(syncUrlField, gbc);
     }
 
