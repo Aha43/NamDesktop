@@ -63,7 +63,7 @@ public final class ActionDialog extends NodeDialog {
         var currentDue = workspace.getNode(nodeId).map(n -> n.getDueAt()).orElse(null);
         dueDateField = new JTextField(currentDue != null ? currentDue.toString() : "");
         dueDateField.putClientProperty("JTextField.placeholderText", "No due date");
-        dueDateField.setToolTipText("Due date — YYYY-MM-DD, e.g. " + LocalDate.now().plusWeeks(1));
+        dueDateField.setToolTipText("Due date — e.g. " + LocalDate.now().plusWeeks(1) + " or 26-7-4 (2-digit year, single-digit month/day ok)");
 
         var southPanel = new JPanel();
         southPanel.setLayout(new BoxLayout(southPanel, BoxLayout.Y_AXIS));
@@ -118,11 +118,27 @@ public final class ActionDialog extends NodeDialog {
             actionService.setDueDate(nodeId, null);
         } else {
             try {
-                actionService.setDueDate(nodeId, LocalDate.parse(text));
-            } catch (DateTimeParseException e) {
-                throw new IOException("Invalid date — use YYYY-MM-DD format (e.g. " + LocalDate.now().plusWeeks(1) + ")");
+                actionService.setDueDate(nodeId, parseFlexibleDate(text));
+            } catch (DateTimeParseException | IllegalArgumentException e) {
+                throw new IOException("Invalid date — e.g. " + LocalDate.now().plusWeeks(1) + " or 26-7-4");
             }
         }
+    }
+
+    /**
+     * Accepts YY or YYYY year, single- or double-digit month/day, separated by - / or .
+     * Examples: "2026-06-15", "26-6-15", "26-1-2", "26-06-2"
+     */
+    private static LocalDate parseFlexibleDate(String text) {
+        var parts = text.strip().split("[-/.]");
+        if (parts.length != 3) throw new IllegalArgumentException("expected 3 parts");
+        var year  = parts[0].strip();
+        var month = parts[1].strip();
+        var day   = parts[2].strip();
+        if (year.length() == 2)  year  = "20" + year;
+        if (month.length() == 1) month = "0"  + month;
+        if (day.length()   == 1) day   = "0"  + day;
+        return LocalDate.parse(year + "-" + month + "-" + day);
     }
 
     private JComponent buildProjectRow(Window parent, UUID projectId, String projectTitle,
