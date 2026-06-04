@@ -63,6 +63,9 @@ public final class MainFrame extends JFrame {
     private       JComponent            lastNonHelpContent;
     private       JDialog               helpDialog;
     private       boolean               monitoringActive = false;
+    private final java.util.ArrayDeque<NavigationLocation> navHistory = new java.util.ArrayDeque<>();
+    private       NavigationLocation    currentLocation;
+    private       JButton               backButton;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
     private       JLabel                monitoringStatusBar;
@@ -107,6 +110,13 @@ public final class MainFrame extends JFrame {
 
         var toolbar = new JToolBar();
         toolbar.setFloatable(false);
+        backButton = UiHelper.iconButton("Back",
+                new FlatSVGIcon(MainFrame.class.getResource("/icons/arrow-left.svg")).derive(16, 16));
+        backButton.setToolTipText("Go back (⌘[)");
+        backButton.setEnabled(false);
+        backButton.addActionListener(e -> navigateBack());
+        toolbar.add(backButton);
+        toolbar.addSeparator();
         var manageTagsButton = UiHelper.iconButton("Manage Tags…", new FlatSVGIcon(MainFrame.class.getResource("/icons/tag.svg")).derive(16, 16));
         manageTagsButton.addActionListener(e ->
                 new TagManagementDialog(this, workspace, service, this::refreshAll).setVisible(true));
@@ -308,6 +318,10 @@ public final class MainFrame extends JFrame {
                 zenItem.setText(!toolbar.isVisible() && (int) ev.getNewValue() == 0
                         ? "Exit Zen Mode" : "Enter Zen Mode"));
         var mask = java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx();
+        var goBackItem = new JMenuItem("Back");
+        goBackItem.setAccelerator(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_OPEN_BRACKET, mask));
+        goBackItem.addActionListener(e -> navigateBack());
+
         var goInboxItem       = new JMenuItem("Inbox");
         var goNextActionsItem = new JMenuItem("Next Actions");
         var goBacklogItem     = new JMenuItem("Backlog");
@@ -329,6 +343,8 @@ public final class MainFrame extends JFrame {
         viewMenu.add(navToggleItem);
         viewMenu.addSeparator();
         viewMenu.add(zenItem);
+        viewMenu.addSeparator();
+        viewMenu.add(goBackItem);
         viewMenu.addSeparator();
         viewMenu.add(goInboxItem);
         viewMenu.add(goNextActionsItem);
@@ -560,6 +576,7 @@ public final class MainFrame extends JFrame {
     }
 
     private void onNavSelected(NavigationEntry entry) {
+        recordNavigation(locationForEntry(entry));
         if (sessionRestored) {
             settings.setLastNavId(entry.id());
             settings.setLastProjectId(null);
@@ -669,6 +686,7 @@ public final class MainFrame extends JFrame {
     }
 
     private void openProjectWorkbench(java.util.UUID projectId) {
+        recordNavigation(new NavigationLocation.WorkbenchLocation(projectId));
         if (sessionRestored) {
             settings.setLastProjectId(projectId.toString());
             saveSession();
@@ -681,8 +699,80 @@ public final class MainFrame extends JFrame {
                 contentArea.setContent(projectsPanel);
                 projectsPanel.refresh();
             });
+            cachedWorkbench.setOnInternalNavigate(
+                    id -> recordNavigation(new NavigationLocation.WorkbenchLocation(id)));
         }
         contentArea.setContent(cachedWorkbench);
+    }
+
+    private static NavigationLocation locationForEntry(NavigationEntry entry) {
+        if (entry.id().startsWith("saved-view:"))
+            return new NavigationLocation.SavedViewLocation(entry.id().substring("saved-view:".length()));
+        return new NavigationLocation.PanelLocation(entry.id());
+    }
+
+    private void recordNavigation(NavigationLocation newLocation) {
+        if (currentLocation != null && !currentLocation.equals(newLocation)) {
+            if (navHistory.size() >= 20) navHistory.pollFirst();
+            navHistory.addLast(currentLocation);
+        }
+        currentLocation = newLocation;
+        if (backButton != null) backButton.setEnabled(!navHistory.isEmpty());
+    }
+
+    private void navigateBack() {
+        NavigationLocation lastPopped = null;
+        for (int attempts = 0; attempts < 5 && !navHistory.isEmpty(); attempts++) {
+            lastPopped = navHistory.pollLast();
+            if (backButton != null) backButton.setEnabled(!navHistory.isEmpty());
+            if (isValidLocation(lastPopped)) {
+                currentLocation = lastPopped; // prevent re-push during navigation
+                executeLocation(lastPopped);
+                return;
+            }
+        }
+        if (lastPopped != null) {
+            var root = sectionRootOf(lastPopped);
+            currentLocation = root;
+            executeLocation(root);
+        }
+    }
+
+    private boolean isValidLocation(NavigationLocation loc) {
+        if (loc instanceof NavigationLocation.WorkbenchLocation w)
+            return workspace.getNode(w.projectId()).isPresent();
+        if (loc instanceof NavigationLocation.SavedViewLocation s)
+            return workspace.getSavedViews().stream().anyMatch(v -> v.name().equals(s.viewName()));
+        return true; // PanelLocation always valid
+    }
+
+    private NavigationLocation sectionRootOf(NavigationLocation loc) {
+        if (loc instanceof NavigationLocation.WorkbenchLocation)
+            return new NavigationLocation.PanelLocation("projects");
+        if (loc instanceof NavigationLocation.SavedViewLocation)
+            return new NavigationLocation.PanelLocation("context");
+        return loc; // PanelLocation is already a root
+    }
+
+    private void executeLocation(NavigationLocation loc) {
+        if (loc instanceof NavigationLocation.PanelLocation p)
+            navigateTo(p.panelId());
+        else if (loc instanceof NavigationLocation.WorkbenchLocation w)
+            executeWorkbenchLocation(w.projectId());
+        else if (loc instanceof NavigationLocation.SavedViewLocation s) {
+            var svId = "saved-view:" + s.viewName();
+            navPanel.selectById(svId);
+            onNavSelected(new NavigationEntry(svId, s.viewName(), ""));
+        }
+    }
+
+    private void executeWorkbenchLocation(java.util.UUID projectId) {
+        if (cachedWorkbench != null) {
+            cachedWorkbench.showProject(projectId);
+            contentArea.setContent(cachedWorkbench);
+        } else {
+            openProjectWorkbench(projectId);
+        }
     }
 
     public void runDemo() {
