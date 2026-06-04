@@ -98,12 +98,15 @@ public final class ContextPanel extends JPanel {
         var actionEditor = new DefaultCellEditor(new JTextField());
         actionEditor.setClickCountToStart(99);
         table.getColumn("Action").setCellEditor(actionEditor);
+        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.dueRenderer());
+        table.getColumnModel().getColumn(2).setPreferredWidth(60);
+        table.getColumnModel().getColumn(2).setMaxWidth(60);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
-        table.getColumnModel().getColumn(2).setPreferredWidth(110);
-        table.getColumnModel().getColumn(3).setCellRenderer(UiHelper.paperclipRenderer());
-        table.getColumnModel().getColumn(3).setPreferredWidth(18);
-        table.getColumnModel().getColumn(3).setMaxWidth(18);
+        table.getColumnModel().getColumn(3).setPreferredWidth(110);
+        table.getColumnModel().getColumn(4).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(4).setPreferredWidth(18);
+        table.getColumnModel().getColumn(4).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
 
         table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
@@ -280,7 +283,7 @@ public final class ContextPanel extends JPanel {
 
     private final class ContextTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Tags", ""};
+        private static final String[] COLUMNS = {"Action", "Project", "Due", "Tags", ""};
         private List<ContextItemRow> rows = List.of();
 
         void setRows(List<ContextItemRow> rows) {
@@ -315,18 +318,20 @@ public final class ContextPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.title();
                 case 1 -> r.projectPath() != null ? r.projectPath() : "";
-                case 2 -> new String[]{
+                case 2 -> r.dueAt();
+                case 3 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
-                case 3 -> r.hasResources();
+                case 4 -> r.hasResources();
                 default -> null;
             };
         }
 
         @Override
         public Class<?> getColumnClass(int col) {
-            if (col == 2) return String[].class;
-            if (col == 3) return Boolean.class;
+            if (col == 2) return java.time.LocalDate.class;
+            if (col == 3) return String[].class;
+            if (col == 4) return Boolean.class;
             return String.class;
         }
     }

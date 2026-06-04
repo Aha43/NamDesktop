@@ -255,15 +255,18 @@ public final class BacklogPanel extends JPanel {
         table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.ageRenderer(false));
         table.getColumnModel().getColumn(2).setPreferredWidth(50);
         table.getColumnModel().getColumn(2).setMaxWidth(50);
+        table.getColumnModel().getColumn(3).setCellRenderer(UiHelper.dueRenderer());
+        table.getColumnModel().getColumn(3).setPreferredWidth(60);
+        table.getColumnModel().getColumn(3).setMaxWidth(60);
         table.getColumn("Tags").setCellRenderer(UiHelper.tagsRenderer());
-        statusColumn = table.getColumnModel().getColumn(4);
+        statusColumn = table.getColumnModel().getColumn(5);
         table.getColumnModel().getColumn(0).setPreferredWidth(210);
-        table.getColumnModel().getColumn(3).setPreferredWidth(110);
-        table.getColumnModel().getColumn(4).setPreferredWidth(70);
-        table.getColumnModel().getColumn(4).setMaxWidth(70);
-        table.getColumnModel().getColumn(5).setCellRenderer(UiHelper.paperclipRenderer());
-        table.getColumnModel().getColumn(5).setPreferredWidth(18);
-        table.getColumnModel().getColumn(5).setMaxWidth(18);
+        table.getColumnModel().getColumn(4).setPreferredWidth(110);
+        table.getColumnModel().getColumn(5).setPreferredWidth(70);
+        table.getColumnModel().getColumn(5).setMaxWidth(70);
+        table.getColumnModel().getColumn(6).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(6).setPreferredWidth(18);
+        table.getColumnModel().getColumn(6).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
         applyColumnVisibility(AppSettings.getInstance().isShowStatusColumn());
 
@@ -477,7 +480,7 @@ public final class BacklogPanel extends JPanel {
 
     private final class BacklogTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Age", "Tags", "Status", ""};
+        private static final String[] COLUMNS = {"Action", "Project", "Age", "Due", "Tags", "Status", ""};
         private List<BacklogItemRow> rows = List.of();
 
         void setRows(List<BacklogItemRow> rows) {
@@ -514,11 +517,12 @@ public final class BacklogPanel extends JPanel {
                 case 0 -> r.title();
                 case 1 -> r.projectPath() != null ? r.projectPath() : "";
                 case 2 -> UiHelper.ageDays(r.updatedAt(), r.createdAt());
-                case 3 -> new String[]{
+                case 3 -> r.dueAt();
+                case 4 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
-                case 4 -> r.status();
-                case 5 -> r.hasResources();
+                case 5 -> r.status();
+                case 6 -> r.hasResources();
                 default -> null;
             };
         }
@@ -526,8 +530,9 @@ public final class BacklogPanel extends JPanel {
         @Override
         public Class<?> getColumnClass(int col) {
             if (col == 2) return Long.class;
-            if (col == 3) return String[].class;
-            if (col == 5) return Boolean.class;
+            if (col == 3) return java.time.LocalDate.class;
+            if (col == 4) return String[].class;
+            if (col == 6) return Boolean.class;
             return String.class;
         }
     }

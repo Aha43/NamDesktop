@@ -38,7 +38,7 @@ public final class ContextLens {
                     return new ContextItemRow(n.getId(), n.getTitle(), n.getStatus(),
                             parent != null ? parent.getTitle() : null,
                             projectPath, List.copyOf(ownTags), inherited,
-                            !n.getResources().isEmpty());
+                            !n.getResources().isEmpty(), n.getDueAt());
                 })
                 .toList();
     }

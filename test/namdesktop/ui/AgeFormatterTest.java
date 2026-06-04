@@ -2,6 +2,7 @@ package namdesktop.ui;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -59,5 +60,33 @@ class AgeFormatterTest {
     void ageText_formatsYears() {
         assertEquals("1y", UiHelper.ageText(365L));
         assertEquals("2y", UiHelper.ageText(730L));
+    }
+
+    // --- dueText ---
+
+    @Test
+    void dueText_overdue() {
+        var today = LocalDate.of(2026, 6, 10);
+        assertEquals("2d ago", UiHelper.dueText(LocalDate.of(2026, 6, 8), today));
+    }
+
+    @Test
+    void dueText_today() {
+        var today = LocalDate.of(2026, 6, 10);
+        assertEquals("Today", UiHelper.dueText(today, today));
+    }
+
+    @Test
+    void dueText_thisWeek() {
+        var today = LocalDate.of(2026, 6, 10); // Wednesday
+        var fri   = LocalDate.of(2026, 6, 12); // Friday — 2 days out
+        assertEquals("Fri", UiHelper.dueText(fri, today));
+    }
+
+    @Test
+    void dueText_later() {
+        var today = LocalDate.of(2026, 6, 10);
+        var later = LocalDate.of(2026, 7, 3);
+        assertEquals("Jul 3", UiHelper.dueText(later, today));
     }
 }

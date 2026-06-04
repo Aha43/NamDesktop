@@ -14,7 +14,9 @@ import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.TextStyle;
 import java.time.temporal.ChronoUnit;
+import java.util.Locale;
 import java.util.List;
 import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
@@ -56,6 +58,45 @@ public final class UiHelper {
         btn.putClientProperty(PROP_DENSEABLE, Boolean.TRUE);
         btn.putClientProperty(PROP_LABEL, label);
         return btn;
+    }
+
+    /**
+     * Formats a due date relative to today.
+     * Overdue → "Nd ago"; today → "Today"; ≤7 days → day name; later → "MMM D".
+     */
+    public static String dueText(LocalDate due, LocalDate today) {
+        long days = ChronoUnit.DAYS.between(today, due);
+        if (days < 0)       return (-days) + "d ago";
+        if (days == 0)      return "Today";
+        if (days <= 7)      return due.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.getDefault());
+        return due.getMonth().getDisplayName(TextStyle.SHORT, Locale.getDefault()) + " " + due.getDayOfMonth();
+    }
+
+    /** Right-aligned due-date cell renderer — blank when null, colour-coded by urgency. */
+    public static TableCellRenderer dueRenderer() {
+        return new DefaultTableCellRenderer() {
+            private static final Color DUE_RED   = new Color(200, 60,  60);
+            private static final Color DUE_AMBER = new Color(180, 120,  0);
+            private static final Color DUE_BLUE  = new Color( 60, 100, 180);
+            { setHorizontalAlignment(SwingConstants.RIGHT); }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable t, Object val,
+                    boolean sel, boolean foc, int row, int col) {
+                super.getTableCellRendererComponent(t, null, sel, foc, row, col);
+                if (!(val instanceof LocalDate due)) { setText(""); return this; }
+                var today = LocalDate.now();
+                long days = ChronoUnit.DAYS.between(today, due);
+                setText(dueText(due, today));
+                if (!sel) {
+                    if      (days < 0) setForeground(DUE_RED);
+                    else if (days == 0) setForeground(DUE_AMBER);
+                    else if (days <= 7) setForeground(DUE_BLUE);
+                    else                setForeground(t.getForeground());
+                }
+                return this;
+            }
+        };
     }
 
     /** Updates a denseable button's label in both the stored property and the visible text. */

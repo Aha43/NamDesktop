@@ -6,6 +6,7 @@ import namdesktop.model.NodeStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -65,6 +66,26 @@ class NextActionsLensTest {
         var row = lens.items(workspace).get(0);
         assertNull(row.updatedAt());
         assertNull(row.createdAt());
+    }
+
+    @Test
+    void items_propagatesDueAt() {
+        var node = new NamNode(UUID.randomUUID(), "Pay invoice");
+        node.setStatus(NodeStatus.NEXT);
+        var due = LocalDate.of(2026, 7, 1);
+        node.setDueAt(due);
+        workspace.getNodes().put(node.getId(), node);
+
+        assertEquals(due, lens.items(workspace).get(0).dueAt());
+    }
+
+    @Test
+    void items_dueAtIsNullWhenNotSet() {
+        var node = new NamNode(UUID.randomUUID(), "No due date");
+        node.setStatus(NodeStatus.NEXT);
+        workspace.getNodes().put(node.getId(), node);
+
+        assertNull(lens.items(workspace).get(0).dueAt());
     }
 
     @Test
