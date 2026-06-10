@@ -70,6 +70,31 @@ single-user personal tool, last-write-wins with an explicit warning is the right
 **Startup auto-pull: deferred.** Manual push/pull ships first; auto-pull on launch
 becomes a follow-up issue once conflict handling has been exercised by hand.
 
+## Follow-up sprint: dev-mode cloud sync (planned 2026-06-10)
+
+Dev mode currently disables sync entirely (`!devMode` guard) because both modes would
+target the same remote row and clobber each other. The fix is the first concrete use of
+the multi-workspace door the schema left open: dev mode syncs to its own row,
+`name = 'dev'`, while normal mode keeps `name = 'default'`. Two rows, two independent
+version watermarks, no collision possible.
+
+What it takes:
+
+1. **Service** — `SupabaseSyncService` takes the workspace name as a parameter instead
+   of hardcoding `'default'`.
+2. **Settings** — one `lastSyncedVersion` watermark per workspace name (e.g.
+   `lastSyncedVersion` + `lastSyncedVersionDev`); a dev push must not move the default
+   workspace's watermark.
+3. **Migration** — add a unique index on `(owner_user_id, name)`; with two rows per user
+   the key needs enforcing.
+4. **UI** — drop `!devMode` from the *cloud* branch of `syncAvailable()` (Git sync stays
+   dev-gated), route the name by mode, surface the target in tooltips/status messages
+   ("Push workspace to Supabase (dev)").
+
+Product angle: this turns dev mode into a durable, syncable sandbox — fool around freely
+while the real inventory stays untouched. A possible "play mode" rebrand for end users
+is noted in `docs/IDEAS.md`; naming is out of scope for this sprint.
+
 ## The three issues
 
 | # | Scope | Depends on |
