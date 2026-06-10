@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+
+- Local Supabase stack for the cloud-sync PoC (experiment/cloud branch): Supabase CLI config (`supabase/config.toml`), `workspaces` table + RLS policy as a checked-in migration, test-user setup, and `docs/features/supabase-poc/setup.md` covering install, start/stop, env vars, and the later hosted-Supabase move. Closes #348.
+
 ### Changed
 
 - Settings dialog restructured: left sidebar (Appearance / Workspace / Sync) replaces the flat single-column layout. Dialog is now resizable. Closes #344.

@@ -54,3 +54,7 @@ replay_pid*
 
 # === Distribution ===
 dist/
+
+# === Supabase CLI local state ===
+supabase/.temp/
+supabase/.branches/
