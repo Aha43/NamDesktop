@@ -34,7 +34,15 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         if (!Files.exists(path)) {
             return NamWorkspace.createDefault();
         }
-        var file = mapper.readValue(path.toFile(), WorkspaceFile.class);
+        return toWorkspace(mapper.readValue(path.toFile(), WorkspaceFile.class));
+    }
+
+    /** Deserialize a workspace from a JSON string (same format as the workspace file). */
+    public NamWorkspace fromJson(String json) throws IOException {
+        return toWorkspace(mapper.readValue(json, WorkspaceFile.class));
+    }
+
+    private static NamWorkspace toWorkspace(WorkspaceFile file) {
         var workspace = new NamWorkspace();
         workspace.setRootNodeId(file.rootNodeId);
         workspace.setNodes(file.nodes);
@@ -56,6 +64,15 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
     public void save(Path path, NamWorkspace workspace) throws IOException {
         if (path == null) return;
         Files.createDirectories(path.getParent());
+        mapper.writeValue(path.toFile(), toFile(workspace));
+    }
+
+    /** Serialize a workspace to a JSON string (same format as the workspace file). */
+    public String toJson(NamWorkspace workspace) throws IOException {
+        return mapper.writeValueAsString(toFile(workspace));
+    }
+
+    private static WorkspaceFile toFile(NamWorkspace workspace) {
         var file = new WorkspaceFile();
         file.formatVersion      = FORMAT_VERSION;
         file.rootNodeId         = workspace.getRootNodeId();
@@ -68,7 +85,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         file.missionControls    = workspace.getMissionControls();
         file.templates          = workspace.getTemplates();
         file.viewOrders         = workspace.getViewOrders();
-        mapper.writeValue(path.toFile(), file);
+        return file;
     }
 
     private static void migrate(NamWorkspace workspace, String title, UUID currentId, Consumer<UUID> setter) {

@@ -24,9 +24,21 @@ The dialog has three sections in the left sidebar.</p>
 </ul>
 
 <h4>Sync</h4>
+<p><b>Git sync</b></p>
 <ul>
   <li><b>Sync repo URL</b> — URL of a private GitHub repository used for <a href="concept://git-sync">Git sync</a>.
   Paste the repo URL here to enable Push and Pull in the toolbar and File menu.</li>
+</ul>
+<p><b>Cloud sync (Supabase)</b> — see <a href="concept://cloud-sync">Cloud sync</a> for the full story.</p>
+<ul>
+  <li><b>Enable</b> — turns cloud sync on. The toolbar Push and Pull buttons then go to Supabase.
+  When both Git and cloud sync are configured, cloud sync wins.</li>
+  <li><b>Supabase URL</b> — where to sync to. Pre-filled for a local Supabase stack;
+  paste your hosted project URL to sync to the cloud.</li>
+  <li><b>Publishable key</b> — the project's public API key (<code>sb_publishable_…</code>).
+  Pre-filled for the local stack.</li>
+  <li><b>Email / Password</b> — your Supabase account credentials. The password field is masked;
+  use <b>Show</b> to reveal it. Credentials are stored locally and only sent to the configured Supabase instance.</li>
 </ul>
 
 </body>
