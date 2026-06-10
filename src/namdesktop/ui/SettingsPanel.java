@@ -20,7 +20,7 @@ public final class SettingsPanel extends JPanel {
         cards.setBorder(new EmptyBorder(12, 16, 12, 16));
         cards.add(buildAppearance(settings, onChanged), "Appearance");
         cards.add(buildWorkspace(settings),             "Workspace");
-        cards.add(buildSync(settings),                  "Sync");
+        cards.add(buildSync(settings, onChanged),       "Sync");
 
         var sections = new JList<>(new String[]{"Appearance", "Workspace", "Sync"});
         sections.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -119,7 +119,7 @@ public final class SettingsPanel extends JPanel {
         return p;
     }
 
-    private JPanel buildSync(AppSettings settings) {
+    private JPanel buildSync(AppSettings settings, Runnable onChanged) {
         var p = sectionPanel();
         var gbc = sectionGbc();
 
@@ -144,6 +144,7 @@ public final class SettingsPanel extends JPanel {
             box.addActionListener(e -> {
                 cloud.setEnabled(box.isSelected());
                 save(settings);
+                onChanged.run();
             });
             return box;
         });

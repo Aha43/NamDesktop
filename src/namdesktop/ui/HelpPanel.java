@@ -47,6 +47,7 @@ public final class HelpPanel extends JPanel {
             new Entry("Keyboard shortcuts", "keyboard-shortcuts"),
             new Entry("Tag management",     "tag-management"),
             new Entry("Git sync",           "git-sync"),
+            new Entry("Cloud sync",         "cloud-sync"),
 
             new SectionHeader("Superpower"),
             new Entry("AI assistant",       "ai-assistant"),

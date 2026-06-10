@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; margin: 16px; line-height: 1.5;">
+
+<h3>Cloud sync</h3>
+
+<p>Cloud sync stores your workspace in a Supabase database so you can push it from one
+machine and pull it on another. It is the database-backed alternative to
+<a href="concept://git-sync">Git sync</a> — no Git repository needed, and conflicts are
+detected instead of silently overwritten.</p>
+
+<h4>Setting it up</h4>
+<ol>
+  <li>Open <b>Settings → Sync</b> and fill in the <b>Cloud sync (Supabase)</b> group:
+      the Supabase URL and publishable key (pre-filled for a local stack), and your
+      account email and password.</li>
+  <li>Tick <b>Enable</b>. The Push and Pull buttons in the toolbar now sync to Supabase.</li>
+</ol>
+
+<h4>Pushing and pulling</h4>
+<p>Click <b>Push workspace</b> (↑, or Cmd+S) to upload your workspace.
+Click <b>Pull workspace</b> (↓) to replace your local workspace with the remote one —
+the app reloads it immediately, no restart needed. The status bar confirms each sync
+with a timestamp.</p>
+
+<h4>Conflicts</h4>
+<p>If the remote workspace changed since your last sync (for example, you pushed from
+another machine), pushing opens a <b>Workspace conflict</b> dialog with three choices:</p>
+<ul>
+  <li><b>Keep remote</b> — pulls the remote version and replaces this workspace.
+      Local changes since your last sync are lost.</li>
+  <li><b>Keep local</b> — overwrites the remote workspace with this one.</li>
+  <li><b>Cancel</b> — does nothing, so you can look around before deciding.</li>
+</ul>
+<p>Either choice is safe for a personal workspace — pick whichever copy is the one
+you want to keep going forward.</p>
+
+<h4>Git sync and cloud sync</h4>
+<p>Both can be configured, but the toolbar buttons follow cloud sync when it is enabled.
+Untick <b>Enable</b> in Settings to fall back to Git sync.</p>
+
+</body>
+</html>

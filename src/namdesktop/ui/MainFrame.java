@@ -6,6 +6,9 @@ import namdesktop.app.AppSettings;
 import namdesktop.demo.NamDemoWiring;
 import namdesktop.model.NamWorkspace;
 import namdesktop.service.NamWorkspaceService;
+import namdesktop.sync.CloudSyncService;
+import namdesktop.sync.PullResult;
+import namdesktop.sync.SupabaseSyncService;
 import namdesktop.sync.WorkspaceSyncService;
 import swingdemo.ScriptRunner;
 
@@ -66,6 +69,11 @@ public final class MainFrame extends JFrame {
     private final java.util.ArrayDeque<NavigationLocation> navHistory = new java.util.ArrayDeque<>();
     private       NavigationLocation    currentLocation;
     private       JButton               backButton;
+    private final CloudSyncService      cloudSyncService = new SupabaseSyncService();
+    private       JButton               syncPushButton;
+    private       JButton               syncPullButton;
+    private       JMenuItem             savePushItem;
+    private       JMenuItem             syncPullItem;
     private       JButton               monitoringButton;
     private       JLabel                monitoringIndicator;
     private       JLabel                monitoringStatusBar;
@@ -139,15 +147,14 @@ public final class MainFrame extends JFrame {
         newMcButton.setToolTipText("New Goal Board…");
         newMcButton.addActionListener(e -> createGoalBoard());
         toolbar.add(newMcButton);
-        if (!devMode && syncService.isConfigured()) {
-            var pushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
-            pushButton.setToolTipText("Push workspace (Cmd+S)");
-            pushButton.addActionListener(e -> runSync(true));
-            var pullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
-            pullButton.addActionListener(e -> runSync(false));
-            toolbar.add(pushButton);
-            toolbar.add(pullButton);
-        }
+        syncPushButton = UiHelper.iconButton("Push workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-upload.svg")).derive(16, 16));
+        syncPushButton.setToolTipText("Push workspace (Cmd+S)");
+        syncPushButton.addActionListener(e -> runSync(true));
+        syncPullButton = UiHelper.iconButton("Pull workspace", new FlatSVGIcon(MainFrame.class.getResource("/icons/cloud-download.svg")).derive(16, 16));
+        syncPullButton.setToolTipText("Pull workspace");
+        syncPullButton.addActionListener(e -> runSync(false));
+        toolbar.add(syncPushButton);
+        toolbar.add(syncPullButton);
         monitoringButton = UiHelper.iconButton("Toggle Monitoring Mode",
                 new FlatSVGIcon(MainFrame.class.getResource("/icons/antenna.svg")).derive(16, 16));
         monitoringButton.setToolTipText("Enter monitoring mode (Cmd+Shift+M)");
@@ -240,21 +247,18 @@ public final class MainFrame extends JFrame {
         fileMenu.add(runDemoItem);
         fileMenu.addSeparator();
 
-        var saveItem = new JMenuItem(!devMode && syncService.isConfigured() ? "Push workspace" : "Save workspace");
-        saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
+        savePushItem = new JMenuItem("Save workspace");
+        savePushItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S,
                 java.awt.Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
-        if (!devMode && syncService.isConfigured()) {
-            saveItem.addActionListener(e -> runSync(true));
-        } else {
-            saveItem.addActionListener(e -> showNudge("Workspace auto-saved locally."));
-        }
-        fileMenu.add(saveItem);
+        savePushItem.addActionListener(e -> {
+            if (syncAvailable()) runSync(true);
+            else showNudge("Workspace auto-saved locally.");
+        });
+        fileMenu.add(savePushItem);
 
-        if (!devMode && syncService.isConfigured()) {
-            var pullItem = new JMenuItem("Pull workspace");
-            pullItem.addActionListener(e -> runSync(false));
-            fileMenu.add(pullItem);
-        }
+        syncPullItem = new JMenuItem("Pull workspace");
+        syncPullItem.addActionListener(e -> runSync(false));
+        fileMenu.add(syncPullItem);
         fileMenu.addSeparator();
 
         fileMenu.add(settingsItem);
@@ -406,6 +410,27 @@ public final class MainFrame extends JFrame {
 
         navPanel.rebuildDynamicSections(workspace.getSavedViews(), workspace.getMissionControls());
         MonitoringModeGuard.configure(workspacePath, this::exitMonitoringMode);
+        updateSyncUI();
+    }
+
+    /** Cloud sync wins over Git sync when both are configured. */
+    private boolean cloudSyncActive() {
+        return !devMode && settings.getCloudSync().isEnabled();
+    }
+
+    private boolean syncAvailable() {
+        return cloudSyncActive() || (!devMode && syncService.isConfigured());
+    }
+
+    private void updateSyncUI() {
+        var available = syncAvailable();
+        syncPushButton.setVisible(available);
+        syncPullButton.setVisible(available);
+        syncPullItem.setVisible(available);
+        savePushItem.setText(available ? "Push workspace" : "Save workspace");
+        var target = cloudSyncActive() ? "Supabase" : "Git";
+        syncPushButton.setToolTipText("Push workspace to " + target + " (Cmd+S)");
+        syncPullButton.setToolTipText("Pull workspace from " + target);
     }
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }
@@ -557,6 +582,7 @@ public final class MainFrame extends JFrame {
         new SettingsDialog(this, settings, () -> {
             nextActionsPanel.applyColumnVisibility(settings.isShowStatusColumn());
             backlogPanel.applyColumnVisibility(settings.isShowStatusColumn());
+            updateSyncUI();
             var current = contentArea.getContent();
             if (current instanceof ProjectWorkbenchPanel pwp) pwp.refresh();
         }).setVisible(true);
@@ -641,6 +667,81 @@ public final class MainFrame extends JFrame {
     }
 
     private void runSync(boolean push) {
+        if (cloudSyncActive()) runCloudSync(push);
+        else                   runGitSync(push);
+    }
+
+    private void runCloudSync(boolean push) {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        syncPushButton.setEnabled(false);
+        syncPullButton.setEnabled(false);
+        new Thread(() -> {
+            if (push) {
+                var result = cloudSyncService.push(workspace, settings.getCloudSync());
+                SwingUtilities.invokeLater(() -> {
+                    cloudSyncDone();
+                    if (result.success()) {
+                        saveSession();
+                        showNudge("Synced — " + syncTimestamp() + " (v" + result.remoteVersion() + ")");
+                    } else if (result.conflict()) {
+                        showCloudConflictDialog(result.remoteVersion());
+                    } else {
+                        showNudge("Sync failed: " + result.error());
+                    }
+                });
+            } else {
+                var result = cloudSyncService.pull(settings.getCloudSync());
+                SwingUtilities.invokeLater(() -> {
+                    cloudSyncDone();
+                    if (result.success())            applyPulledWorkspace(result);
+                    else if (result.nothingToPull()) showNudge("Nothing to pull — no remote workspace yet. Push first.");
+                    else                             showNudge("Sync failed: " + result.error());
+                });
+            }
+        }, "cloud-sync-thread").start();
+    }
+
+    private void cloudSyncDone() {
+        setCursor(Cursor.getDefaultCursor());
+        syncPushButton.setEnabled(true);
+        syncPullButton.setEnabled(true);
+    }
+
+    private void applyPulledWorkspace(PullResult result) {
+        try {
+            new namdesktop.persist.JsonWorkspaceRepository().save(workspacePath, result.workspace());
+            service.reloadWorkspace();
+            refreshAll();
+            saveSession();
+            showNudge("Synced — " + syncTimestamp() + " (pulled v" + result.remoteVersion() + ")");
+        } catch (java.io.IOException e) {
+            JOptionPane.showMessageDialog(this, "Failed to apply pulled workspace: " + e.getMessage(),
+                    "Sync error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void showCloudConflictDialog(long remoteVersion) {
+        Object[] options = {"Keep remote", "Keep local", "Cancel"};
+        var choice = JOptionPane.showOptionDialog(this,
+                "The remote workspace was saved more recently than your local copy.\n\n"
+                        + "Keep remote — replace this workspace with the remote one\n"
+                        + "(local changes since your last sync will be lost).\n"
+                        + "Keep local — overwrite the remote workspace with this one.",
+                "Workspace conflict",
+                JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[2]);
+        if (choice == 0) {
+            runCloudSync(false);
+        } else if (choice == 1) {
+            settings.getCloudSync().setLastSyncedVersion(remoteVersion);
+            runCloudSync(true);
+        }
+    }
+
+    private static String syncTimestamp() {
+        return java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss"));
+    }
+
+    private void runGitSync(boolean push) {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         new Thread(() -> {
             String message;
