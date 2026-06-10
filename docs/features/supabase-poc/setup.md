@@ -29,6 +29,8 @@ supabase status   # prints API URL, anon key, service_role key, Studio URL
 supabase stop     # stops containers; data persists in a Docker volume
 ```
 
+Or via make: `make supabase-start`, `make supabase-status`, `make supabase-stop`.
+
 `supabase status` is the source of truth for local credentials. The API URL is
 `http://127.0.0.1:54321`; Studio (web UI for poking at the database) runs on
 `http://127.0.0.1:54323`.
