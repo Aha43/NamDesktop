@@ -1,10 +1,22 @@
 # Supabase PoC
 
-> Status: **PoC sprint** — two issues. Goal is to answer one question: is Supabase a clean
-> fit for NamDesktop cloud sync, with a path to a future web app? No app integration in
-> this sprint. Decision checkpoint follows.
+> Status: **PoC sprint** — two issues, running on the long-lived `experiment/cloud` branch.
+> Goal is to answer one question: is Supabase a clean fit for NamDesktop cloud sync, with
+> a path to a future web app? No app integration in this sprint. Decision checkpoint follows.
 
 ---
+
+## Local-first
+
+The PoC targets a **local Supabase stack** run via the Supabase CLI (`supabase start`,
+Docker Desktop underneath) rather than a hosted project. The local stack exposes the same
+auth (GoTrue) and PostgREST endpoints as hosted Supabase, so everything validated locally
+transfers unchanged — moving to hosted later is a swap of the `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` env vars, nothing else.
+
+This also gives the experiment branch a real persistent backend for local front-end/UX
+development: no account, no network, schema checked into the repo as migration files
+under `supabase/migrations/`.
 
 ## Question being answered
 
@@ -71,14 +83,15 @@ If the version has changed, zero rows are updated. The spike checks the
 
 ## Credentials / secrets
 
-| Value | Where |
-|---|---|
-| Supabase project URL | env var `SUPABASE_URL` |
-| Supabase anon key | env var `SUPABASE_ANON_KEY` |
-| Test user email | env var `SUPABASE_TEST_EMAIL` |
-| Test user password | env var `SUPABASE_TEST_PASSWORD` |
+| Value | Where | Local value |
+|---|---|---|
+| Supabase project URL | env var `SUPABASE_URL` | `http://127.0.0.1:54321` |
+| Supabase anon key | env var `SUPABASE_ANON_KEY` | from `supabase status` |
+| Test user email | env var `SUPABASE_TEST_EMAIL` | `test@namdesktop.local` |
+| Test user password | env var `SUPABASE_TEST_PASSWORD` | local-only password |
 
-None of the above are committed. The docs record their names and purpose only.
+The local stack's keys are well-known development defaults, not secrets. Hosted values,
+when they exist later, are never committed — the docs record names and purpose only.
 
 ## Decision checkpoint (after both issues are done)
 
@@ -97,11 +110,11 @@ Ask:
 - Multi-workspace support
 - RLS beyond single-user ownership
 - Any backend service (Hono, Javalin, etc.)
-- Deployment
+- Hosted Supabase project and deployment (later: env-var swap)
 
 ## Issues
 
 | # | Scope |
 |---|---|
-| #348 | Supabase project setup and workspace table |
+| #348 | Local Supabase setup: CLI config, workspace table migration, test user |
 | #349 | Java spike: auth + workspace roundtrip |

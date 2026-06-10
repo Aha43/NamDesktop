@@ -46,6 +46,24 @@ gh issue list --label ai
 gh issue list --label ux-review-1 --state open
 ```
 
+## Experimental branches
+
+Some work is exploratory enough that it should not flow through the normal
+`feature/*` sprint cycle. For these we use long-lived `experiment/*` branches
+(first one: `experiment/cloud` — backend + UI cloud-sync experiments).
+
+Rules:
+
+- Normal sprint work continues on `feature/*` branches off `main`, unaffected.
+- `main` is merged **into** the experiment branch periodically to keep it current.
+- Work flows back to `main` only selectively, when a piece has proven itself —
+  not as a wholesale merge at a deadline.
+- Issue discipline is unchanged on experiment branches: every commit belongs to an
+  issue, `Closes #N` in commit messages, one issue at a time. Issues auto-close only
+  if/when the work reaches `main`.
+- Docs-only commits (design docs, practices) go directly on `main` as usual, so both
+  branch lines see them.
+
 ## Cross-references
 
 Issues within a feature group should reference all sibling issues in a "Related issues"
