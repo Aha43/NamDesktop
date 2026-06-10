@@ -18,7 +18,7 @@ TEST_SOURCES := $(shell find test -name "*.java" 2>/dev/null)
 
 JUNIT_JAR := $(TEST_LIB_DIR)/junit-platform-console-standalone-1.10.2.jar
 
-.PHONY: clean classes jar app run all test e2e help mcp mcp-direct mcp-direct-dev
+.PHONY: clean classes jar app run all test e2e help mcp mcp-direct mcp-direct-dev spike
 
 all: app
 
@@ -33,6 +33,7 @@ help:
 	@echo "  mcp-direct-dev  Same, using the dev workspace (~/.namdesktop/dev/)"
 	@echo "  e2e         Build and run the e2e regression suite"
 	@echo "  test        Compile and run unit tests"
+	@echo "  spike       Build and run the Supabase PoC spike (needs SUPABASE_* env vars)"
 	@echo "  clean       Delete build output"
 	@echo ""
 	@echo "Override workspace path: make mcp-direct WORKSPACE=/path/to/workspace.json"
@@ -101,6 +102,11 @@ e2e: app
 	java \
 		-cp "$(APP_DIR)/$(MAIN_JAR):$(APP_DIR)/lib/*" \
 		$(MAIN_CLASS) --e2e
+
+spike: classes
+	java \
+		-cp "$(CLASSES_DIR):$(LIB_DIR)/*" \
+		namdesktop.spike.SupabaseSpike
 
 test: classes
 	rm -rf $(TEST_CLASSES)
