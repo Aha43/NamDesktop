@@ -32,22 +32,29 @@ public final class SupabaseSyncService implements CloudSyncService {
 
     public record Response(int status, String body) {}
 
-    private static final String WORKSPACE_NAME = "default";
-
+    private final String workspaceName;
     private final Transport transport;
     private final ObjectMapper mapper = new ObjectMapper();
     private final JsonWorkspaceRepository repository = new JsonWorkspaceRepository();
 
-    public SupabaseSyncService() { this(httpClientTransport()); }
+    public SupabaseSyncService() { this(CloudSyncSettings.WORKSPACE_DEFAULT, httpClientTransport()); }
 
-    SupabaseSyncService(Transport transport) { this.transport = transport; }
+    /** Sync against the given remote workspace row, e.g. {@link CloudSyncSettings#WORKSPACE_DEV}. */
+    public SupabaseSyncService(String workspaceName) { this(workspaceName, httpClientTransport()); }
+
+    SupabaseSyncService(Transport transport) { this(CloudSyncSettings.WORKSPACE_DEFAULT, transport); }
+
+    SupabaseSyncService(String workspaceName, Transport transport) {
+        this.workspaceName = workspaceName;
+        this.transport = transport;
+    }
 
     @Override
     public PushResult push(NamWorkspace workspace, CloudSyncSettings settings) {
         try {
             var auth = signIn(settings);
             var document = mapper.readTree(repository.toJson(workspace));
-            var local = settings.getLastSyncedVersion();
+            var local = settings.lastSyncedVersionFor(workspaceName);
             if (local > 0) {
                 var rows = patchGuarded(settings, auth, local, document);
                 if (rows.size() == 1) return pushed(settings, rows.get(0));
@@ -76,7 +83,7 @@ public final class SupabaseSyncService implements CloudSyncService {
             if (row == null) return PullResult.noRemote();
             var workspace = repository.fromJson(mapper.writeValueAsString(row.path("document")));
             var version = row.path("version").asLong();
-            settings.setLastSyncedVersion(version);
+            settings.setLastSyncedVersionFor(workspaceName, version);
             return PullResult.ok(workspace, version);
         } catch (SyncFailure e) {
             return PullResult.failure(e.getMessage());
@@ -125,7 +132,7 @@ public final class SupabaseSyncService implements CloudSyncService {
             throws IOException, InterruptedException {
         var body = mapper.createObjectNode();
         body.put("owner_user_id", auth.userId());
-        body.put("name", WORKSPACE_NAME);
+        body.put("name", workspaceName);
         body.put("version", 1);
         body.set("document", document);
         var response = transport.send("POST",
@@ -149,13 +156,13 @@ public final class SupabaseSyncService implements CloudSyncService {
 
     private PushResult pushed(CloudSyncSettings settings, JsonNode row) {
         var version = row.path("version").asLong();
-        settings.setLastSyncedVersion(version);
+        settings.setLastSyncedVersionFor(workspaceName, version);
         return PushResult.ok(version);
     }
 
     private String rowUrl(CloudSyncSettings settings, Auth auth) {
         return settings.getSupabaseUrl() + "/rest/v1/workspaces?owner_user_id=eq." + auth.userId()
-                + "&name=eq." + WORKSPACE_NAME;
+                + "&name=eq." + workspaceName;
     }
 
     private Map<String, String> writeHeaders(CloudSyncSettings settings, Auth auth) {

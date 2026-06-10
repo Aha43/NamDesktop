@@ -85,4 +85,27 @@ class CloudSyncSettingsTest {
         assertTrue(back.isEnabled());
         assertEquals(CloudSyncSettings.DEFAULT_SUPABASE_URL, back.getSupabaseUrl());
     }
+
+    @Test
+    void watermarksAreKeyedByWorkspaceName() {
+        var s = new CloudSyncSettings();
+        s.setLastSyncedVersionFor(CloudSyncSettings.WORKSPACE_DEFAULT, 5);
+        s.setLastSyncedVersionFor(CloudSyncSettings.WORKSPACE_DEV, 2);
+        assertEquals(5, s.lastSyncedVersionFor(CloudSyncSettings.WORKSPACE_DEFAULT));
+        assertEquals(2, s.lastSyncedVersionFor(CloudSyncSettings.WORKSPACE_DEV));
+        assertEquals(5, s.getLastSyncedVersion());
+        assertEquals(2, s.getLastSyncedVersionDev());
+    }
+
+    @Test
+    void devWatermarkRoundtripsAndDefaultsToZeroWhenAbsent() throws Exception {
+        var s = new CloudSyncSettings();
+        s.setLastSyncedVersionDev(7);
+        var back = mapper.readValue(mapper.writeValueAsString(s), CloudSyncSettings.class);
+        assertEquals(7, back.getLastSyncedVersionDev());
+
+        var legacy = mapper.readValue("{\"enabled\":true,\"lastSyncedVersion\":3}", CloudSyncSettings.class);
+        assertEquals(3, legacy.getLastSyncedVersion());
+        assertEquals(0, legacy.getLastSyncedVersionDev(), "absent dev watermark loads as never-synced");
+    }
 }

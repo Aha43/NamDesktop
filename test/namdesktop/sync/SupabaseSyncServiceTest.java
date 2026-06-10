@@ -173,4 +173,55 @@ class SupabaseSyncServiceTest {
         assertFalse(result.success());
         assertTrue(result.error().contains("HTTP 500"));
     }
+
+    @Test
+    void devWorkspacePushTargetsDevRowAndDevWatermark() {
+        var t = new FakeTransport();
+        t.responses.add(ok(SIGN_IN_OK));
+        t.responses.add(ok("[]"));                  // no dev row yet
+        t.responses.add(ok("[{\"version\":1}]"));   // insert dev row
+        var settings = settings(3);                 // default workspace already at v3
+        var service = new SupabaseSyncService(CloudSyncSettings.WORKSPACE_DEV, t);
+
+        var result = service.push(NamWorkspace.createDefault(), settings);
+
+        assertTrue(result.success());
+        assertTrue(t.call(1).url().contains("name=eq.dev"));
+        assertTrue(t.call(2).body().contains("\"name\":\"dev\""));
+        assertEquals(1, settings.getLastSyncedVersionDev());
+        assertEquals(3, settings.getLastSyncedVersion(), "dev push must not move the default watermark");
+    }
+
+    @Test
+    void devWorkspacePullStoresOnlyDevWatermark() throws Exception {
+        var document = new JsonWorkspaceRepository().toJson(NamWorkspace.createDefault());
+        var t = new FakeTransport();
+        t.responses.add(ok(SIGN_IN_OK));
+        t.responses.add(ok("[{\"version\":6,\"document\":" + document + "}]"));
+        var settings = settings(3);
+        var service = new SupabaseSyncService(CloudSyncSettings.WORKSPACE_DEV, t);
+
+        var result = service.pull(settings);
+
+        assertTrue(result.success());
+        assertTrue(t.call(1).url().contains("name=eq.dev"));
+        assertEquals(6, settings.getLastSyncedVersionDev());
+        assertEquals(3, settings.getLastSyncedVersion(), "dev pull must not move the default watermark");
+    }
+
+    @Test
+    void defaultWorkspacePushLeavesDevWatermarkUntouched() {
+        var t = new FakeTransport();
+        t.responses.add(ok(SIGN_IN_OK));
+        t.responses.add(ok("[{\"version\":4}]"));
+        var settings = settings(3);
+        settings.setLastSyncedVersionDev(9);
+
+        var result = new SupabaseSyncService(t).push(NamWorkspace.createDefault(), settings);
+
+        assertTrue(result.success());
+        assertTrue(t.call(1).url().contains("name=eq.default"));
+        assertEquals(4, settings.getLastSyncedVersion());
+        assertEquals(9, settings.getLastSyncedVersionDev(), "default push must not move the dev watermark");
+    }
 }
