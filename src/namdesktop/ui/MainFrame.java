@@ -69,7 +69,8 @@ public final class MainFrame extends JFrame {
     private final java.util.ArrayDeque<NavigationLocation> navHistory = new java.util.ArrayDeque<>();
     private       NavigationLocation    currentLocation;
     private       JButton               backButton;
-    private final CloudSyncService      cloudSyncService = new SupabaseSyncService();
+    private final CloudSyncService      cloudSyncService;
+    private final String                cloudWorkspaceName;
     private       JButton               syncPushButton;
     private       JButton               syncPullButton;
     private       JMenuItem             savePushItem;
@@ -88,6 +89,9 @@ public final class MainFrame extends JFrame {
         this.syncService      = syncService;
         this.workspacePath    = workspacePath;
         this.devMode          = devMode;
+        this.cloudWorkspaceName = devMode ? namdesktop.app.CloudSyncSettings.WORKSPACE_DEV
+                                          : namdesktop.app.CloudSyncSettings.WORKSPACE_DEFAULT;
+        this.cloudSyncService = new SupabaseSyncService(cloudWorkspaceName);
         this.contentArea      = new ContentArea();
         this.treePanel        = new TreePanel(workspace, service, this::refreshAll);
         this.inboxPanel       = new InboxPanel(workspace, service);
@@ -413,9 +417,12 @@ public final class MainFrame extends JFrame {
         updateSyncUI();
     }
 
-    /** Cloud sync wins over Git sync when both are configured. */
+    /**
+     * Cloud sync wins over Git sync when both are configured. Unlike Git sync it also
+     * works in dev mode, targeting the separate 'dev' remote row (#351).
+     */
     private boolean cloudSyncActive() {
-        return !devMode && settings.getCloudSync().isEnabled();
+        return settings.getCloudSync().isEnabled();
     }
 
     private boolean syncAvailable() {
@@ -428,9 +435,16 @@ public final class MainFrame extends JFrame {
         syncPullButton.setVisible(available);
         syncPullItem.setVisible(available);
         savePushItem.setText(available ? "Push workspace" : "Save workspace");
-        var target = cloudSyncActive() ? "Supabase" : "Git";
+        var target = cloudSyncActive()
+                ? (devMode ? "Supabase (dev)" : "Supabase")
+                : "Git";
         syncPushButton.setToolTipText("Push workspace to " + target + " (Cmd+S)");
         syncPullButton.setToolTipText("Pull workspace from " + target);
+    }
+
+    /** Status-message suffix naming the targeted remote row in dev mode. */
+    private String syncTargetSuffix() {
+        return devMode ? "dev, " : "";
     }
 
     public static void showNudge(String message) { nudgeCallback.accept(message); }
@@ -682,7 +696,7 @@ public final class MainFrame extends JFrame {
                     cloudSyncDone();
                     if (result.success()) {
                         saveSession();
-                        showNudge("Synced — " + syncTimestamp() + " (v" + result.remoteVersion() + ")");
+                        showNudge("Synced — " + syncTimestamp() + " (" + syncTargetSuffix() + "v" + result.remoteVersion() + ")");
                     } else if (result.conflict()) {
                         showCloudConflictDialog(result.remoteVersion());
                     } else {
@@ -713,7 +727,7 @@ public final class MainFrame extends JFrame {
             service.reloadWorkspace();
             refreshAll();
             saveSession();
-            showNudge("Synced — " + syncTimestamp() + " (pulled v" + result.remoteVersion() + ")");
+            showNudge("Synced — " + syncTimestamp() + " (" + syncTargetSuffix() + "pulled v" + result.remoteVersion() + ")");
         } catch (java.io.IOException e) {
             JOptionPane.showMessageDialog(this, "Failed to apply pulled workspace: " + e.getMessage(),
                     "Sync error", JOptionPane.ERROR_MESSAGE);
@@ -732,7 +746,7 @@ public final class MainFrame extends JFrame {
         if (choice == 0) {
             runCloudSync(false);
         } else if (choice == 1) {
-            settings.getCloudSync().setLastSyncedVersion(remoteVersion);
+            settings.getCloudSync().setLastSyncedVersionFor(cloudWorkspaceName, remoteVersion);
             runCloudSync(true);
         }
     }

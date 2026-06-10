@@ -39,5 +39,12 @@ you want to keep going forward.</p>
 <p>Both can be configured, but the toolbar buttons follow cloud sync when it is enabled.
 Untick <b>Enable</b> in Settings to fall back to Git sync.</p>
 
+<h4>Dev mode</h4>
+<p>Cloud sync also works in dev mode — unlike Git sync — and targets a separate remote
+workspace named <code>dev</code>. Your real workspace and the dev sandbox sync
+independently and never mix: pushing from dev mode cannot touch your normal workspace,
+and vice versa. Tooltips and the status bar say <i>(dev)</i> when syncing the dev
+workspace.</p>
+
 </body>
 </html>
