@@ -3,6 +3,17 @@
 A scratchpad for future directions — one-liners from any contributor (Arne, ChatGPT, Claude Code).
 No commitment, no priority order. Raw material for planning sessions.
 
+## Rebrand dev mode as "play mode" (2026-06-10)
+
+Once dev-mode cloud sync lands (own remote row, durable sandbox), dev mode stops being
+just dev tooling: it's a safe sandbox where an end user can fool around — try workflows,
+run demos, experiment with structure — while the real inventory stays untouched and
+synced separately. Candidate framing: "Play mode" / "Sandbox". Touches the splash dialog
+checkbox, the `--dev` flag (keep as alias?), the "● Dev" toolbar indicator, and the help
+articles' mental model. Could be done several ways (pure rename; separate play and dev
+concepts; per-workspace switcher when multi-workspace arrives) — decide after living
+with dev-mode sync for a while.
+
 ## Ordering (multi-phase, vision.md §Ordering)
 
 The same node may need a different position in different views. Three kinds of order exist:
