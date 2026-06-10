@@ -33,6 +33,7 @@ Every issue carries two labels:
 | `branding` | Logo, icon, visual identity, app presentation |
 | `ux-review-1` | Findings from the first critical AI UX review (2026-05-27) |
 | `help` | Help system content, layout, and UX |
+| `ux` | Planned UX improvement sprints (#346–#347 show/hide done) |
 
 When a new coherent feature area appears, create a label for it here and in GitHub at the
 same time. Use a distinct colour so the label is visually distinguishable in the issue list.
