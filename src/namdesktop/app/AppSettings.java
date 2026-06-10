@@ -41,6 +41,7 @@ public final class AppSettings {
     private Integer helpDialogY      = null;
     private int     helpDialogWidth  = 560;
     private int     helpDialogHeight = 700;
+    private CloudSyncSettings cloudSync = new CloudSyncSettings();
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -82,6 +83,8 @@ public final class AppSettings {
     public void    setHelpDialogWidth(int v)         { this.helpDialogWidth = v; }
     public int     getHelpDialogHeight()             { return helpDialogHeight > 0 ? helpDialogHeight : 700; }
     public void    setHelpDialogHeight(int v)        { this.helpDialogHeight = v; }
+    public CloudSyncSettings getCloudSync()          { return cloudSync; }
+    public void    setCloudSync(CloudSyncSettings v) { this.cloudSync = v != null ? v : new CloudSyncSettings(); }
 
     public static AppSettings load() {
         try {
@@ -108,6 +111,7 @@ public final class AppSettings {
                 s.setHelpDialogY(dto.helpDialogY);
                 if (dto.helpDialogWidth  != null) s.setHelpDialogWidth(dto.helpDialogWidth);
                 if (dto.helpDialogHeight != null) s.setHelpDialogHeight(dto.helpDialogHeight);
+                s.setCloudSync(dto.cloudSync);
                 return s;
             }
         } catch (Exception e) {
@@ -139,6 +143,7 @@ public final class AppSettings {
         dto.helpDialogY      = this.helpDialogY;
         dto.helpDialogWidth  = this.helpDialogWidth;
         dto.helpDialogHeight = this.helpDialogHeight;
+        dto.cloudSync        = this.cloudSync;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -164,5 +169,6 @@ public final class AppSettings {
         public Integer  helpDialogY;
         public Integer  helpDialogWidth;
         public Integer  helpDialogHeight;
+        public CloudSyncSettings cloudSync;
     }
 }

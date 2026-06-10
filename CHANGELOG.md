@@ -10,6 +10,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 - Local Supabase stack for the cloud-sync PoC (experiment/cloud branch): Supabase CLI config (`supabase/config.toml`), `workspaces` table + RLS policy as a checked-in migration, test-user setup, and `docs/features/supabase-poc/setup.md` covering install, start/stop, env vars, and the later hosted-Supabase move. Closes #348.
 - Supabase PoC spike (`namdesktop.spike.SupabaseSpike`, run via `make spike`): signs in to Supabase with email/password, inserts/pulls/updates a workspace JSONB document, and verifies optimistic conflict detection (stale `version=eq.N` PATCH updates 0 rows). Zero new dependencies — `java.net.http.HttpClient` + Jackson. Closes #349.
+- Cloud sync settings: new "Cloud sync (Supabase)" group in Settings → Sync — enable toggle, Supabase URL and publishable key (defaulting to the local stack for zero-config dev), email, and masked password with show/hide. Persisted as `cloudSync` in settings.json via the new `CloudSyncSettings` model; no sync logic yet. Closes #215.
 
 ### Changed
 
