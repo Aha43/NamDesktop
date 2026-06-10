@@ -1,95 +1,91 @@
-# Cloud Sync (DB-backed)
+# Cloud Sync (Supabase)
 
-> Feature design note — ready for implementation.
+> Feature design note — ready for implementation on the `experiment/cloud` branch.
 > Start with #215 (settings), then #216 (service), then #217 (UI).
+> Backend decision settled 2026-06-10 by the Supabase PoC (#348–#349): **Supabase**,
+> local stack first. See `docs/features/supabase-poc/` for the validated groundwork.
 
 ## What and why
 
-Add an optional cloud sync target backed by a hosted database. The user pushes and pulls
-the workspace JSON to/from a remote endpoint. This complements the existing Git sync but
+Add an optional cloud sync target backed by Supabase. The user pushes and pulls the
+workspace JSON to/from the `workspaces` table. This complements the existing Git sync but
 is designed as the stepping stone toward a future web API + web/mobile client.
 
 Git sync was always slightly awkward — it requires a Git repo, treats a JSON blob as a
 versioned text file, and has no programmatic access story. A DB-backed sync is cleaner,
-enables conflict detection via timestamps, and gives the future web API a natural home.
+enables real conflict detection, and gives the future web app a natural home.
 
 ## Strategic position
 
 ```
-Desktop app  ──push/pull──▶  Cloud DB  (this feature)
+Desktop app  ──push/pull──▶  Supabase (local stack now, hosted later)
                                  │
-                          future web API
-                           ┌─────┴─────┐
-                        Web app    Mobile app
+                          future web app
 ```
 
-The desktop app talks directly to the cloud DB now. When the web API is built, the
-desktop can switch to talking to the API instead — the `CloudSyncService` interface is
-the seam that makes that swap cheap.
+The desktop talks directly to Supabase (GoTrue auth + PostgREST). Development runs
+against the local stack (`supabase start`); moving to hosted is an env/settings swap —
+same wire protocol, validated by the PoC spike (`namdesktop.spike.SupabaseSpike`,
+`make spike`).
 
 ## Design decisions (settled)
 
-**JSON blob, not relational schema — for now.** The workspace JSON stays as-is. The cloud
-DB stores one row per workspace: `workspace_id, json, updated_at`. No domain model in
-the DB yet. Schema migration to relational happens when the web API is built — that's
-the forcing function that justifies it.
+**Supabase, not Turso.** Resolved by the PoC: plain `java.net.http.HttpClient` + Jackson
+against GoTrue + PostgREST ran clean on the first attempt — see the decision checkpoint
+comment on #349. RLS and first-class auth keep the future web app path open.
 
-**Interface seam now.** `CloudSyncService` is an interface. The v1 implementation talks
-directly to the DB HTTP API. When the web API arrives, a new implementation talks to
-that instead. Desktop code doesn't change.
+**JSON blob, not relational schema — for now.** The workspace JSON goes into the
+`document` JSONB column of the `workspaces` table (migration
+`supabase/migrations/20260610120000_workspaces.sql`), one row per (user, workspace name).
+No domain model in the DB yet; relational migration happens if/when the web app forces it.
 
-**Config is DB-agnostic.** `CloudSyncSettings` stores an endpoint URL + auth token, not
-Turso-specific fields. Any HTTP-accessible service that accepts the schema works.
+**Optimistic locking via `version`, not timestamps.** Push = PATCH guarded by
+`version=eq.<expected>`, body bumps `version` by one. PostgREST returns 200 with **zero
+rows updated** on a stale version — never a 409. Conflict detection counts returned rows
+(`Prefer: return=representation`). Validated in the spike; this replaces the earlier
+`updated_at` scheme.
 
-**Optimistic locking via `updated_at`.** On push, send the local `updated_at`; server
-rejects (409) if remote is newer. Conflict shown to user as a simple Keep Remote / Keep
-Local / Cancel dialog. For a personal single-user tool, last-write-wins with a warning
-is the right call.
+**Auth: email + password in settings, fresh sign-in per operation.** `CloudSyncSettings`
+stores the user's Supabase email and password (masked in the UI, plain in the local
+settings JSON — accepted trade-off for a personal tool). Each push/pull signs in for a
+fresh JWT (`POST /auth/v1/token?grant_type=password`). No session state, no token
+refresh machinery — Supabase JWTs expire in ~1 h, and re-authenticating per click is
+simpler than refresh logic. Revisit only if sync becomes high-frequency.
 
-**Git sync stays.** `CloudSyncService` is an addition alongside `WorkspaceSyncService` /
-`GitSyncService`. Nothing is removed. Users can run both or either.
+**Settings default to the local stack.** `supabaseUrl` defaults to
+`http://127.0.0.1:54321` and `publishableKey` to the well-known local CLI key, so dev
+sync works with zero config once `supabase start` is running. Hosted use = paste the
+hosted URL + publishable key.
 
-## Open decision — which cloud DB?
+**Interface seam now.** `CloudSyncService` is an interface; the v1 implementation talks
+PostgREST directly. A future web-API implementation swaps in behind the same seam.
 
-**Must be resolved before starting #216.** Two candidates:
+**One toolbar button pair, active backend.** The existing push/pull toolbar buttons and
+Cmd+S dispatch to cloud sync when it is enabled, otherwise to Git sync as today. If both
+are configured, cloud wins. Git sync code stays untouched underneath.
 
-| | Turso | Supabase |
-|---|---|---|
-| Backend | Distributed SQLite (libSQL) | Postgres |
-| API | HTTP (libSQL REST) | REST + realtime |
-| Auth | Token (per-DB or per-user) | Anon key + JWT |
-| Setup | Minimal — CLI + token | More config |
-| Future multi-user | Limited | First-class (RLS, auth) |
-| Dep overhead | None (raw HTTP) | None (raw HTTP) |
+**Conflict UX: Keep remote / Keep local / Cancel.** No three-way merge — for a
+single-user personal tool, last-write-wins with an explicit warning is the right call.
 
-**Lean: Turso** for a personal single-user tool at this stage. Simple, lean, no backend
-to run, token auth fits the AppSettings pattern already used by Git sync. Choose Supabase
-if multi-user or realtime sync is on the medium-term roadmap.
-
-Record the decision in issue #216 before closing it.
+**Startup auto-pull: deferred.** Manual push/pull ships first; auto-pull on launch
+becomes a follow-up issue once conflict handling has been exercised by hand.
 
 ## The three issues
 
 | # | Scope | Depends on |
 |---|---|---|
-| [#215](https://github.com/Aha43/NamDesktop/issues/215) | Settings: endpoint URL, token, workspace ID | — (do first) |
-| [#216](https://github.com/Aha43/NamDesktop/issues/216) | CloudSyncService: push, pull, conflict detection | #215 |
-| [#217](https://github.com/Aha43/NamDesktop/issues/217) | UI: toolbar push/pull, conflict resolution dialog | #215, #216 |
+| [#215](https://github.com/Aha43/NamDesktop/issues/215) | Settings: enable, Supabase URL/key, email/password | — (do first) |
+| [#216](https://github.com/Aha43/NamDesktop/issues/216) | CloudSyncService: push, pull, version-conflict detection | #215 |
+| [#217](https://github.com/Aha43/NamDesktop/issues/217) | UI: toolbar dispatch, conflict resolution dialog | #215, #216 |
 
 ## Implementation sketch
 
-### Schema (DB side)
+### Schema (already applied)
 
-```sql
-CREATE TABLE workspaces (
-    workspace_id  TEXT     PRIMARY KEY,
-    json          TEXT     NOT NULL,
-    updated_at    INTEGER  NOT NULL   -- epoch milliseconds
-);
-```
-
-One row per workspace. `workspace_id` is a UUID generated on first enable, stored in
-`CloudSyncSettings.workspaceId`.
+The `workspaces` table from the PoC migration: `id uuid PK`, `owner_user_id uuid → auth.users`,
+`name text default 'default'`, `version bigint default 1`, `document jsonb`,
+`created_at` / `updated_at`. RLS: users see only their own rows. The desktop targets the
+row where `owner_user_id = auth.uid()` and `name = 'default'` (multi-workspace later).
 
 ### CloudSyncService interface
 
@@ -102,52 +98,62 @@ public interface CloudSyncService {
 }
 ```
 
-`PushResult` / `PullResult` are records carrying: `success: boolean`,
-`remoteUpdatedAt: long`, and a `ConflictInfo` (null when no conflict).
+`PushResult` / `PullResult` are records carrying success, the remote `version` on
+success, and a conflict flag (push: stale version; pull: no remote row yet is *not* a
+conflict — it's first-push state).
 
-### HTTP implementation
+### Push flow
 
-Plain `java.net.http.HttpClient` + Jackson. No new deps. Auth header:
-`Authorization: Bearer <token>`.
+1. Sign in → JWT + user id.
+2. Serialize workspace (existing `JsonWorkspaceRepository` logic) into `document`.
+3. `PATCH /rest/v1/workspaces?owner_user_id=eq.<uid>&name=eq.default&version=eq.<local>`
+   with `document` + `version = local + 1`, `Prefer: return=representation`.
+4. 1 row returned → success, store new version locally. 0 rows → either no remote row
+   (then `POST` insert, first push) or version conflict → CONFLICT result.
 
-Push: `PUT <endpointUrl>/workspaces/<workspaceId>` with body:
-```json
-{ "json": "<serialized workspace>", "updatedAt": 1234567890000, "ifNotNewerThan": 1234567880000 }
-```
-Server returns 409 with remote `updatedAt` if conflict. Implementation checks status
-code and returns `PushResult` accordingly.
+### Pull flow
 
-Pull: `GET <endpointUrl>/workspaces/<workspaceId>` — returns `{ "json": "...", "updatedAt": ... }`.
-
-For Turso specifically: the HTTP API uses SQL over HTTP. The PUT/GET above would be
-translated to `INSERT OR REPLACE` / `SELECT` SQL statements in the request body. See
-Turso HTTP API docs for the exact envelope.
+1. Sign in → JWT.
+2. `GET /rest/v1/workspaces?owner_user_id=eq.<uid>&name=eq.default&select=*`.
+3. Row exists → deserialize `document` into the workspace, store remote `version` locally.
+   No row → surface "nothing to pull".
 
 ### Conflict handling
 
-Local `updatedAt` is stored in AppSettings (updated after every successful push or pull).
-On push conflict: show `CloudConflictDialog` — three buttons as described in #217.
-"Keep remote" calls `pull` then saves locally. "Keep local" calls push with
-`ifNotNewerThan` removed (force). "Cancel" is a no-op.
+Local `version` is stored in `CloudSyncSettings.lastSyncedVersion` (updated after every
+successful push or pull). On push conflict: `CloudConflictDialog` — **Keep remote**
+(pull + overwrite local, with data-loss warning), **Keep local** (re-read remote version,
+push again with that as the guard — i.e. force), **Cancel** (no-op).
 
 ### Settings model
 
 ```java
 public record CloudSyncSettings(
     boolean enabled,
-    String endpointUrl,
-    String authToken,       // never logged
-    String workspaceId,     // UUID, generated on first enable
-    long lastSyncedAt       // epoch ms, updated after push/pull
+    String supabaseUrl,        // default http://127.0.0.1:54321
+    String publishableKey,     // default: local CLI well-known key
+    String email,
+    String password,           // masked in UI; plain in local settings JSON
+    long lastSyncedVersion     // 0 = never synced
 ) {}
 ```
 
-Persisted under `cloudSync` in AppSettings JSON. Absent → all defaults (disabled).
+Persisted under `cloudSync` in AppSettings JSON. Absent → defaults (disabled, local URLs).
 
 ### Key files to read before starting
 
+- `src/namdesktop/spike/SupabaseSpike.java` — the validated HTTP calls, headers, and
+  conflict pattern; the service implementation is this, productionised
+- `docs/features/supabase-poc/setup.md` — local stack, keys, test user
 - `src/namdesktop/app/AppSettings.java` — add `CloudSyncSettings` here
-- `src/namdesktop/ui/SettingsDialog.java` + `SettingsPanel.java` — add Cloud Sync tab
-- `src/namdesktop/sync/GitSyncService.java` — HTTP client and push/pull pattern to follow
-- `src/namdesktop/sync/WorkspaceSyncService.java` — existing sync interface for reference
-- `src/namdesktop/ui/MainFrame.java` — where toolbar push/pull buttons go
+- `src/namdesktop/ui/SettingsDialog.java` + `SettingsPanel.java` — Sync sidebar section
+- `src/namdesktop/sync/GitSyncService.java` / `WorkspaceSyncService.java` — existing seam
+- `src/namdesktop/ui/MainFrame.java` — toolbar push/pull buttons + Cmd+S dispatch
+
+## Sprint-end checklist notes
+
+- **Help**: Settings article gains the Cloud Sync group; likely a short "Cloud sync"
+  concept article linked from Getting Started "What's next?".
+- **MCP**: consider exposing sync status (enabled, last synced version) read-only.
+- **e2e**: sync requires a running local stack — keep out of `e2e.json`; unit tests
+  mock the HTTP layer instead.
