@@ -1,12 +1,15 @@
 package namdesktop.demo;
 
+import namdesktop.model.NamNode;
 import namdesktop.model.NodeStatus;
 import namdesktop.model.NamWorkspace;
 import namdesktop.model.ResourceType;
 import namdesktop.service.NamWorkspaceService;
 import swingdemo.ScriptRunner;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Registers NamDesktop assertion handlers on a {@link ScriptRunner}.
@@ -32,6 +35,7 @@ public final class NamAssertWiring {
             .register("assertNodeStatus",      this::assertNodeStatus)
             .register("assertTagOnNode",       this::assertTagOnNode)
             .register("assertChildOf",         this::assertChildOf)
+            .register("assertChildOrder",      this::assertChildOrder)
             .register("assertProjectExists",   this::assertProjectExists)
             .register("assertSavedViewExists", this::assertSavedViewExists)
             .register("assertNodeCount",       this::assertNodeCount)
@@ -93,6 +97,26 @@ public final class NamAssertWiring {
         if (!parent.equals(actualParent.getTitle())) {
             throw new IllegalStateException("Node \"" + title + "\": expected parent \"" + parent
                     + "\" but was \"" + actualParent.getTitle() + "\"");
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertChildOrder(Map<String, Object> args) {
+        var parentTitle = str(args, "parent");
+        var expected    = (List<String>) args.get("order");
+        var parent = workspace.getNodes().values().stream()
+                .filter(n -> parentTitle.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Parent not found: \"" + parentTitle + "\""));
+        var actual = parent.getChildIds().stream()
+                .map(workspace::getNode)
+                .flatMap(Optional::stream)
+                .filter(n -> !n.isProject())
+                .map(NamNode::getTitle)
+                .toList();
+        if (!expected.equals(actual)) {
+            throw new IllegalStateException("Parent \"" + parentTitle + "\": expected action order "
+                    + expected + " but was " + actual);
         }
     }
 

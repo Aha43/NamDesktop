@@ -77,5 +77,15 @@
   {"action":"moveNode",         "args":{"title":"Book hotel","newParent":"Accommodation"},      "delayMs":50, "description":"Move Unsorted card into a column (reparent)"},
   {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Accommodation"},         "delayMs":20, "description":"Now owned by the Accommodation column"},
   {"action":"moveNode",         "args":{"title":"Book hotel","newParent":"Flights"},            "delayMs":50, "description":"Move card to a sibling column — the core Column-view move"},
-  {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Flights"},               "delayMs":20, "description":"Reparented to the sibling column"}
+  {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Flights"},               "delayMs":20, "description":"Reparented to the sibling column"},
+
+  {"action":"addAction",        "args":{"project":"Flights","title":"Seat A"},                  "delayMs":50, "description":"DnD setup: cards to reorder within a column"},
+  {"action":"addAction",        "args":{"project":"Flights","title":"Seat B"},                  "delayMs":50},
+  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Book hotel","Seat A","Seat B"]}, "delayMs":20, "description":"Initial within-column order"},
+  {"action":"moveNodeBefore",   "args":{"title":"Seat B","newParent":"Flights","before":"Book hotel"}, "delayMs":50, "description":"Within-column reorder (drag a card up) = moveNodeBefore, same parent"},
+  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Seat B","Book hotel","Seat A"]}, "delayMs":20, "description":"Reordered in place"},
+  {"action":"addAction",        "args":{"project":"Accommodation","title":"Check in"},          "delayMs":50, "description":"A card in a sibling column to drop before"},
+  {"action":"moveNodeBefore",   "args":{"title":"Seat A","newParent":"Accommodation","before":"Check in"}, "delayMs":50, "description":"Positioned cross-column drop = reparent + insert before anchor"},
+  {"action":"assertChildOrder", "args":{"parent":"Accommodation","order":["Seat A","Check in"]}, "delayMs":20, "description":"Landed before the anchor in the target column"},
+  {"action":"assertChildOf",    "args":{"title":"Seat A","parent":"Accommodation"},             "delayMs":20, "description":"And reparented to that column"}
 ]
