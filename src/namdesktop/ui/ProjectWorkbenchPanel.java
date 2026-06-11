@@ -16,6 +16,9 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import javax.swing.*;
 import javax.swing.border.Border;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -37,6 +40,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       UUID              parentProjectId;
     private       UUID              pendingSelection;
     private final Set<UUID>         collapsedSections = new HashSet<>();
+    private final ColumnTransferHandler columnDnD     = new ColumnTransferHandler();
     private       boolean           accordionMode     = false;
     private       boolean           mcrMode           = false;
     private       boolean           columnMode        = false;
@@ -878,7 +882,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (actions.isEmpty()) {
             var lbl = new JLabel("No actions");
             lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lbl.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            lbl.setBorder(BorderFactory.createEmptyBorder(12, 4, 12, 4));
             body = lbl;
         } else {
             list = buildActionList(actions, columnId);
@@ -906,6 +910,19 @@ public final class ProjectWorkbenchPanel extends JPanel {
         }
         var footer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         footer.add(moveBtn);
+
+        // Drag-and-drop (additive to the move button / right-click menu): drag a card to another
+        // column to reparent it, or within its column to reorder. Only when there's somewhere to go.
+        if (movable) {
+            column.putClientProperty(COLUMN_ID_KEY, columnId);
+            column.setTransferHandler(columnDnD);
+            body.putClientProperty(COLUMN_ID_KEY, columnId);
+            body.setTransferHandler(columnDnD);
+            if (fList != null) {
+                fList.setDragEnabled(true);
+                fList.setDropMode(DropMode.INSERT);
+            }
+        }
 
         column.add(head,   BorderLayout.NORTH);
         column.add(body,   BorderLayout.CENTER);
@@ -959,6 +976,89 @@ public final class ProjectWorkbenchPanel extends JPanel {
             service.moveNode(actionId, targetProjectId);
             rebuild();
         } catch (IOException ex) { showError(ex.getMessage()); }
+    }
+
+    // --- Column-view drag and drop ---
+
+    private static final String COLUMN_ID_KEY = "namdesktop.columnId";
+
+    private static final DataFlavor CARD_FLAVOR = cardFlavor();
+
+    private static DataFlavor cardFlavor() {
+        try {
+            return new DataFlavor(DataFlavor.javaJVMLocalObjectMimeType + ";class=" + ColumnDragData.class.getName());
+        } catch (ClassNotFoundException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
+
+    /** What a dragged card carries: the action id and the column it came from. */
+    private record ColumnDragData(UUID actionId, UUID sourceColumnId) {}
+
+    private static final class CardTransferable implements Transferable {
+        private final ColumnDragData data;
+        CardTransferable(ColumnDragData data) { this.data = data; }
+        @Override public DataFlavor[] getTransferDataFlavors() { return new DataFlavor[]{ CARD_FLAVOR }; }
+        @Override public boolean isDataFlavorSupported(DataFlavor f) { return CARD_FLAVOR.equals(f); }
+        @Override public Object getTransferData(DataFlavor f) throws UnsupportedFlavorException {
+            if (!CARD_FLAVOR.equals(f)) throw new UnsupportedFlavorException(f);
+            return data;
+        }
+    }
+
+    /**
+     * Shared across all columns: the source/target column id is read from the component's
+     * {@link #COLUMN_ID_KEY} client property, and the drop position from the JList drop location.
+     * A drop reparents (cross-column) or reorders (same column) via {@code moveNodeBefore}.
+     */
+    private final class ColumnTransferHandler extends TransferHandler {
+        @Override public int getSourceActions(JComponent c) { return MOVE; }
+
+        @Override protected Transferable createTransferable(JComponent c) {
+            if (c instanceof JList<?> list && list.getSelectedValue() instanceof NamNode node) {
+                return new CardTransferable(new ColumnDragData(node.getId(),
+                        (UUID) list.getClientProperty(COLUMN_ID_KEY)));
+            }
+            return null;
+        }
+
+        @Override public boolean canImport(TransferSupport support) {
+            return support.isDrop() && support.isDataFlavorSupported(CARD_FLAVOR);
+        }
+
+        @Override public boolean importData(TransferSupport support) {
+            if (!canImport(support)) return false;
+            final UUID targetCol;
+            final ColumnDragData data;
+            try {
+                data      = (ColumnDragData) support.getTransferable().getTransferData(CARD_FLAVOR);
+                targetCol = (UUID) ((JComponent) support.getComponent()).getClientProperty(COLUMN_ID_KEY);
+            } catch (UnsupportedFlavorException | java.io.IOException ex) {
+                return false;
+            }
+            if (targetCol == null) return false;
+
+            UUID anchorId = null;
+            if (support.getComponent() instanceof JList<?> targetList
+                    && support.getDropLocation() instanceof JList.DropLocation dl) {
+                var model = targetList.getModel();
+                var idx   = dl.getIndex();
+                if (idx >= 0 && idx < model.getSize() && model.getElementAt(idx) instanceof NamNode anchor)
+                    anchorId = anchor.getId();
+            }
+            // Dropping a card onto its own slot is a no-op.
+            if (data.actionId().equals(anchorId)) return false;
+
+            final UUID anchor = anchorId;
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    pendingSelection = data.actionId();
+                    service.moveNodeBefore(data.actionId(), targetCol, anchor);
+                    rebuild();
+                } catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            return true;
+        }
     }
 
     // --- MCR view ---

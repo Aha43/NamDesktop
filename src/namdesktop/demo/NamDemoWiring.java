@@ -39,6 +39,7 @@ public final class NamDemoWiring {
             .register("markBacklog",     this::markBacklog)
             .register("addTag",          this::addTag)
             .register("moveNode",        this::moveNode)
+            .register("moveNodeBefore",  this::moveNodeBefore)
             .register("createSavedView",    this::createSavedView)
             .register("deleteProject",      this::deleteProject)
             .register("addPrerequisite",    this::addPrerequisite)
@@ -90,6 +91,13 @@ public final class NamDemoWiring {
         var node      = findByTitle(str(args, "title"));
         var newParent = findByTitle(str(args, "newParent"));
         service.moveNode(node.getId(), newParent.getId());
+    }
+
+    private void moveNodeBefore(Map<String, Object> args) throws Exception {
+        var node      = findByTitle(str(args, "title"));
+        var newParent = findByTitle(str(args, "newParent"));
+        var anchor    = args.containsKey("before") ? findByTitle(str(args, "before")).getId() : null;
+        service.moveNodeBefore(node.getId(), newParent.getId(), anchor);
     }
 
     @SuppressWarnings("unchecked")

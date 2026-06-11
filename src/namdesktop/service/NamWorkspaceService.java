@@ -565,6 +565,15 @@ public final class NamWorkspaceService {
     }
 
     public void moveNode(UUID nodeId, UUID newParentId) throws IOException {
+        moveNodeBefore(nodeId, newParentId, null);
+    }
+
+    /**
+     * Moves {@code nodeId} under {@code newParentId}, inserted immediately before
+     * {@code anchorId} in the new parent's child order. When {@code anchorId} is null (or not a
+     * child of the new parent) the node is appended. Same-parent calls reorder in place.
+     */
+    public void moveNodeBefore(UUID nodeId, UUID newParentId, UUID anchorId) throws IOException {
         var node = require(nodeId);
         var structuralIds = Set.of(workspace.getRootNodeId(), workspace.getInboxNodeId(),
                 workspace.getProjectsNodeId(), workspace.getNextActionsNodeId());
@@ -581,7 +590,10 @@ public final class NamWorkspaceService {
         if (subtree.contains(newParentId))
             throw new IllegalArgumentException("Cannot move a node into one of its own descendants.");
         workspace.getNodes().values().forEach(n -> n.getChildIds().remove(nodeId));
-        newParent.getChildIds().add(nodeId);
+        var ids   = newParent.getChildIds();
+        var index = anchorId != null ? ids.indexOf(anchorId) : -1;
+        if (index < 0) ids.add(nodeId);
+        else           ids.add(index, nodeId);
         node.setUpdatedAt(LocalDateTime.now());
         repository.save(path, workspace);
     }
