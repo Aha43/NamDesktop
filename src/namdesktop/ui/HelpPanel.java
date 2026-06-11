@@ -31,6 +31,7 @@ public final class HelpPanel extends JPanel {
             new SectionHeader("Projects"),
             new Entry("Projects",           "projects"),
             new Entry("Project Workbench",  "workbench"),
+            new Entry("Column view",        "column-view"),
             new Entry("Templates",          "templates"),
             new Entry("Blocked actions",    "blocked"),
             new Entry("Resources",          "resources"),

@@ -69,5 +69,13 @@
   {"action":"addResource",       "args":{"title":"Book hotel",  "type":"TEXT", "value":"Confirmation: ABC123"},    "delayMs":50, "description":"Attach a text note to the same action"},
   {"action":"assertHasResource", "args":{"title":"Book hotel",  "type":"URI",  "value":"https://booking.com/rome"},"delayMs":20, "description":"URI resource should be present"},
   {"action":"assertHasResource", "args":{"title":"Book hotel",  "value":"Confirmation: ABC123"},                   "delayMs":20, "description":"Text resource should be present (type optional)"},
-  {"action":"assertResourceCount","args":{"title":"Book hotel", "count":2},                                         "delayMs":20, "description":"Action should have exactly 2 resources"}
+  {"action":"assertResourceCount","args":{"title":"Book hotel", "count":2},                                         "delayMs":20, "description":"Action should have exactly 2 resources"},
+
+  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Flights"},            "delayMs":50, "description":"Column-view setup: a sub-project = a column"},
+  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Accommodation"},      "delayMs":50, "description":"A second column"},
+  {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Trip to Rome"},          "delayMs":20, "description":"Book hotel starts in the parent's Unsorted column"},
+  {"action":"moveNode",         "args":{"title":"Book hotel","newParent":"Accommodation"},      "delayMs":50, "description":"Move Unsorted card into a column (reparent)"},
+  {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Accommodation"},         "delayMs":20, "description":"Now owned by the Accommodation column"},
+  {"action":"moveNode",         "args":{"title":"Book hotel","newParent":"Flights"},            "delayMs":50, "description":"Move card to a sibling column — the core Column-view move"},
+  {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Flights"},               "delayMs":20, "description":"Reparented to the sibling column"}
 ]

@@ -38,6 +38,7 @@ public final class NamDemoWiring {
             .register("markDone",        this::markDone)
             .register("markBacklog",     this::markBacklog)
             .register("addTag",          this::addTag)
+            .register("moveNode",        this::moveNode)
             .register("createSavedView",    this::createSavedView)
             .register("deleteProject",      this::deleteProject)
             .register("addPrerequisite",    this::addPrerequisite)
@@ -83,6 +84,12 @@ public final class NamDemoWiring {
         var tags = new ArrayList<>(node.getTags());
         if (!tags.contains(tag)) tags.add(tag);
         service.updateTags(node.getId(), tags);
+    }
+
+    private void moveNode(Map<String, Object> args) throws Exception {
+        var node      = findByTitle(str(args, "title"));
+        var newParent = findByTitle(str(args, "newParent"));
+        service.moveNode(node.getId(), newParent.getId());
     }
 
     @SuppressWarnings("unchecked")

@@ -45,6 +45,8 @@ ICONS=(
   clock-up
   clock-down
   arrow-left
+  layout-columns
+  arrows-exchange
 )
 
 mkdir -p "$ICONS_DIR"

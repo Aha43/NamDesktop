@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<body style="font-family: sans-serif; margin: 16px; line-height: 1.5;">
+
+<h3>Column view</h3>
+
+<p>Column view shows a project's structure as a board. When a project has
+sub-projects, open its <a href="concept://workbench">workbench</a> and click the
+<b>columns</b> icon in the breadcrumb bar.</p>
+
+<ul>
+  <li>Each <b>column</b> is one immediate sub-project.</li>
+  <li>Each <b>card</b> is an action belonging directly to that sub-project.</li>
+  <li>A leading <b>Unsorted</b> column appears when the project has actions of its
+      own that don't yet live in a sub-project, so you can sort them into one.</li>
+</ul>
+
+<p>It answers "<i>which part of this project does this action belong to?</i>" at a
+glance — something the stacked workbench sections can't show side by side.</p>
+
+<h4>Moving an action between columns</h4>
+<p>Select a card and click the <b>move</b> icon at the bottom of its column (or
+right-click the card), then pick the destination column. The action is
+<b>reparented</b> to that sub-project — Column view never invents a separate board
+state; moving a card simply changes which sub-project owns the action, exactly as if
+you had moved it in the workbench.</p>
+
+<p>Click a column's title to drill into that sub-project. Use the columns icon again,
+or the readiness icon, to switch views; Column view is available whenever the project
+has at least one sub-project.</p>
+
+</body>
+</html>
