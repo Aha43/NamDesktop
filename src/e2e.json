@@ -87,5 +87,9 @@
   {"action":"addAction",        "args":{"project":"Accommodation","title":"Check in"},          "delayMs":50, "description":"A card in a sibling column to drop before"},
   {"action":"moveNodeBefore",   "args":{"title":"Seat A","newParent":"Accommodation","before":"Check in"}, "delayMs":50, "description":"Positioned cross-column drop = reparent + insert before anchor"},
   {"action":"assertChildOrder", "args":{"parent":"Accommodation","order":["Seat A","Check in"]}, "delayMs":20, "description":"Landed before the anchor in the target column"},
-  {"action":"assertChildOf",    "args":{"title":"Seat A","parent":"Accommodation"},             "delayMs":20, "description":"And reparented to that column"}
+  {"action":"assertChildOf",    "args":{"title":"Seat A","parent":"Accommodation"},             "delayMs":20, "description":"And reparented to that column"},
+
+  {"action":"addSubProject",    "args":{"parent":"Flights","title":"Loyalty"},                  "delayMs":50, "description":"Split-lane: a nested sub-project shown in a column's Projects lane"},
+  {"action":"moveNodeBefore",   "args":{"title":"Loyalty","newParent":"Accommodation"},         "delayMs":50, "description":"Drag a sub-project to another column (reparent)"},
+  {"action":"assertChildOf",    "args":{"title":"Loyalty","parent":"Accommodation"},            "delayMs":20, "description":"Sub-project now lives under the Accommodation column"}
 ]
