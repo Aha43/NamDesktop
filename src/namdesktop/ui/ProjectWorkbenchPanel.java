@@ -39,6 +39,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private final Set<UUID>         collapsedSections = new HashSet<>();
     private       boolean           accordionMode     = false;
     private       boolean           mcrMode           = false;
+    private       boolean           columnMode        = false;
     private       UUID              mcrReturnId       = null;
     private       List<UUID>        currentSectionIds = List.of();
 
@@ -100,10 +101,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
         currentSectionIds = List.copyOf(sectionIds);
         var hasSubProjects = !projection.childSections().isEmpty();
-        if (mcrMode && !hasSubProjects) mcrMode = false;
+        if (mcrMode    && !hasSubProjects) mcrMode    = false;
+        if (columnMode && !hasSubProjects) columnMode = false;
         add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
-        if (mcrMode) add(new JScrollPane(buildMcrGrid()),         BorderLayout.CENTER);
-        else         add(new JScrollPane(buildContent(projection)), BorderLayout.CENTER);
+        if (columnMode)   add(new JScrollPane(buildColumnView(projection)), BorderLayout.CENTER);
+        else if (mcrMode) add(new JScrollPane(buildMcrGrid()),              BorderLayout.CENTER);
+        else              add(new JScrollPane(buildContent(projection)),    BorderLayout.CENTER);
         revalidate();
         repaint();
     }
@@ -188,11 +191,21 @@ public final class ProjectWorkbenchPanel extends JPanel {
         mcrButton.setSelected(mcrMode);
         mcrButton.setEnabled(hasSubProjects);
         mcrButton.setToolTipText(mcrMode ? "Readiness view — click to return to workbench" : "Open sub-projects in readiness view");
-        mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); rebuild(); });
+        mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); columnMode = false; rebuild(); });
+
+        var columnIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-columns.svg")).derive(16, 16);
+        var columnButton = new JToggleButton(columnIcon);
+        columnButton.setSelected(columnMode);
+        columnButton.setEnabled(hasSubProjects);
+        columnButton.setToolTipText(columnMode
+                ? "Column view — click to return to workbench"
+                : "Open sub-projects as columns (move actions between them)");
+        columnButton.addActionListener(e -> { columnMode = columnButton.isSelected(); mcrMode = false; rebuild(); });
 
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        buttons.add(columnButton);
         buttons.add(mcrButton);
-        if (!mcrMode && !sectionIds.isEmpty()) {
+        if (!mcrMode && !columnMode && !sectionIds.isEmpty()) {
             buttons.add(accordionButton);
             buttons.add(toggleAllButton);
         }
@@ -780,6 +793,172 @@ public final class ProjectWorkbenchPanel extends JPanel {
         currentProjectId = projectId;
         collapsedSections.clear();
         rebuild();
+    }
+
+    // --- Column view ---
+
+    private static final int COLUMN_WIDTH = 240;
+
+    /**
+     * Renders the current project's immediate child projects as columns and their direct
+     * actions as cards. A leading "Unsorted" column holds the parent's own direct actions
+     * (omitted when there are none). Moving a card to another column reparents the action
+     * between sibling projects via {@link NamWorkspaceService#moveNode}.
+     */
+    private JComponent buildColumnView(WorkbenchProjection projection) {
+        // Column id -> display label, in display order; drives the per-card move menu.
+        var columns     = new java.util.LinkedHashMap<UUID, String>();
+        var hasUnsorted = !projection.directActions().isEmpty();
+        if (hasUnsorted) columns.put(currentProjectId, "Unsorted");
+        for (var section : projection.childSections())
+            columns.put(section.project().getId(), section.project().getTitle());
+
+        var row = new JPanel();
+        row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
+        row.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+
+        if (hasUnsorted) {
+            row.add(buildColumn(null, currentProjectId, projection.directActions(), columns));
+            row.add(Box.createHorizontalStrut(12));
+        }
+        var sections = projection.childSections();
+        for (int i = 0; i < sections.size(); i++) {
+            var s = sections.get(i);
+            row.add(buildColumn(s.project(), s.project().getId(), s.directActions(), columns));
+            if (i < sections.size() - 1) row.add(Box.createHorizontalStrut(12));
+        }
+        return row;
+    }
+
+    private JComponent buildColumn(NamNode project, UUID columnId, List<NamNode> actions,
+                                   java.util.LinkedHashMap<UUID, String> columns) {
+        var column = new JPanel(new BorderLayout(0, 6)) {
+            @Override public Dimension getPreferredSize() { return new Dimension(COLUMN_WIDTH, super.getPreferredSize().height); }
+            @Override public Dimension getMaximumSize()   { return new Dimension(COLUMN_WIDTH, super.getMaximumSize().height); }
+            @Override public Dimension getMinimumSize()   { return new Dimension(COLUMN_WIDTH, super.getMinimumSize().height); }
+        };
+        column.setAlignmentY(Component.TOP_ALIGNMENT);
+        column.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")),
+                BorderFactory.createEmptyBorder(8, 8, 8, 8)));
+
+        // Header — clickable project title, or a static "Unsorted" label.
+        JComponent header;
+        if (project == null) {
+            var lbl = new JLabel("Unsorted");
+            lbl.setToolTipText("Actions directly under this project (not in a sub-project)");
+            lbl.setFont(lbl.getFont().deriveFont(Font.BOLD | Font.ITALIC));
+            lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+            header = lbl;
+        } else {
+            var btn = new JButton(project.getTitle() + " ›");
+            btn.setBorderPainted(false);
+            btn.setContentAreaFilled(false);
+            btn.setHorizontalAlignment(SwingConstants.LEFT);
+            btn.setMargin(new Insets(0, 0, 0, 0));
+            btn.setFont(btn.getFont().deriveFont(Font.BOLD));
+            btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+            btn.setToolTipText("Open " + project.getTitle());
+            final var id = project.getId();
+            btn.addActionListener(e -> navigateTo(id));
+            header = btn;
+        }
+
+        var count = new JLabel(actions.size() + (actions.size() == 1 ? " action" : " actions"));
+        count.setForeground(UIManager.getColor("Label.disabledForeground"));
+        count.setFont(count.getFont().deriveFont(11f));
+
+        var head = new JPanel(new BorderLayout());
+        head.add(header, BorderLayout.CENTER);
+        head.add(count,  BorderLayout.SOUTH);
+
+        // Body — reuse the workbench action list (status badge, pencil, inline rename).
+        JComponent body;
+        JList<NamNode> list = null;
+        if (actions.isEmpty()) {
+            var lbl = new JLabel("No actions");
+            lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+            lbl.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+            body = lbl;
+        } else {
+            list = buildActionList(actions, columnId);
+            attachMoveMenu(list, columnId, columns);
+            body = list;
+        }
+
+        // Footer — a discoverable "move" button mirroring the workbench button-on-selection pattern.
+        var movable  = columns.size() > 1;
+        var moveBtn  = UiHelper.iconButton("Move action to another column",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrows-exchange.svg")).derive(16, 16));
+        moveBtn.setToolTipText("Move selected action to another column");
+        final var fList = list;
+        moveBtn.setEnabled(movable && fList != null && fList.getSelectedIndex() >= 0);
+        if (fList != null) {
+            fList.addListSelectionListener(e -> {
+                if (e.getValueIsAdjusting()) return;
+                moveBtn.setEnabled(movable && fList.getSelectedIndex() >= 0);
+            });
+            moveBtn.addActionListener(e -> {
+                var action = fList.getSelectedValue();
+                if (action == null) return;
+                showMoveToColumnMenu(moveBtn, action, columnId, columns, 0, moveBtn.getHeight());
+            });
+        }
+        var footer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
+        footer.add(moveBtn);
+
+        column.add(head,   BorderLayout.NORTH);
+        column.add(body,   BorderLayout.CENTER);
+        column.add(footer, BorderLayout.SOUTH);
+        return column;
+    }
+
+    private void attachMoveMenu(JList<NamNode> list, UUID columnId,
+                                java.util.LinkedHashMap<UUID, String> columns) {
+        list.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e)  { maybePopup(e); }
+            @Override public void mouseReleased(MouseEvent e) { maybePopup(e); }
+            private void maybePopup(MouseEvent e) {
+                if (!e.isPopupTrigger()) return;
+                var idx = list.locationToIndex(e.getPoint());
+                if (idx < 0) return;
+                list.setSelectedIndex(idx);
+                showMoveToColumnMenu(list, list.getModel().getElementAt(idx), columnId, columns, e.getX(), e.getY());
+            }
+        });
+    }
+
+    private void showMoveToColumnMenu(JComponent source, NamNode action, UUID currentParentId,
+                                      java.util.LinkedHashMap<UUID, String> columns, int x, int y) {
+        var menu  = new JPopupMenu();
+        var title = action.getTitle();
+        var label = new JMenuItem("Move \"" + (title.length() <= 40 ? title : title.substring(0, 40) + "…") + "\" to:");
+        label.setEnabled(false);
+        menu.add(label);
+        menu.addSeparator();
+        var added = false;
+        for (var entry : columns.entrySet()) {
+            if (entry.getKey().equals(currentParentId)) continue;
+            var item = new JMenuItem(entry.getValue());
+            final var targetId = entry.getKey();
+            item.addActionListener(e -> moveActionToColumn(action.getId(), targetId));
+            menu.add(item);
+            added = true;
+        }
+        if (!added) {
+            var none = new JMenuItem("No other column");
+            none.setEnabled(false);
+            menu.add(none);
+        }
+        menu.show(source, x, y);
+    }
+
+    private void moveActionToColumn(UUID actionId, UUID targetProjectId) {
+        try {
+            pendingSelection = actionId;
+            service.moveNode(actionId, targetProjectId);
+            rebuild();
+        } catch (IOException ex) { showError(ex.getMessage()); }
     }
 
     // --- MCR view ---

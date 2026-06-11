@@ -31,6 +31,7 @@ public final class NamAssertWiring {
             .register("assertNodeNotExists",   this::assertNodeNotExists)
             .register("assertNodeStatus",      this::assertNodeStatus)
             .register("assertTagOnNode",       this::assertTagOnNode)
+            .register("assertChildOf",         this::assertChildOf)
             .register("assertProjectExists",   this::assertProjectExists)
             .register("assertSavedViewExists", this::assertSavedViewExists)
             .register("assertNodeCount",       this::assertNodeCount)
@@ -77,6 +78,21 @@ public final class NamAssertWiring {
         if (!node.getTags().contains(tag)) {
             throw new IllegalStateException("Node \"" + title + "\": expected tag \"" + tag
                     + "\" but tags were " + node.getTags());
+        }
+    }
+
+    private void assertChildOf(Map<String, Object> args) {
+        var title  = str(args, "title");
+        var parent = str(args, "parent");
+        var node   = workspace.getNodes().values().stream()
+                .filter(n -> title.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Node not found: \"" + title + "\""));
+        var actualParent = workspace.getParent(node.getId())
+                .orElseThrow(() -> new IllegalStateException("Node \"" + title + "\" has no parent"));
+        if (!parent.equals(actualParent.getTitle())) {
+            throw new IllegalStateException("Node \"" + title + "\": expected parent \"" + parent
+                    + "\" but was \"" + actualParent.getTitle() + "\"");
         }
     }
 
