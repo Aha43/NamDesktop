@@ -44,8 +44,18 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       boolean           accordionMode     = false;
     private       boolean           mcrMode           = false;
     private       boolean           columnMode        = false;
-    private       UUID              mcrReturnId       = null;
+    private       LaneMode          laneMode          = LaneMode.ACTIONS;
     private       List<UUID>        currentSectionIds = List.of();
+
+    /** Which lanes each Column-view column shows. */
+    private enum LaneMode { ACTIONS, BOTH, PROJECTS }
+
+    // Per-project view memory for the session only (static ⇒ survives panel recreation,
+    // resets on app restart). Lets each project reopen in the view it was last shown in.
+    private enum WbMode { WORKBENCH, COLUMN, MCR }
+    private record WbView(WbMode mode, LaneMode lane) {}
+    private static final WbView DEFAULT_VIEW = new WbView(WbMode.WORKBENCH, LaneMode.ACTIONS);
+    private static final java.util.Map<UUID, WbView> SESSION_VIEWS = new java.util.HashMap<>();
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
@@ -65,7 +75,22 @@ public final class ProjectWorkbenchPanel extends JPanel {
         this.currentProjectId     = initialProjectId;
         this.parentProjectId      = workspace.getParent(initialProjectId)
                 .map(n -> n.getId()).orElse(null);
+        applyView(initialProjectId);
         rebuild();
+    }
+
+    /** Restores the session-remembered view for {@code projectId} into the mode flags. */
+    private void applyView(UUID projectId) {
+        var view = SESSION_VIEWS.getOrDefault(projectId, DEFAULT_VIEW);
+        columnMode = view.mode() == WbMode.COLUMN;
+        mcrMode    = view.mode() == WbMode.MCR;
+        laneMode   = view.lane();
+    }
+
+    /** Records the current view for {@code currentProjectId} so it reopens the same way this session. */
+    private void rememberView() {
+        var mode = columnMode ? WbMode.COLUMN : mcrMode ? WbMode.MCR : WbMode.WORKBENCH;
+        SESSION_VIEWS.put(currentProjectId, new WbView(mode, laneMode));
     }
 
     public void refresh() { rebuild(); }
@@ -80,6 +105,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         parentProjectId  = workspace.getParent(projectId).map(n -> n.getId()).orElse(null);
         currentProjectId = projectId;
         collapsedSections.clear();
+        applyView(projectId);
         rebuild();
     }
 
@@ -105,8 +131,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
         currentSectionIds = List.copyOf(sectionIds);
         var hasSubProjects = !projection.childSections().isEmpty();
-        if (mcrMode    && !hasSubProjects) mcrMode    = false;
-        if (columnMode && !hasSubProjects) columnMode = false;
+        if (!hasSubProjects && (mcrMode || columnMode)) {
+            mcrMode = columnMode = false;
+            laneMode = LaneMode.ACTIONS;
+            rememberView();  // a project that lost its sub-projects falls back to the workbench
+        }
         add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
         if (columnMode)   add(new JScrollPane(buildColumnView(projection)), BorderLayout.CENTER);
         else if (mcrMode) add(new JScrollPane(buildMcrGrid()),              BorderLayout.CENTER);
@@ -190,29 +219,54 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     : "Accordion mode off — click to open one section at a time");
         });
 
-        var mcrIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16);
-        var mcrButton = new JToggleButton(mcrIcon);
-        mcrButton.setSelected(mcrMode);
-        mcrButton.setEnabled(hasSubProjects);
-        mcrButton.setToolTipText(mcrMode ? "Readiness view — click to return to workbench" : "Open sub-projects in readiness view");
-        mcrButton.addActionListener(e -> { mcrMode = mcrButton.isSelected(); columnMode = false; rebuild(); });
+        // View-mode trio — Workbench (default) / Columns / Goal — mutually exclusive, so there is
+        // always an explicit way back to the workbench (the remembered view no longer resets it).
+        var wbIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/list-details.svg")).derive(16, 16);
+        var wbButton = new JToggleButton(wbIcon);
+        wbButton.setSelected(!columnMode && !mcrMode);
+        wbButton.setToolTipText("Workbench — the default stacked view");
+        wbButton.addActionListener(e -> { columnMode = false; mcrMode = false; rememberView(); rebuild(); });
 
         var columnIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-columns.svg")).derive(16, 16);
         var columnButton = new JToggleButton(columnIcon);
         columnButton.setSelected(columnMode);
         columnButton.setEnabled(hasSubProjects);
-        columnButton.setToolTipText(columnMode
-                ? "Column view — click to return to workbench"
-                : "Open sub-projects as columns (move actions between them)");
-        columnButton.addActionListener(e -> { columnMode = columnButton.isSelected(); mcrMode = false; rebuild(); });
+        columnButton.setToolTipText("Column view — sub-projects as columns");
+        columnButton.addActionListener(e -> { columnMode = true; mcrMode = false; rememberView(); rebuild(); });
+
+        var mcrIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/layout-dashboard.svg")).derive(16, 16);
+        var mcrButton = new JToggleButton(mcrIcon);
+        mcrButton.setSelected(mcrMode);
+        mcrButton.setEnabled(hasSubProjects);
+        mcrButton.setToolTipText("Readiness view — sub-project progress board");
+        mcrButton.addActionListener(e -> { mcrMode = true; columnMode = false; rememberView(); rebuild(); });
+
+        var modeGroup = new ButtonGroup();
+        modeGroup.add(wbButton);
+        modeGroup.add(columnButton);
+        modeGroup.add(mcrButton);
+
+        // Column-view lane control — cycles actions-only → both → sub-projects-only.
+        var laneButton = UiHelper.iconButton(laneTooltip(laneMode), laneIcon(laneMode));
+        laneButton.setToolTipText(laneTooltip(laneMode));
+        laneButton.addActionListener(e -> { laneMode = nextLane(laneMode); rememberView(); rebuild(); });
+
+        // Each view mode sits with its own controls; controls stay in place (disabled when the
+        // mode is inactive) so the toolbar never reflows as you switch views.
+        var workbenchMode = !columnMode && !mcrMode;
+        accordionButton.setEnabled(workbenchMode);
+        toggleAllButton.setEnabled(workbenchMode);
+        laneButton.setEnabled(columnMode);
 
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        buttons.add(wbButton);
+        buttons.add(accordionButton);
+        buttons.add(toggleAllButton);
+        buttons.add(Box.createHorizontalStrut(8));
         buttons.add(columnButton);
+        buttons.add(laneButton);
+        buttons.add(Box.createHorizontalStrut(8));
         buttons.add(mcrButton);
-        if (!mcrMode && !columnMode && !sectionIds.isEmpty()) {
-            buttons.add(accordionButton);
-            buttons.add(toggleAllButton);
-        }
         var sep = new JSeparator(SwingConstants.VERTICAL);
         sep.setPreferredSize(new Dimension(1, 16));
         buttons.add(sep);
@@ -226,6 +280,31 @@ public final class ProjectWorkbenchPanel extends JPanel {
         bar.add(crumbs,   BorderLayout.CENTER);
         bar.add(buttons,  BorderLayout.EAST);
         return bar;
+    }
+
+    private static LaneMode nextLane(LaneMode m) {
+        return switch (m) {
+            case ACTIONS  -> LaneMode.BOTH;
+            case BOTH     -> LaneMode.PROJECTS;
+            case PROJECTS -> LaneMode.ACTIONS;
+        };
+    }
+
+    private static FlatSVGIcon laneIcon(LaneMode m) {
+        var name = switch (m) {
+            case ACTIONS  -> "list-check";
+            case BOTH     -> "layout-rows";
+            case PROJECTS -> "folders";
+        };
+        return new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/" + name + ".svg")).derive(16, 16);
+    }
+
+    private static String laneTooltip(LaneMode m) {
+        return switch (m) {
+            case ACTIONS  -> "Lanes: actions only — click to also show sub-projects";
+            case BOTH     -> "Lanes: actions and sub-projects — click to show sub-projects only";
+            case PROJECTS -> "Lanes: sub-projects only — click to show actions only";
+        };
     }
 
     private static JButton breadcrumbLink(String title, Runnable action) {
@@ -790,12 +869,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private void navigateTo(UUID projectId) {
         onInternalNavigate.accept(projectId);
-        if (mcrMode) mcrReturnId = currentProjectId;
-        mcrMode          = projectId.equals(mcrReturnId);
-        if (mcrMode) mcrReturnId = null;
         parentProjectId  = currentProjectId;
         currentProjectId = projectId;
         collapsedSections.clear();
+        applyView(projectId);  // each project reopens in its own remembered view this session
         rebuild();
     }
 
@@ -868,7 +945,13 @@ public final class ProjectWorkbenchPanel extends JPanel {
             header = btn;
         }
 
-        var count = new JLabel(actions.size() + (actions.size() == 1 ? " action" : " actions"));
+        var showActions  = laneMode != LaneMode.PROJECTS;
+        var showProjects = laneMode != LaneMode.ACTIONS;
+        var subProjectCount = (int) workspace.getChildren(columnId).stream().filter(NamNode::isProject).count();
+        var countText = laneMode == LaneMode.PROJECTS
+                ? subProjectCount + (subProjectCount == 1 ? " sub-project" : " sub-projects")
+                : actions.size() + (actions.size() == 1 ? " action" : " actions");
+        var count = new JLabel(countText);
         count.setForeground(UIManager.getColor("Label.disabledForeground"));
         count.setFont(count.getFont().deriveFont(11f));
 
@@ -876,26 +959,47 @@ public final class ProjectWorkbenchPanel extends JPanel {
         head.add(header, BorderLayout.CENTER);
         head.add(count,  BorderLayout.SOUTH);
 
-        // Body — reuse the workbench action list (status badge, pencil, inline rename).
-        JComponent body;
-        JList<NamNode> list = null;
-        if (actions.isEmpty()) {
-            var lbl = new JLabel("No actions");
-            lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
-            lbl.setBorder(BorderFactory.createEmptyBorder(12, 4, 12, 4));
-            body = lbl;
-        } else {
-            list = buildActionList(actions, columnId);
-            attachMoveMenu(list, columnId, columns);
-            body = list;
+        // Body — actions lane and/or sub-projects lane, depending on the lane mode.
+        JList<NamNode> actionsList = null;
+        JComponent     actionsBody = null;
+        if (showActions) {
+            actionsList = actions.isEmpty() ? null : buildActionList(actions, columnId);
+            if (actionsList != null) attachMoveMenu(actionsList, columnId, columns);
+            actionsBody = actionsList != null ? actionsList : emptyLaneLabel("No actions");
         }
 
-        // Footer — a discoverable "move" button mirroring the workbench button-on-selection pattern.
+        JComponent projectsBody = null;
+        if (showProjects) {
+            var subProjects = workspace.getChildren(columnId).stream().filter(NamNode::isProject).toList();
+            var projectsList = subProjects.isEmpty() ? null : buildProjectLaneList(subProjects, columnId);
+            projectsBody = projectsList != null ? projectsList : emptyLaneLabel("No sub-projects");
+        }
+
+        JComponent body;
+        if (laneMode == LaneMode.BOTH) {
+            var split = new JPanel();
+            split.setLayout(new BoxLayout(split, BoxLayout.Y_AXIS));
+            actionsBody.setAlignmentX(Component.LEFT_ALIGNMENT);
+            projectsBody.setAlignmentX(Component.LEFT_ALIGNMENT);
+            clampHeight(actionsBody);
+            clampHeight(projectsBody);
+            split.add(laneHeader("Actions"));
+            split.add(actionsBody);
+            split.add(Box.createVerticalStrut(8));
+            split.add(laneHeader("Projects"));
+            split.add(projectsBody);
+            split.add(Box.createVerticalGlue());
+            body = split;
+        } else {
+            body = showActions ? actionsBody : projectsBody;
+        }
+
+        // Footer — move button acts on the Actions lane selection (unchanged behavior).
         var movable  = columns.size() > 1;
         var moveBtn  = UiHelper.iconButton("Move action to another column",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrows-exchange.svg")).derive(16, 16));
         moveBtn.setToolTipText("Move selected action to another column");
-        final var fList = list;
+        final var fList = actionsList;
         moveBtn.setEnabled(movable && fList != null && fList.getSelectedIndex() >= 0);
         if (fList != null) {
             fList.addListSelectionListener(e -> {
@@ -911,23 +1015,86 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var footer = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 2));
         footer.add(moveBtn);
 
-        // Drag-and-drop (additive to the move button / right-click menu): drag a card to another
-        // column to reparent it, or within its column to reorder. Only when there's somewhere to go.
+        // Drag-and-drop: each lane's list is a drag source + INSERT drop target; the column panel
+        // and empty-lane labels also accept drops (append). A drop reparents the node to this column.
         if (movable) {
             column.putClientProperty(COLUMN_ID_KEY, columnId);
             column.setTransferHandler(columnDnD);
-            body.putClientProperty(COLUMN_ID_KEY, columnId);
-            body.setTransferHandler(columnDnD);
-            if (fList != null) {
-                fList.setDragEnabled(true);
-                fList.setDropMode(DropMode.INSERT);
-            }
+            if (actionsBody  != null) wireLaneDnd(actionsBody, columnId);
+            if (projectsBody != null) wireLaneDnd(projectsBody, columnId);
         }
 
         column.add(head,   BorderLayout.NORTH);
         column.add(body,   BorderLayout.CENTER);
         column.add(footer, BorderLayout.SOUTH);
         return column;
+    }
+
+    private static JLabel emptyLaneLabel(String text) {
+        var lbl = new JLabel(text);
+        lbl.setForeground(UIManager.getColor("Label.disabledForeground"));
+        lbl.setBorder(BorderFactory.createEmptyBorder(12, 4, 12, 4));
+        return lbl;
+    }
+
+    private static JLabel laneHeader(String text) {
+        var l = new JLabel(text);
+        l.setFont(l.getFont().deriveFont(Font.BOLD, 11f));
+        l.setForeground(UIManager.getColor("Label.disabledForeground"));
+        l.setBorder(BorderFactory.createEmptyBorder(4, 2, 2, 2));
+        l.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return l;
+    }
+
+    private static void clampHeight(JComponent c) {
+        c.setMaximumSize(new Dimension(Integer.MAX_VALUE, c.getPreferredSize().height));
+    }
+
+    private void wireLaneDnd(JComponent laneBody, UUID columnId) {
+        laneBody.putClientProperty(COLUMN_ID_KEY, columnId);
+        laneBody.setTransferHandler(columnDnD);
+        if (laneBody instanceof JList<?> jl) {
+            jl.setDragEnabled(true);
+            jl.setDropMode(DropMode.INSERT);
+        }
+    }
+
+    /** A column's nested sub-projects: double-click to drill in, drag to reparent to another column. */
+    private JList<NamNode> buildProjectLaneList(List<NamNode> projects, UUID columnId) {
+        var model = new DefaultListModel<NamNode>();
+        for (var p : projects) model.addElement(p);
+        var jlist = new JList<>(model);
+        jlist.setCellRenderer(new ProjectLaneRenderer());
+        jlist.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        jlist.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+        jlist.setToolTipText("Double-click to open · drag to another column");
+        jlist.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() != 2) return;
+                var idx = jlist.locationToIndex(e.getPoint());
+                if (idx >= 0) navigateTo(model.getElementAt(idx).getId());
+            }
+        });
+        if (pendingSelection != null) {
+            for (int i = 0; i < model.getSize(); i++) {
+                if (model.getElementAt(i).getId().equals(pendingSelection)) {
+                    jlist.setSelectedIndex(i);
+                    pendingSelection = null;
+                    break;
+                }
+            }
+        }
+        return jlist;
+    }
+
+    private static final class ProjectLaneRenderer extends DefaultListCellRenderer {
+        @Override public Component getListCellRendererComponent(
+                JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+            var c = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+            if (value instanceof NamNode n) c.setText(n.getTitle() + "  ›");
+            c.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
+            return c;
+        }
     }
 
     private void attachMoveMenu(JList<NamNode> list, UUID columnId,

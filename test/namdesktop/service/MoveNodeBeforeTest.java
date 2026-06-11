@@ -82,6 +82,18 @@ class MoveNodeBeforeTest {
     }
 
     @Test
+    void crossColumn_reparentsSubProjectBetweenColumns() throws Exception {
+        // split-lane mode lets a sub-project be dragged column-to-column
+        var existing = addProject(childB, "B-sub");
+        var moved    = addProject(childA, "A-sub");
+
+        service.moveNodeBefore(moved, childB, existing); // A-sub before B-sub under Packing
+
+        assertEquals(List.of(moved, existing), projectIdsOf(childB));
+        assertTrue(projectIdsOf(childA).isEmpty(), "source column no longer owns the sub-project");
+    }
+
+    @Test
     void move_stampsUpdatedAt() throws Exception {
         var a = addAction(childA, "A");
         assertNull(workspace.getNode(a).orElseThrow().getUpdatedAt());
@@ -111,6 +123,12 @@ class MoveNodeBeforeTest {
     private List<UUID> actionIdsOf(UUID projectId) {
         return workspace.getNode(projectId).orElseThrow().getChildIds().stream()
                 .filter(id -> workspace.getNode(id).map(n -> !n.isProject()).orElse(false))
+                .toList();
+    }
+
+    private List<UUID> projectIdsOf(UUID projectId) {
+        return workspace.getNode(projectId).orElseThrow().getChildIds().stream()
+                .filter(id -> workspace.getNode(id).map(NamNode::isProject).orElse(false))
                 .toList();
     }
 

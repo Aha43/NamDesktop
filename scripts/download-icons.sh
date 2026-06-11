@@ -47,6 +47,10 @@ ICONS=(
   arrow-left
   layout-columns
   arrows-exchange
+  layout-rows
+  list-details
+  list-check
+  folders
 )
 
 mkdir -p "$ICONS_DIR"
