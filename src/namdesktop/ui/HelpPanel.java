@@ -27,6 +27,7 @@ public final class HelpPanel extends JPanel {
             new Entry("Backlog",            "backlog"),
             new Entry("Due Actions",        "due"),
             new Entry("Done",               "done"),
+            new Entry("Focus mode",         "focus-mode"),
 
             new SectionHeader("Projects"),
             new Entry("Projects",           "projects"),
@@ -35,12 +36,15 @@ public final class HelpPanel extends JPanel {
             new Entry("Templates",          "templates"),
             new Entry("Blocked actions",    "blocked"),
             new Entry("Resources",          "resources"),
+            new Entry("Goal Board",         "mission-control"),
 
             new SectionHeader("Finding work"),
             new Entry("Tag filter",         "contexts"),
             new Entry("Saved Views",        "saved-views"),
             new Entry("Search",             "search"),
             new Entry("Goal Board",         "mission-control"),
+            new Entry("Due Actions",        "due"),
+            new Entry("Blocked actions",    "blocked"),
 
             new SectionHeader("App"),
             new Entry("Focus mode",         "focus-mode"),
