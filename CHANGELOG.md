@@ -23,6 +23,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Help sidebar cross-lists articles that belong in more than one section: Goal Board now also appears under Projects; Due Actions and Blocked actions also under Finding work; Focus mode also under Daily workflow. Closes #363.
 - Settings dialog restructured: left sidebar (Appearance / Workspace / Sync) replaces the flat single-column layout. Dialog is now resizable. Closes #344.
 
 ### Added
