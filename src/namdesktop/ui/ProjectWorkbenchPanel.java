@@ -57,6 +57,14 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private static final WbView DEFAULT_VIEW = new WbView(WbMode.WORKBENCH, LaneMode.ACTIONS);
     private static final java.util.Map<UUID, WbView> SESSION_VIEWS = new java.util.HashMap<>();
 
+    // Collapsed Column-view columns, remembered per project for the session (parent id → set of
+    // collapsed column ids). Static ⇒ survives panel recreation, resets on app restart.
+    private static final java.util.Map<UUID, Set<UUID>> SESSION_COLLAPSED = new java.util.HashMap<>();
+
+    private Set<UUID> collapsedColumns() {
+        return SESSION_COLLAPSED.computeIfAbsent(currentProjectId, k -> new HashSet<>());
+    }
+
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
                                   NamWorkspaceService service, UUID initialProjectId,
                                   Runnable onNavigateToProjects) {
@@ -898,21 +906,25 @@ public final class ProjectWorkbenchPanel extends JPanel {
         row.setLayout(new BoxLayout(row, BoxLayout.X_AXIS));
         row.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
+        var sections = projection.childSections();
         if (hasUnsorted) {
-            row.add(buildColumn(null, currentProjectId, projection.directActions(), columns));
+            row.add(buildColumn(null, currentProjectId, projection.directActions(), columns, -1, sections.size()));
             row.add(Box.createHorizontalStrut(12));
         }
-        var sections = projection.childSections();
         for (int i = 0; i < sections.size(); i++) {
             var s = sections.get(i);
-            row.add(buildColumn(s.project(), s.project().getId(), s.directActions(), columns));
+            row.add(buildColumn(s.project(), s.project().getId(), s.directActions(), columns, i, sections.size()));
             if (i < sections.size() - 1) row.add(Box.createHorizontalStrut(12));
         }
         return row;
     }
 
     private JComponent buildColumn(NamNode project, UUID columnId, List<NamNode> actions,
-                                   java.util.LinkedHashMap<UUID, String> columns) {
+                                   java.util.LinkedHashMap<UUID, String> columns,
+                                   int sectionIndex, int sectionCount) {
+        if (collapsedColumns().contains(columnId)) {
+            return buildCollapsedColumn(project, columnId, actions.size());
+        }
         var column = new JPanel(new BorderLayout(0, 6)) {
             @Override public Dimension getPreferredSize() { return new Dimension(COLUMN_WIDTH, super.getPreferredSize().height); }
             @Override public Dimension getMaximumSize()   { return new Dimension(COLUMN_WIDTH, super.getMaximumSize().height); }
@@ -955,9 +967,40 @@ public final class ProjectWorkbenchPanel extends JPanel {
         count.setForeground(UIManager.getColor("Label.disabledForeground"));
         count.setFont(count.getFont().deriveFont(11f));
 
-        var head = new JPanel(new BorderLayout());
-        head.add(header, BorderLayout.CENTER);
-        head.add(count,  BorderLayout.SOUTH);
+        var titleBlock = new JPanel(new BorderLayout());
+        titleBlock.add(header, BorderLayout.CENTER);
+        titleBlock.add(count,  BorderLayout.SOUTH);
+
+        // Header bar: collapse chevron (left) · title + count (center) · reorder arrows (right).
+        var collapseBtn = UiHelper.iconOnlyButton("Collapse column",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-left.svg")).derive(14, 14));
+        collapseBtn.addActionListener(e -> { collapsedColumns().add(columnId); rebuild(); });
+
+        var head = new JPanel(new BorderLayout(4, 0));
+        head.add(collapseBtn, BorderLayout.WEST);
+        head.add(titleBlock,  BorderLayout.CENTER);
+
+        if (sectionIndex >= 0) {  // real child-project columns can be reordered (Unsorted stays pinned)
+            var leftBtn  = UiHelper.iconOnlyButton("Move column left",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-left.svg")).derive(14, 14));
+            var rightBtn = UiHelper.iconOnlyButton("Move column right",
+                    new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/arrow-right.svg")).derive(14, 14));
+            leftBtn.setEnabled(sectionIndex > 0);
+            rightBtn.setEnabled(sectionIndex < sectionCount - 1);
+            leftBtn.addActionListener(e -> {
+                try { service.moveProjectUp(currentProjectId, columnId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            rightBtn.addActionListener(e -> {
+                try { service.moveProjectDown(currentProjectId, columnId); rebuild(); }
+                catch (IOException ex) { showError(ex.getMessage()); }
+            });
+            var reorder = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+            reorder.setOpaque(false);
+            reorder.add(leftBtn);
+            reorder.add(rightBtn);
+            head.add(reorder, BorderLayout.EAST);
+        }
 
         // Body — actions lane and/or sub-projects lane, depending on the lane mode.
         JList<NamNode> actionsList = null;
@@ -1028,6 +1071,60 @@ public final class ProjectWorkbenchPanel extends JPanel {
         column.add(body,   BorderLayout.CENTER);
         column.add(footer, BorderLayout.SOUTH);
         return column;
+    }
+
+    private static final int COLLAPSED_WIDTH = 34;
+
+    /** A collapsed column: a narrow strip with an expand button and the title drawn vertically. */
+    private JComponent buildCollapsedColumn(NamNode project, UUID columnId, int actionCount) {
+        var strip = new JPanel(new BorderLayout(0, 4)) {
+            @Override public Dimension getPreferredSize() { return new Dimension(COLLAPSED_WIDTH, super.getPreferredSize().height); }
+            @Override public Dimension getMaximumSize()   { return new Dimension(COLLAPSED_WIDTH, super.getMaximumSize().height); }
+            @Override public Dimension getMinimumSize()   { return new Dimension(COLLAPSED_WIDTH, super.getMinimumSize().height); }
+        };
+        strip.setAlignmentY(Component.TOP_ALIGNMENT);
+        strip.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIManager.getColor("Separator.foreground")),
+                BorderFactory.createEmptyBorder(6, 2, 8, 2)));
+
+        var title = project == null ? "Unsorted" : project.getTitle();
+        var expandBtn = UiHelper.iconOnlyButton("Expand column: " + title,
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-right.svg")).derive(14, 14));
+        expandBtn.addActionListener(e -> { collapsedColumns().remove(columnId); rebuild(); });
+
+        var vlabel = new VerticalLabel(title + "  ·  " + actionCount);
+        vlabel.setToolTipText(title);
+        vlabel.setForeground(UIManager.getColor(project == null ? "Label.disabledForeground" : "Label.foreground"));
+
+        strip.add(expandBtn, BorderLayout.NORTH);
+        strip.add(vlabel,    BorderLayout.CENTER);
+        return strip;
+    }
+
+    /** Paints one line of text rotated 90° (reads bottom-to-top), for collapsed column strips. */
+    private static final class VerticalLabel extends JComponent {
+        private final String text;
+        VerticalLabel(String text) {
+            this.text = text;
+            setFont(UIManager.getFont("Label.font"));
+        }
+        @Override public Dimension getPreferredSize() {
+            var fm = getFontMetrics(getFont());
+            return new Dimension(fm.getHeight(), fm.stringWidth(text) + 8);
+        }
+        @Override protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            var g2 = (Graphics2D) g.create();
+            g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+            g2.setFont(getFont());
+            g2.setColor(getForeground());
+            var fm = g2.getFontMetrics();
+            g2.translate(0, getHeight());
+            g2.rotate(-Math.PI / 2);
+            int y = (getWidth() + fm.getAscent() - fm.getDescent()) / 2;
+            g2.drawString(text, 4, y);
+            g2.dispose();
+        }
     }
 
     private static JLabel emptyLaneLabel(String text) {

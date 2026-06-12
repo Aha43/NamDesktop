@@ -8,6 +8,8 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Column view — collapse columns: each column header has a chevron that collapses it into a narrow titled strip, so the important columns get room. Collapsed columns are remembered per project for the session (resets on restart). Closes #365.
+- Column view — rearrange columns: ◀ ▶ buttons on a column move it left/right; because a column is a sub-project, this reorders the sibling sub-projects in the model (also reflected in the Workbench view). The Unsorted column stays pinned first. Closes #366.
 - Column view lanes: a lanes button cycles each column through actions-only (default), actions + sub-projects (two lanes), and sub-projects-only. Actions and sub-projects can both be dragged between columns to reparent them; double-click a sub-project to drill in. Closes #356.
 - Project Workbench view switcher: the breadcrumb bar now has an explicit Workbench / Columns / Readiness trio, so there's always a clear way back to the default view.
 - Project Workbench remembers each project's view within the session: the view you leave a project in — Workbench, Columns (with whichever lanes), or the readiness board — is restored when you navigate back. In-memory only; projects open in the normal workbench again after a restart. Closes #360.

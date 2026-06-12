@@ -51,6 +51,8 @@ ICONS=(
   list-details
   list-check
   folders
+  chevron-left
+  chevron-right
 )
 
 mkdir -p "$ICONS_DIR"
