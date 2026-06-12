@@ -50,19 +50,39 @@ public final class ProjectWorkbenchPanel extends JPanel {
     /** Which lanes each Column-view column shows. */
     private enum LaneMode { ACTIONS, BOTH, PROJECTS }
 
-    // Per-project view memory for the session only (static ⇒ survives panel recreation,
-    // resets on app restart). Lets each project reopen in the view it was last shown in.
+    // Per-project workbench view, persisted across sessions in AppSettings: each project reopens
+    // in the view (Workbench / Columns+lanes / Readiness) and with the columns collapsed as it
+    // was left — including on startup session-restore.
     private enum WbMode { WORKBENCH, COLUMN, MCR }
     private record WbView(WbMode mode, LaneMode lane) {}
     private static final WbView DEFAULT_VIEW = new WbView(WbMode.WORKBENCH, LaneMode.ACTIONS);
-    private static final java.util.Map<UUID, WbView> SESSION_VIEWS = new java.util.HashMap<>();
 
-    // Collapsed Column-view columns, remembered per project for the session (parent id → set of
-    // collapsed column ids). Static ⇒ survives panel recreation, resets on app restart.
-    private static final java.util.Map<UUID, Set<UUID>> SESSION_COLLAPSED = new java.util.HashMap<>();
+    private void persistSettings() {
+        var s = AppSettings.getInstance();
+        if (s == null) return;
+        try { s.save(); } catch (IOException ignored) {}
+    }
 
-    private Set<UUID> collapsedColumns() {
-        return SESSION_COLLAPSED.computeIfAbsent(currentProjectId, k -> new HashSet<>());
+    private boolean isColumnCollapsed(UUID columnId) {
+        var s = AppSettings.getInstance();
+        if (s == null) return false;
+        var list = s.getCollapsedColumns().get(currentProjectId.toString());
+        return list != null && list.contains(columnId.toString());
+    }
+
+    private void setColumnCollapsed(UUID columnId, boolean collapsed) {
+        var s = AppSettings.getInstance();
+        if (s != null) {
+            var map = s.getCollapsedColumns();
+            var key = currentProjectId.toString();
+            var id  = columnId.toString();
+            var list = new java.util.ArrayList<>(map.getOrDefault(key, List.of()));
+            if (collapsed) { if (!list.contains(id)) list.add(id); }
+            else           { list.remove(id); }
+            if (list.isEmpty()) map.remove(key); else map.put(key, list);
+            persistSettings();
+        }
+        rebuild();
     }
 
     public ProjectWorkbenchPanel(Window parent, NamWorkspace workspace,
@@ -87,18 +107,34 @@ public final class ProjectWorkbenchPanel extends JPanel {
         rebuild();
     }
 
-    /** Restores the session-remembered view for {@code projectId} into the mode flags. */
+    /** Restores the persisted view for {@code projectId} into the mode flags. */
     private void applyView(UUID projectId) {
-        var view = SESSION_VIEWS.getOrDefault(projectId, DEFAULT_VIEW);
+        var s    = AppSettings.getInstance();
+        var view = decodeView(s == null ? null : s.getProjectViews().get(projectId.toString()));
         columnMode = view.mode() == WbMode.COLUMN;
         mcrMode    = view.mode() == WbMode.MCR;
         laneMode   = view.lane();
     }
 
-    /** Records the current view for {@code currentProjectId} so it reopens the same way this session. */
+    /** Records the current view for {@code currentProjectId} so it reopens the same way next time. */
     private void rememberView() {
+        var s = AppSettings.getInstance();
+        if (s == null) return;
         var mode = columnMode ? WbMode.COLUMN : mcrMode ? WbMode.MCR : WbMode.WORKBENCH;
-        SESSION_VIEWS.put(currentProjectId, new WbView(mode, laneMode));
+        s.getProjectViews().put(currentProjectId.toString(), mode.name() + ":" + laneMode.name());
+        persistSettings();
+    }
+
+    private static WbView decodeView(String enc) {
+        if (enc == null) return DEFAULT_VIEW;
+        var parts = enc.split(":");
+        try {
+            var mode = WbMode.valueOf(parts[0]);
+            var lane = parts.length > 1 ? LaneMode.valueOf(parts[1]) : LaneMode.ACTIONS;
+            return new WbView(mode, lane);
+        } catch (RuntimeException e) {
+            return DEFAULT_VIEW;
+        }
     }
 
     public void refresh() { rebuild(); }
@@ -922,7 +958,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private JComponent buildColumn(NamNode project, UUID columnId, List<NamNode> actions,
                                    java.util.LinkedHashMap<UUID, String> columns,
                                    int sectionIndex, int sectionCount) {
-        if (collapsedColumns().contains(columnId)) {
+        if (isColumnCollapsed(columnId)) {
             return buildCollapsedColumn(project, columnId, actions.size());
         }
         var column = new JPanel(new BorderLayout(0, 6)) {
@@ -974,7 +1010,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         // Header bar: collapse chevron (left) · title + count (center) · reorder arrows (right).
         var collapseBtn = UiHelper.iconOnlyButton("Collapse column",
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-left.svg")).derive(14, 14));
-        collapseBtn.addActionListener(e -> { collapsedColumns().add(columnId); rebuild(); });
+        collapseBtn.addActionListener(e -> setColumnCollapsed(columnId, true));
 
         var head = new JPanel(new BorderLayout(4, 0));
         head.add(collapseBtn, BorderLayout.WEST);
@@ -1090,7 +1126,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var title = project == null ? "Unsorted" : project.getTitle();
         var expandBtn = UiHelper.iconOnlyButton("Expand column: " + title,
                 new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-right.svg")).derive(14, 14));
-        expandBtn.addActionListener(e -> { collapsedColumns().remove(columnId); rebuild(); });
+        expandBtn.addActionListener(e -> setColumnCollapsed(columnId, false));
 
         var vlabel = new VerticalLabel(title + "  ·  " + actionCount);
         vlabel.setToolTipText(title);

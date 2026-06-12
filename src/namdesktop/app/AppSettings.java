@@ -42,6 +42,10 @@ public final class AppSettings {
     private int     helpDialogWidth  = 560;
     private int     helpDialogHeight = 700;
     private CloudSyncSettings cloudSync = new CloudSyncSettings();
+    // Per-project workbench view, persisted across sessions. projectViews: projectId -> "MODE:LANE".
+    // collapsedColumns: parent projectId -> list of collapsed column (child-project) ids.
+    private java.util.Map<String, String>                   projectViews     = new java.util.HashMap<>();
+    private java.util.Map<String, java.util.List<String>>   collapsedColumns = new java.util.HashMap<>();
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
@@ -85,6 +89,10 @@ public final class AppSettings {
     public void    setHelpDialogHeight(int v)        { this.helpDialogHeight = v; }
     public CloudSyncSettings getCloudSync()          { return cloudSync; }
     public void    setCloudSync(CloudSyncSettings v) { this.cloudSync = v != null ? v : new CloudSyncSettings(); }
+    public java.util.Map<String, String> getProjectViews()                          { return projectViews; }
+    public void setProjectViews(java.util.Map<String, String> v)                    { this.projectViews = v != null ? v : new java.util.HashMap<>(); }
+    public java.util.Map<String, java.util.List<String>> getCollapsedColumns()      { return collapsedColumns; }
+    public void setCollapsedColumns(java.util.Map<String, java.util.List<String>> v){ this.collapsedColumns = v != null ? v : new java.util.HashMap<>(); }
 
     public static AppSettings load() {
         try {
@@ -112,6 +120,8 @@ public final class AppSettings {
                 if (dto.helpDialogWidth  != null) s.setHelpDialogWidth(dto.helpDialogWidth);
                 if (dto.helpDialogHeight != null) s.setHelpDialogHeight(dto.helpDialogHeight);
                 s.setCloudSync(dto.cloudSync);
+                s.setProjectViews(dto.projectViews);
+                s.setCollapsedColumns(dto.collapsedColumns);
                 return s;
             }
         } catch (Exception e) {
@@ -144,6 +154,8 @@ public final class AppSettings {
         dto.helpDialogWidth  = this.helpDialogWidth;
         dto.helpDialogHeight = this.helpDialogHeight;
         dto.cloudSync        = this.cloudSync;
+        dto.projectViews     = this.projectViews;
+        dto.collapsedColumns = this.collapsedColumns;
         MAPPER.writeValue(SETTINGS_PATH.toFile(), dto);
     }
 
@@ -170,5 +182,7 @@ public final class AppSettings {
         public Integer  helpDialogWidth;
         public Integer  helpDialogHeight;
         public CloudSyncSettings cloudSync;
+        public java.util.Map<String, String>                 projectViews;
+        public java.util.Map<String, java.util.List<String>> collapsedColumns;
     }
 }
