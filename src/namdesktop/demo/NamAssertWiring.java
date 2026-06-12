@@ -36,6 +36,7 @@ public final class NamAssertWiring {
             .register("assertTagOnNode",       this::assertTagOnNode)
             .register("assertChildOf",         this::assertChildOf)
             .register("assertChildOrder",      this::assertChildOrder)
+            .register("assertChildProjectOrder", this::assertChildProjectOrder)
             .register("assertProjectExists",   this::assertProjectExists)
             .register("assertSavedViewExists", this::assertSavedViewExists)
             .register("assertNodeCount",       this::assertNodeCount)
@@ -116,6 +117,26 @@ public final class NamAssertWiring {
                 .toList();
         if (!expected.equals(actual)) {
             throw new IllegalStateException("Parent \"" + parentTitle + "\": expected action order "
+                    + expected + " but was " + actual);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void assertChildProjectOrder(Map<String, Object> args) {
+        var parentTitle = str(args, "parent");
+        var expected    = (List<String>) args.get("order");
+        var parent = workspace.getNodes().values().stream()
+                .filter(n -> parentTitle.equals(n.getTitle()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("Parent not found: \"" + parentTitle + "\""));
+        var actual = parent.getChildIds().stream()
+                .map(workspace::getNode)
+                .flatMap(Optional::stream)
+                .filter(NamNode::isProject)
+                .map(NamNode::getTitle)
+                .toList();
+        if (!expected.equals(actual)) {
+            throw new IllegalStateException("Parent \"" + parentTitle + "\": expected column (sub-project) order "
                     + expected + " but was " + actual);
         }
     }

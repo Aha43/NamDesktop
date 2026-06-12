@@ -91,5 +91,9 @@
 
   {"action":"addSubProject",    "args":{"parent":"Flights","title":"Loyalty"},                  "delayMs":50, "description":"Split-lane: a nested sub-project shown in a column's Projects lane"},
   {"action":"moveNodeBefore",   "args":{"title":"Loyalty","newParent":"Accommodation"},         "delayMs":50, "description":"Drag a sub-project to another column (reparent)"},
-  {"action":"assertChildOf",    "args":{"title":"Loyalty","parent":"Accommodation"},            "delayMs":20, "description":"Sub-project now lives under the Accommodation column"}
+  {"action":"assertChildOf",    "args":{"title":"Loyalty","parent":"Accommodation"},            "delayMs":20, "description":"Sub-project now lives under the Accommodation column"},
+
+  {"action":"assertChildProjectOrder","args":{"parent":"Trip to Rome","order":["Flights","Accommodation"]}, "delayMs":20, "description":"Initial column order"},
+  {"action":"moveNodeBefore",   "args":{"title":"Accommodation","newParent":"Trip to Rome","before":"Flights"}, "delayMs":50, "description":"Rearrange columns (◀) = reorder sibling projects"},
+  {"action":"assertChildProjectOrder","args":{"parent":"Trip to Rome","order":["Accommodation","Flights"]}, "delayMs":20, "description":"Columns reordered in the model"}
 ]
