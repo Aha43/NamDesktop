@@ -8,6 +8,7 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- `workspaces` table is now published to the Supabase Realtime change feed (`alter publication supabase_realtime add table workspaces`), so clients can react live to row updates. Unblocks NamWeb's live-SPA updates (remote-MCP P3): subscribers use a signal-then-pull pattern, and RLS still scopes deliveries to the owning user. Closes #371.
 - Column view — collapse columns: each column header has a chevron that collapses it into a narrow titled strip, so the important columns get room. Collapsed columns are remembered per project across restarts. Closes #365.
 - Column view — rearrange columns: ◀ ▶ buttons on a column move it left/right; because a column is a sub-project, this reorders the sibling sub-projects in the model (also reflected in the Workbench view). The Unsorted column stays pinned first. Closes #366.
 - Column view lanes: a lanes button cycles each column through actions-only (default), actions + sub-projects (two lanes), and sub-projects-only. Actions and sub-projects can both be dragged between columns to reparent them; double-click a sub-project to drill in. Closes #356.
