@@ -8,6 +8,13 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Projects view layouts: the top-level **Projects** view now offers the same Column and Readiness
+  layouts as a single project's workbench, via a List / Columns / Readiness toggle in its toolbar.
+  **List** stays the default compact table; **Columns** lays each top-level project out as a column
+  of its actions (drag a card between columns to reparent it); **Readiness** shows a progress
+  heat-map card per project. The existing tag filter narrows all three, drilling into a project opens
+  its full workbench, and the chosen layout is remembered across restarts. The board layouts reuse
+  the workbench renderer in an embedded mode (no duplicate board code). Closes #383.
 - `workspaces` table is now published to the Supabase Realtime change feed (`alter publication supabase_realtime add table workspaces`), so clients can react live to row updates. Unblocks NamWeb's live-SPA updates (remote-MCP P3): subscribers use a signal-then-pull pattern, and RLS still scopes deliveries to the owning user. Closes #371.
 - Column view — collapse columns: each column header has a chevron that collapses it into a narrow titled strip, so the important columns get room. Collapsed columns are remembered per project across restarts. Closes #365.
 - Column view — rearrange columns: ◀ ▶ buttons on a column move it left/right; because a column is a sub-project, this reorders the sibling sub-projects in the model (also reflected in the Workbench view). The Unsorted column stays pinned first. Closes #366.

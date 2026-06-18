@@ -30,6 +30,7 @@ public final class AppSettings {
     private boolean showNavPane      = true;
     private String  lastNavId        = null;
     private String  lastProjectId    = null;
+    private String  projectsListView = "LIST";   // top-level Projects view: LIST | COLUMNS | READINESS
     private boolean welcomed         = false;
     private boolean backlogFreeOnly      = true;
     private boolean powerMode            = false;
@@ -65,6 +66,8 @@ public final class AppSettings {
     public void    setLastNavId(String v)            { this.lastNavId = v; }
     public String  getLastProjectId()                { return lastProjectId; }
     public void    setLastProjectId(String v)        { this.lastProjectId = v; }
+    public String  getProjectsListView()             { return projectsListView; }
+    public void    setProjectsListView(String v)     { this.projectsListView = v != null ? v : "LIST"; }
     public boolean isWelcomed()                      { return welcomed; }
     public void    setWelcomed(boolean v)            { this.welcomed = v; }
     public boolean isBacklogFreeOnly()               { return backlogFreeOnly; }
@@ -108,6 +111,7 @@ public final class AppSettings {
                 s.setShowNavPane(dto.showNavPane == null || dto.showNavPane);
                 s.setLastNavId(dto.lastNavId);
                 s.setLastProjectId(dto.lastProjectId);
+                if (dto.projectsListView != null) s.setProjectsListView(dto.projectsListView);
                 s.setWelcomed(dto.welcomed != null && dto.welcomed);
                 s.setBacklogFreeOnly(dto.backlogFreeOnly == null || dto.backlogFreeOnly);
                 s.setPowerMode(dto.powerMode != null && dto.powerMode);
@@ -142,6 +146,7 @@ public final class AppSettings {
         dto.showNavPane      = this.showNavPane;
         dto.lastNavId        = this.lastNavId;
         dto.lastProjectId    = this.lastProjectId;
+        dto.projectsListView = this.projectsListView;
         dto.welcomed         = this.welcomed;
         dto.backlogFreeOnly      = this.backlogFreeOnly;
         dto.powerMode            = this.powerMode;
@@ -170,6 +175,7 @@ public final class AppSettings {
         public Boolean showNavPane;
         public String  lastNavId;
         public String  lastProjectId;
+        public String  projectsListView;
         public Boolean welcomed;
         public Boolean backlogFreeOnly;
         public Boolean  powerMode;
