@@ -139,6 +139,34 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     public void refresh() { rebuild(); }
 
+    /** The project's own direct actions that are still open (not sub-projects, not done). */
+    static List<NamNode> focusableDirectActions(NamWorkspace workspace, UUID projectId) {
+        return workspace.getChildren(projectId).stream()
+                .filter(n -> !n.isProject())
+                .filter(n -> n.getStatus() != NodeStatus.DONE)
+                .toList();
+    }
+
+    /** Opens the focus deck over the current project's open direct actions. */
+    private void enterFocusMode() {
+        var actions = focusableDirectActions(workspace, currentProjectId);
+        if (actions.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No open actions to focus on.",
+                    "Focus mode", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        var projectName = workspace.getNode(currentProjectId).map(NamNode::getTitle).orElse(null);
+        var cards = new java.util.ArrayList<MoonCardPanel.Card>();
+        for (var a : actions)
+            cards.add(new MoonCardPanel.Card(a.getId(), a.getTitle(), a.getDescription(), projectName));
+        removeAll();
+        add(new MoonCardPanel(cards, service, this::exitFocusMode), BorderLayout.CENTER);
+        revalidate();
+        repaint();
+    }
+
+    private void exitFocusMode() { rebuild(); }
+
     /** Called with the new project ID on every internal breadcrumb/card navigation. */
     public void setOnInternalNavigate(Consumer<UUID> cb) {
         onInternalNavigate = cb != null ? cb : id -> {};
@@ -302,6 +330,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         toggleAllButton.setEnabled(workbenchMode);
         laneButton.setEnabled(columnMode);
 
+        var focusButton = UiHelper.iconButton("Focus mode",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
+        focusButton.setToolTipText("Work through this project's actions one at a time");
+        focusButton.setEnabled(!focusableDirectActions(workspace, currentProjectId).isEmpty());
+        focusButton.addActionListener(e -> enterFocusMode());
+
         var buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
         buttons.add(wbButton);
         buttons.add(accordionButton);
@@ -314,6 +348,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var sep = new JSeparator(SwingConstants.VERTICAL);
         sep.setPreferredSize(new Dimension(1, 16));
         buttons.add(sep);
+        buttons.add(focusButton);
         buttons.add(newProjectButton);
         if (namdesktop.app.AppSettings.getInstance().isPowerMode()) {
             for (var b : buildProjectPowerButtons(currentProjectId, projectName))
