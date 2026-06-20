@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Focus mode in the Project Workbench: a deck (stack-2) button in the breadcrumb bar opens the
+  one-card-at-a-time focus deck over the current project's own open direct actions (excludes done
+  and sub-project actions), so you can work a single project end to end. Reuses the existing
+  `MoonCardPanel` — mark-done-and-advance, Esc/Space/←/→. Disabled when the project has no open
+  direct actions. Closes #385.
 - `workspaces` table is now published to the Supabase Realtime change feed (`alter publication supabase_realtime add table workspaces`), so clients can react live to row updates. Unblocks NamWeb's live-SPA updates (remote-MCP P3): subscribers use a signal-then-pull pattern, and RLS still scopes deliveries to the owning user. Closes #371.
 - Column view — collapse columns: each column header has a chevron that collapses it into a narrow titled strip, so the important columns get room. Collapsed columns are remembered per project across restarts. Closes #365.
 - Column view — rearrange columns: ◀ ▶ buttons on a column move it left/right; because a column is a sub-project, this reorders the sibling sub-projects in the model (also reflected in the Workbench view). The Unsorted column stays pinned first. Closes #366.
