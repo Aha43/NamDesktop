@@ -361,6 +361,29 @@ class NamWorkspaceServiceTest {
         assertEquals(0, repository.saveCount);
     }
 
+    // --- archiveProject / unarchiveProject (#407) ---
+
+    @Test
+    void archiveProject_setsArchivedStatus() throws IOException {
+        var p = service.addSubProject(workspace.getProjectsNodeId(), "Old project");
+        service.archiveProject(p);
+        assertEquals(NodeStatus.ARCHIVED, workspace.getNode(p).orElseThrow().getStatus());
+    }
+
+    @Test
+    void unarchiveProject_restoresToBacklog() throws IOException {
+        var p = service.addSubProject(workspace.getProjectsNodeId(), "Old project");
+        service.archiveProject(p);
+        service.unarchiveProject(p);
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(p).orElseThrow().getStatus());
+    }
+
+    @Test
+    void archiveProject_rejectsNonProject() throws IOException {
+        var a = service.createNextAction("An action");
+        assertThrows(IllegalArgumentException.class, () -> service.archiveProject(a));
+    }
+
     // --- addInboxItem ---
 
     @Test

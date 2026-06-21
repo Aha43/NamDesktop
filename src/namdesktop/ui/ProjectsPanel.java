@@ -5,6 +5,7 @@ import namdesktop.app.AppSettings;
 import namdesktop.lens.ProjectItemRow;
 import namdesktop.lens.ProjectsLens;
 import namdesktop.model.NamWorkspace;
+import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -39,6 +40,7 @@ public final class ProjectsPanel extends JPanel {
     private JToggleButton         readinessButton;
     private ProjectWorkbenchPanel board;
     private String                viewMode;
+    private boolean               showArchived = false;  // #407
 
     public ProjectsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -83,8 +85,10 @@ public final class ProjectsPanel extends JPanel {
             public Component getTableCellRendererComponent(JTable t, Object value,
                     boolean isSelected, boolean hasFocus, int row, int col) {
                 cell.setBackground(isSelected ? t.getSelectionBackground() : t.getBackground());
-                title.setForeground(isSelected ? t.getSelectionForeground() : t.getForeground());
-                title.setText(value != null ? value.toString() : "");
+                var archived = tableModel.getRow(row).status() == NodeStatus.ARCHIVED;
+                title.setForeground(isSelected ? t.getSelectionForeground()
+                        : archived ? Color.GRAY : t.getForeground());
+                title.setText(archived ? value + "  (archived)" : (value != null ? value.toString() : ""));
                 return cell;
             }
         });
@@ -118,6 +122,33 @@ public final class ProjectsPanel extends JPanel {
                         if (ed instanceof JTextField tf) { tf.selectAll(); tf.requestFocusInWindow(); }
                     }
                 }
+            }
+        });
+
+        table.addMouseListener(new MouseAdapter() {
+            @Override public void mousePressed(MouseEvent e)  { popup(e); }
+            @Override public void mouseReleased(MouseEvent e) { popup(e); }
+            private void popup(MouseEvent e) {
+                if (!e.isPopupTrigger()) return;
+                var row = table.rowAtPoint(e.getPoint());
+                if (row < 0) return;
+                table.setRowSelectionInterval(row, row);
+                var item = tableModel.getRow(row);
+                var menu = new JPopupMenu();
+                var open = new JMenuItem("Open");
+                open.addActionListener(a -> onOpenProject.accept(item.id()));
+                menu.add(open);
+                menu.addSeparator();
+                if (item.status() == NodeStatus.ARCHIVED) {
+                    var unarchive = new JMenuItem("Unarchive");
+                    unarchive.addActionListener(a -> archive(item.id(), false));
+                    menu.add(unarchive);
+                } else {
+                    var archive = new JMenuItem("Archive");
+                    archive.addActionListener(a -> archive(item.id(), true));
+                    menu.add(archive);
+                }
+                menu.show(table, e.getX(), e.getY());
             }
         });
 
@@ -157,6 +188,13 @@ public final class ProjectsPanel extends JPanel {
         toolbar.add(listButton);
         toolbar.add(columnsButton);
         toolbar.add(readinessButton);
+
+        toolbar.addSeparator();
+        var archivedButton = UiHelper.iconToggleButton("Archived",
+                new FlatSVGIcon(ProjectsPanel.class.getResource("/icons/archive.svg")).derive(16, 16));
+        archivedButton.setToolTipText("Show archived projects (right-click one to unarchive)");
+        archivedButton.addActionListener(e -> { showArchived = archivedButton.isSelected(); refreshResults(); });
+        toolbar.add(archivedButton);
 
         var settings = AppSettings.getInstance();
         viewMode = settings != null ? settings.getProjectsListView() : "LIST";
@@ -267,13 +305,24 @@ public final class ProjectsPanel extends JPanel {
         filterPanel.revalidate();
     }
 
+    private void archive(UUID projectId, boolean archive) {
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
+        try {
+            if (archive) service.archiveProject(projectId);
+            else         service.unarchiveProject(projectId);
+            refresh();
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void refreshResults() {
         var active = tagBoxes.stream()
                 .filter(JCheckBox::isSelected)
                 .map(JCheckBox::getText)
                 .toList();
         clearButton.setEnabled(!active.isEmpty());
-        var rows = new ProjectsLens().items(workspace, active);
+        var rows = new ProjectsLens().items(workspace, active, showArchived);
         tableModel.setRows(rows);
         if (active.isEmpty()) {
             matchLabel.setText("");

@@ -53,6 +53,29 @@ class ProjectsLensTest {
     }
 
     @Test
+    void items_excludesArchivedByDefault() {
+        addProject("Active", NodeStatus.BACKLOG);
+        addProject("Archived", NodeStatus.ARCHIVED);
+        var rows = lens.items(workspace);
+        assertEquals(1, rows.size());
+        assertEquals("Active", rows.get(0).title());
+    }
+
+    @Test
+    void items_includesArchivedWhenRequested() {
+        addProject("Active", NodeStatus.BACKLOG);
+        addProject("Archived", NodeStatus.ARCHIVED);
+        assertEquals(2, lens.items(workspace, java.util.List.of(), true).size());
+    }
+
+    private void addProject(String title, NodeStatus status) {
+        var n = new NamNode(UUID.randomUUID(), title);
+        n.setStatus(status);
+        workspace.getNodes().put(n.getId(), n);
+        workspace.getNode(workspace.getProjectsNodeId()).orElseThrow().getChildIds().add(n.getId());
+    }
+
+    @Test
     void items_preservesOrder() {
         var first  = new NamNode(UUID.randomUUID(), "First");
         var second = new NamNode(UUID.randomUUID(), "Second");
