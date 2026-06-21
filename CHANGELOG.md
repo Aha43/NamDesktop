@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `workspaces` migration now explicitly grants `select, insert, update, delete` to `authenticated` (and `service_role`). The original table migration relied on Supabase's default privileges to grant DML on new public tables; newer Supabase CLI local stacks no longer do this, so a fresh stack returned "permission denied for table workspaces" (42501) to PostgREST on every NamWeb query. RLS still scopes rows to the owner; the new migration is idempotent. Closes #388.
+
 ### Added
 
 - Projects view layouts: the top-level **Projects** view now offers the same Column and Readiness
@@ -15,6 +19,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
   heat-map card per project. The existing tag filter narrows all three, drilling into a project opens
   its full workbench, and the chosen layout is remembered across restarts. The board layouts reuse
   the workbench renderer in an embedded mode (no duplicate board code). Closes #383.
+- Focus mode in the Project Workbench: a deck (stack-2) button in the breadcrumb bar opens the
+  one-card-at-a-time focus deck over the current project's own open direct actions (excludes done
+  and sub-project actions), so you can work a single project end to end. Reuses the existing
+  `MoonCardPanel` — mark-done-and-advance, Esc/Space/←/→. Disabled when the project has no open
+  direct actions. Closes #385.
 - `workspaces` table is now published to the Supabase Realtime change feed (`alter publication supabase_realtime add table workspaces`), so clients can react live to row updates. Unblocks NamWeb's live-SPA updates (remote-MCP P3): subscribers use a signal-then-pull pattern, and RLS still scopes deliveries to the owning user. Closes #371.
 - Column view — collapse columns: each column header has a chevron that collapses it into a narrow titled strip, so the important columns get room. Collapsed columns are remembered per project across restarts. Closes #365.
 - Column view — rearrange columns: ◀ ▶ buttons on a column move it left/right; because a column is a sub-project, this reorders the sibling sub-projects in the model (also reflected in the Workbench view). The Unsorted column stays pinned first. Closes #366.
