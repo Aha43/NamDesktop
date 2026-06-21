@@ -406,7 +406,8 @@ public final class NextActionsPanel extends JPanel {
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
-        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject,
+                namdesktop.model.NodeStatus.BACKLOG, "Backlog");
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
         toolbar.setVisible(false);

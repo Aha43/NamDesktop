@@ -27,6 +27,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Re-triage in Focus mode: the focus deck now has a secondary button to flip a mis-filed card without
+  leaving focus — **Move to Backlog** in the Next Actions deck, **Move to Next** in the Backlog deck. Like
+  Done, the card changes status, drops out of the deck, and the next one advances. Omitted on the
+  status-mixed decks (Project Workbench focus and Saved Filter). Parity with NamWeb#277. Closes #400.
 - Theme-adaptive icon color: the SVG icons (pitch-black `currentColor` strokes) are now recolored to
   follow the theme — light gray in dark mode, near-black in light mode — so they're legible against the
   panels instead of nearly invisible black-on-dark-gray. Done via a global `FlatSVGIcon.ColorFilter` in
