@@ -71,8 +71,8 @@
   {"action":"assertHasResource", "args":{"title":"Book hotel",  "value":"Confirmation: ABC123"},                   "delayMs":20, "description":"Text resource should be present (type optional)"},
   {"action":"assertResourceCount","args":{"title":"Book hotel", "count":2},                                         "delayMs":20, "description":"Action should have exactly 2 resources"},
 
-  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Flights"},            "delayMs":50, "description":"Column-view setup: a sub-project = a column"},
-  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Accommodation"},      "delayMs":50, "description":"A second column"},
+  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Accommodation"},      "delayMs":50, "description":"Column-view setup: a sub-project = a column (added first)"},
+  {"action":"addSubProject",    "args":{"parent":"Trip to Rome","title":"Flights"},            "delayMs":50, "description":"A second column; adds prepend (#386) so Flights lands first"},
   {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Trip to Rome"},          "delayMs":20, "description":"Book hotel starts in the parent's Unsorted column"},
   {"action":"moveNode",         "args":{"title":"Book hotel","newParent":"Accommodation"},      "delayMs":50, "description":"Move Unsorted card into a column (reparent)"},
   {"action":"assertChildOf",    "args":{"title":"Book hotel","parent":"Accommodation"},         "delayMs":20, "description":"Now owned by the Accommodation column"},
@@ -81,9 +81,9 @@
 
   {"action":"addAction",        "args":{"project":"Flights","title":"Seat A"},                  "delayMs":50, "description":"DnD setup: cards to reorder within a column"},
   {"action":"addAction",        "args":{"project":"Flights","title":"Seat B"},                  "delayMs":50},
-  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Book hotel","Seat A","Seat B"]}, "delayMs":20, "description":"Initial within-column order"},
-  {"action":"moveNodeBefore",   "args":{"title":"Seat B","newParent":"Flights","before":"Book hotel"}, "delayMs":50, "description":"Within-column reorder (drag a card up) = moveNodeBefore, same parent"},
-  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Seat B","Book hotel","Seat A"]}, "delayMs":20, "description":"Reordered in place"},
+  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Seat B","Seat A","Book hotel"]}, "delayMs":20, "description":"Initial within-column order — adds prepend (#386), so newest cards lead and the reparented Book hotel trails"},
+  {"action":"moveNodeBefore",   "args":{"title":"Seat B","newParent":"Flights","before":"Book hotel"}, "delayMs":50, "description":"Within-column reorder = moveNodeBefore, same parent"},
+  {"action":"assertChildOrder", "args":{"parent":"Flights","order":["Seat A","Seat B","Book hotel"]}, "delayMs":20, "description":"Reordered in place — Seat B dropped just before Book hotel"},
   {"action":"addAction",        "args":{"project":"Accommodation","title":"Check in"},          "delayMs":50, "description":"A card in a sibling column to drop before"},
   {"action":"moveNodeBefore",   "args":{"title":"Seat A","newParent":"Accommodation","before":"Check in"}, "delayMs":50, "description":"Positioned cross-column drop = reparent + insert before anchor"},
   {"action":"assertChildOrder", "args":{"parent":"Accommodation","order":["Seat A","Check in"]}, "delayMs":20, "description":"Landed before the anchor in the target column"},

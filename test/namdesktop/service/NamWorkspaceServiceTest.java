@@ -60,13 +60,41 @@ class NamWorkspaceServiceTest {
                 () -> service.addChild(UUID.randomUUID(), "Child"));
     }
 
+    // --- prepend on add: newest lands first (#386) ---
+
+    @Test
+    void addChild_prependsSoNewestLandsFirst() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        var first    = service.addChild(parentId, "First");
+        var second   = service.addChild(parentId, "Second");
+        assertEquals(List.of(second, first),
+                workspace.getNode(parentId).orElseThrow().getChildIds());
+    }
+
+    @Test
+    void addSubProject_prependsSoNewestLandsFirst() throws IOException {
+        var parentId = service.addChild(workspace.getProjectsNodeId(), "Parent");
+        var s1 = service.addSubProject(parentId, "S1");
+        var s2 = service.addSubProject(parentId, "S2");
+        assertEquals(List.of(s2, s1),
+                workspace.getNode(parentId).orElseThrow().getChildIds());
+    }
+
+    @Test
+    void createNextAction_prependsSoNewestLandsFirst() throws IOException {
+        var a1 = service.createNextAction("A1");
+        var a2 = service.createNextAction("A2");
+        assertEquals(List.of(a2, a1),
+                workspace.getNode(workspace.getNextActionsNodeId()).orElseThrow().getChildIds());
+    }
+
     // --- insertChildBefore ---
 
     @Test
     void insertChildBefore_insertsAboveAnchor() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        var first    = service.addChild(parentId, "First");
-        var second   = service.addChild(parentId, "Second");
+        var second   = service.addChild(parentId, "Second"); // adds prepend, so add "Second" first…
+        var first    = service.addChild(parentId, "First");  // …then "First" to get order [first, second]
         var newId    = service.insertChildBefore(parentId, second, "New");
         var ids      = workspace.getNode(parentId).get().getChildIds();
         assertEquals(List.of(first, newId, second), ids);
@@ -113,29 +141,29 @@ class NamWorkspaceServiceTest {
     @Test
     void moveChildUp_isNoOpForFirstChild() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        var a = service.addChild(parentId, "A");
-        service.addChild(parentId, "B");
+        service.addChild(parentId, "A");
+        var b = service.addChild(parentId, "B"); // adds prepend → "B" is the first child
         var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
-        service.moveChildUp(parentId, a);
+        service.moveChildUp(parentId, b);
         assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());
     }
 
     @Test
     void moveChildDown_isNoOpForLastChild() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        service.addChild(parentId, "A");
-        var b = service.addChild(parentId, "B");
+        var a = service.addChild(parentId, "A"); // adds prepend → "A" is the last child
+        service.addChild(parentId, "B");
         var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
-        service.moveChildDown(parentId, b);
+        service.moveChildDown(parentId, a);
         assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());
     }
 
     @Test
     void moveChildUp_savesWorkspace() throws IOException {
-        service.addChild(rootId, "A");
-        var b = service.addChild(rootId, "B");
+        var a = service.addChild(rootId, "A"); // adds prepend → "A" is not the first child
+        service.addChild(rootId, "B");
         repository.saveCount = 0;
-        service.moveChildUp(rootId, b);
+        service.moveChildUp(rootId, a);
         assertEquals(1, repository.saveCount);
     }
 
@@ -153,9 +181,10 @@ class NamWorkspaceServiceTest {
     @Test
     void moveActionUp_skipsOverProjectSiblings() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        var sub      = service.addSubProject(parentId, "Sub");
-        var a        = service.addChild(parentId, "A");
+        // adds prepend, so add in reverse to build childIds [sub, a, b]
         var b        = service.addChild(parentId, "B");
+        var a        = service.addChild(parentId, "A");
+        var sub      = service.addSubProject(parentId, "Sub");
         // childIds: [sub, a, b] — moving a up should skip sub and stay put (already first action)
         service.moveActionUp(parentId, a);
         var ids = workspace.getNode(parentId).orElseThrow().getChildIds();
@@ -166,9 +195,10 @@ class NamWorkspaceServiceTest {
     @Test
     void moveActionDown_swapsWithNextActionSkippingProjects() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        var a        = service.addChild(parentId, "A");
-        var sub      = service.addSubProject(parentId, "Sub");
+        // adds prepend, so add in reverse to build childIds [a, sub, b]
         var b        = service.addChild(parentId, "B");
+        var sub      = service.addSubProject(parentId, "Sub");
+        var a        = service.addChild(parentId, "A");
         // childIds: [a, sub, b] — moving a down should skip sub and swap with b
         service.moveActionDown(parentId, a);
         var ids = workspace.getNode(parentId).orElseThrow().getChildIds();
@@ -178,9 +208,10 @@ class NamWorkspaceServiceTest {
     @Test
     void moveActionUp_isNoOpWhenFirstAmongActions() throws IOException {
         var parentId = service.addChild(rootId, "Parent");
-        var sub      = service.addSubProject(parentId, "Sub");
-        var a        = service.addChild(parentId, "A");
+        // adds prepend, so add in reverse to build childIds [sub, a, b]
         service.addChild(parentId, "B");
+        var a        = service.addChild(parentId, "A");
+        var sub      = service.addSubProject(parentId, "Sub");
         var before = List.copyOf(workspace.getNode(parentId).orElseThrow().getChildIds());
         service.moveActionUp(parentId, a);
         assertEquals(before, workspace.getNode(parentId).orElseThrow().getChildIds());

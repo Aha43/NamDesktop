@@ -40,7 +40,7 @@ public final class NamWorkspaceService {
         if (parentId.equals(workspace.getProjectsNodeId())) child.setProject(true);
         stampCreated(child);
         workspace.getNodes().put(child.getId(), child);
-        parent.getChildIds().add(child.getId());
+        parent.getChildIds().add(0, child.getId()); // newly added items land first (#386)
         repository.save(path, workspace);
         return child.getId();
     }
@@ -65,7 +65,7 @@ public final class NamWorkspaceService {
         child.setProject(true);
         stampCreated(child);
         workspace.getNodes().put(child.getId(), child);
-        parent.getChildIds().add(child.getId());
+        parent.getChildIds().add(0, child.getId()); // newly added items land first (#386)
         repository.save(path, workspace);
         return child.getId();
     }
@@ -215,7 +215,7 @@ public final class NamWorkspaceService {
         if (!tags.isEmpty()) node.setTags(new java.util.ArrayList<>(tags));
         stampCreated(node);
         workspace.getNodes().put(node.getId(), node);
-        workspace.getNode(actionsId).orElseThrow().getChildIds().add(node.getId());
+        workspace.getNode(actionsId).orElseThrow().getChildIds().add(0, node.getId()); // land first (#386)
         repository.save(path, workspace);
         return node.getId();
     }

@@ -562,7 +562,7 @@ public final class NamMcpServer {
             if (args.hasNonNull("blocked_by"))
                 node.setBlockedBy(parseUuids(args.path("blocked_by"), ws));
             ws.getNodes().put(node.getId(), node);
-            ws.getNode(ws.getInboxNodeId()).ifPresent(inbox -> inbox.getChildIds().add(node.getId()));
+            ws.getNode(ws.getInboxNodeId()).ifPresent(inbox -> inbox.getChildIds().add(0, node.getId())); // land first (#386)
         });
         return textResult("Added \"" + title + "\" to Inbox.", false);
     }
@@ -585,7 +585,7 @@ public final class NamMcpServer {
             if (args.hasNonNull("blocked_by"))
                 node.setBlockedBy(parseUuids(args.path("blocked_by"), ws));
             ws.getNodes().put(node.getId(), node);
-            ws.getNode(ws.getNextActionsNodeId()).ifPresent(next -> next.getChildIds().add(node.getId()));
+            ws.getNode(ws.getNextActionsNodeId()).ifPresent(next -> next.getChildIds().add(0, node.getId())); // land first (#386)
         });
         return textResult("Added \"" + title + "\" to Next Actions.", false);
     }
@@ -617,7 +617,7 @@ public final class NamMcpServer {
                 node.setTags(tagList);
             }
             ws.getNodes().put(newId, node);
-            ws.getNode(parentId).ifPresent(p -> p.getChildIds().add(newId));
+            ws.getNode(parentId).ifPresent(p -> p.getChildIds().add(0, newId)); // land first (#386)
             return null;
         });
         if (result != null) return textResult(result, true);
@@ -658,7 +658,7 @@ public final class NamMcpServer {
             }
             if (args.hasNonNull("blocked_by")) node.setBlockedBy(parseUuids(args.path("blocked_by"), w));
             w.getNodes().put(newId, node);
-            w.getNode(finalProjectId).ifPresent(p -> p.getChildIds().add(newId));
+            w.getNode(finalProjectId).ifPresent(p -> p.getChildIds().add(0, newId)); // land first (#386)
         });
         return textResult("Added action \"" + title + "\" with id " + newId + " to project.", false);
     }
