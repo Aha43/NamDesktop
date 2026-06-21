@@ -1,6 +1,7 @@
 package namdesktop.ui;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import namdesktop.model.NodeStatus;
 import namdesktop.service.NamWorkspaceService;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ public final class MoonCardPanel extends JPanel {
     private final NamWorkspaceService  service;
     private final Runnable             onExit;
     private final Consumer<UUID>       onOpenProject;
+    private final NodeStatus           flipTarget; // re-triage target (#400); null = no flip button
     private       int                  index = 0;
 
     private final JLabel    counterLabel;
@@ -32,14 +34,26 @@ public final class MoonCardPanel extends JPanel {
     private final JButton   prevButton;
     private final JButton   nextButton;
     private final JButton   doneButton;
+    private final JButton   flipButton; // null when no re-triage target
 
     public MoonCardPanel(List<Card> cards, NamWorkspaceService service, Runnable onExit,
                          Consumer<UUID> onOpenProject) {
+        this(cards, service, onExit, onOpenProject, null, null);
+    }
+
+    /**
+     * @param flipTarget optional re-triage status (#400) — when set with {@code flipLabel}, a secondary
+     *        "Move to {label}" button flips the card's status and advances, like Done. Pass null for
+     *        status-mixed decks (project-scoped / saved-view focus) where the target is ambiguous.
+     */
+    public MoonCardPanel(List<Card> cards, NamWorkspaceService service, Runnable onExit,
+                         Consumer<UUID> onOpenProject, NodeStatus flipTarget, String flipLabel) {
         super(new BorderLayout(0, 0));
         this.cards         = new ArrayList<>(cards);
         this.service       = service;
         this.onExit        = onExit;
         this.onOpenProject = onOpenProject != null ? onOpenProject : id -> {};
+        this.flipTarget    = flipTarget;
 
         counterLabel = new JLabel("", SwingConstants.CENTER);
         counterLabel.setFont(counterLabel.getFont().deriveFont(Font.PLAIN, 12f));
@@ -95,9 +109,18 @@ public final class MoonCardPanel extends JPanel {
         nextButton.addActionListener(e -> navigate(1));
         doneButton.addActionListener(e -> markDoneAndAdvance());
 
+        if (flipTarget != null && flipLabel != null) {
+            flipButton = new JButton("Move to " + flipLabel);
+            flipButton.setToolTipText("Move this card to " + flipLabel + " and advance");
+            flipButton.addActionListener(e -> flipAndAdvance());
+        } else {
+            flipButton = null;
+        }
+
         var footer = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 8));
         footer.add(prevButton);
         footer.add(doneButton);
+        if (flipButton != null) footer.add(flipButton);
         footer.add(nextButton);
 
         add(topBar,        BorderLayout.NORTH);
@@ -140,6 +163,7 @@ public final class MoonCardPanel extends JPanel {
             prevButton.setEnabled(false);
             nextButton.setEnabled(false);
             doneButton.setEnabled(false);
+            if (flipButton != null) flipButton.setEnabled(false);
             return;
         }
         var card = cards.get(index);
@@ -150,6 +174,7 @@ public final class MoonCardPanel extends JPanel {
         prevButton.setEnabled(cards.size() > 1);
         nextButton.setEnabled(cards.size() > 1);
         doneButton.setEnabled(true);
+        if (flipButton != null) flipButton.setEnabled(true);
     }
 
     /** Rebuilds the breadcrumb as clickable segment links separated by {@code " > "}. */
@@ -199,6 +224,26 @@ public final class MoonCardPanel extends JPanel {
         var card = cards.get(index);
         try {
             service.markDone(card.id());
+        } catch (java.io.IOException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+        cards.remove(index);
+        if (index >= cards.size()) index = Math.max(0, cards.size() - 1);
+        showCard();
+    }
+
+    /** Re-triage the current card to {@link #flipTarget} and advance, mirroring {@link #markDoneAndAdvance}. */
+    private void flipAndAdvance() {
+        if (cards.isEmpty() || flipTarget == null) return;
+        if (!MonitoringModeGuard.checkAndConfirm(this)) return;
+        var card = cards.get(index);
+        try {
+            switch (flipTarget) {
+                case NEXT    -> service.markNext(card.id());
+                case BACKLOG -> service.markBacklog(card.id());
+                default      -> { return; }
+            }
         } catch (java.io.IOException ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             return;

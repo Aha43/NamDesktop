@@ -472,7 +472,8 @@ public final class BacklogPanel extends JPanel {
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
-        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject,
+                namdesktop.model.NodeStatus.NEXT, "Next");
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
         toolbar.setVisible(false);
