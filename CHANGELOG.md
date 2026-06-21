@@ -6,6 +6,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+
+- `workspaces` migration now explicitly grants `select, insert, update, delete` to `authenticated` (and `service_role`). The original table migration relied on Supabase's default privileges to grant DML on new public tables; newer Supabase CLI local stacks no longer do this, so a fresh stack returned "permission denied for table workspaces" (42501) to PostgREST on every NamWeb query. RLS still scopes rows to the owner; the new migration is idempotent. Closes #388.
+
 ### Added
 
 - Focus mode in the Project Workbench: a deck (stack-2) button in the breadcrumb bar opens the
