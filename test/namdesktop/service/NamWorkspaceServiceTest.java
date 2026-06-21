@@ -311,6 +311,56 @@ class NamWorkspaceServiceTest {
         assertEquals(0, repository.saveCount);
     }
 
+    // --- setStatusForAll / addTagToAll (bulk, #402) ---
+
+    @Test
+    void setStatusForAll_setsStatusOnAllInOneSave() throws IOException {
+        var a = service.createNextAction("A");
+        var b = service.createNextAction("B");
+        repository.saveCount = 0;
+        service.setStatusForAll(List.of(a, b), NodeStatus.BACKLOG);
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(a).orElseThrow().getStatus());
+        assertEquals(NodeStatus.BACKLOG, workspace.getNode(b).orElseThrow().getStatus());
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void setStatusForAll_skipsUnknownIds_noSaveWhenNothingChanged() throws IOException {
+        repository.saveCount = 0;
+        service.setStatusForAll(List.of(UUID.randomUUID()), NodeStatus.DONE);
+        assertEquals(0, repository.saveCount);
+    }
+
+    @Test
+    void addTagToAll_addsNormalisedTagOnceInOneSave() throws IOException {
+        var a = service.createNextAction("A");
+        var b = service.createNextAction("B");
+        repository.saveCount = 0;
+        service.addTagToAll(List.of(a, b), "  @Phone ");
+        assertTrue(workspace.getNode(a).orElseThrow().getTags().contains("@phone"));
+        assertTrue(workspace.getNode(b).orElseThrow().getTags().contains("@phone"));
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void addTagToAll_idempotent_noSaveWhenAllAlreadyTagged() throws IOException {
+        var a = service.createNextAction("A");
+        service.addTagToAll(List.of(a), "@phone");
+        repository.saveCount = 0;
+        service.addTagToAll(List.of(a), "@phone");
+        assertEquals(1, workspace.getNode(a).orElseThrow().getTags().stream().filter("@phone"::equals).count());
+        assertEquals(0, repository.saveCount);
+    }
+
+    @Test
+    void addTagToAll_blankTag_noOp() throws IOException {
+        var a = service.createNextAction("A");
+        repository.saveCount = 0;
+        service.addTagToAll(List.of(a), "   ");
+        assertTrue(workspace.getNode(a).orElseThrow().getTags().isEmpty());
+        assertEquals(0, repository.saveCount);
+    }
+
     // --- addInboxItem ---
 
     @Test

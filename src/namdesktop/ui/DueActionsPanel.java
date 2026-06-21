@@ -112,6 +112,14 @@ public final class DueActionsPanel extends JPanel {
         table.getColumnModel().getColumn(3).setMaxWidth(60);
         UiHelper.fillTableColumn(table, 1);
 
+        // Bulk-select checkbox column — blank on section-header rows (#402).
+        var dueBoolRenderer = table.getDefaultRenderer(Boolean.class);
+        table.getColumnModel().getColumn(DueTableModel.CHECK_COL).setCellRenderer((t, value, sel, foc, row, col) ->
+                tableModel.getRow(row).header() ? emptyCell(t)
+                        : dueBoolRenderer.getTableCellRendererComponent(t, value, sel, foc, row, col));
+        add(BulkSelect.install(table, DueTableModel.CHECK_COL, tableModel.check,
+                tableModel::selectableCount, tableModel::rowIds, service, this::refresh), BorderLayout.SOUTH);
+
         table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .put(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
         table.getActionMap().put("openDialog", new javax.swing.AbstractAction() {
@@ -232,22 +240,36 @@ public final class DueActionsPanel extends JPanel {
 
     private final class DueTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Due"};
+        private static final String[] COLUMNS = {"Action", "Project", "Tags", "Due", ""};
+        static final int CHECK_COL = 4;
         private List<FlatRow> rows = List.of();
+        final CheckColumn check = new CheckColumn();
 
-        void setRows(List<FlatRow> rows) { this.rows = rows; fireTableDataChanged(); }
+        void setRows(List<FlatRow> rows) {
+            this.rows = rows;
+            check.retain(rowIds());
+            fireTableDataChanged();
+        }
         FlatRow getRow(int i) { return rows.get(i); }
+
+        /** Ids of the selectable (non-header) rows. */
+        List<UUID> rowIds() {
+            return rows.stream().filter(r -> !r.header()).map(r -> r.item().id()).toList();
+        }
+        int selectableCount() { return (int) rows.stream().filter(r -> !r.header()).count(); }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
         @Override public boolean isCellEditable(int row, int col) {
-            return col == 0 && !rows.get(row).header();
+            return (col == 0 || col == CHECK_COL) && !rows.get(row).header();
         }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col != 0 || row >= rows.size() || rows.get(row).header()) return;
+            if (row >= rows.size() || rows.get(row).header()) return;
+            if (col == CHECK_COL) { check.set(rows.get(row).item().id(), Boolean.TRUE.equals(value)); return; }
+            if (col != 0) return;
             var newTitle = value.toString().strip();
             var item = rows.get(row).item();
             if (newTitle.isEmpty() || newTitle.equals(item.title())) return;
@@ -272,6 +294,7 @@ public final class DueActionsPanel extends JPanel {
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
                 case 3 -> r.dueAt();
+                case CHECK_COL -> check.isChecked(r.id());
                 default -> null;
             };
         }
@@ -280,6 +303,7 @@ public final class DueActionsPanel extends JPanel {
         public Class<?> getColumnClass(int col) {
             if (col == 2) return String[].class;
             if (col == 3) return LocalDate.class;
+            if (col == CHECK_COL) return Boolean.class;
             return String.class;
         }
     }

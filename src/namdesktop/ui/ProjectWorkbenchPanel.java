@@ -40,6 +40,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       UUID              parentProjectId;
     private       UUID              pendingSelection;
     private final Set<UUID>         collapsedSections = new HashSet<>();
+    private final CheckColumn       check             = new CheckColumn();  // bulk-select (#411)
+    private       BulkActionBar     bulkBar;
     private final ColumnTransferHandler columnDnD     = new ColumnTransferHandler();
     private       boolean           accordionMode     = false;
     private       boolean           mcrMode           = false;
@@ -213,6 +215,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         parentProjectId  = workspace.getParent(projectId).map(n -> n.getId()).orElse(null);
         currentProjectId = projectId;
         collapsedSections.clear();
+        check.clear();
         applyView(projectId);
         rebuild();
     }
@@ -253,9 +256,26 @@ public final class ProjectWorkbenchPanel extends JPanel {
             add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
         if (columnMode)   add(new JScrollPane(buildColumnView(projection)), BorderLayout.CENTER);
         else if (mcrMode) add(new JScrollPane(buildMcrGrid(projection)),    BorderLayout.CENTER);
-        else              add(new JScrollPane(buildContent(projection)),    BorderLayout.CENTER);
+        else {
+            add(new JScrollPane(buildContent(projection)), BorderLayout.CENTER);
+            installBulkBar(projection);  // checkbox bulk-select on the stacked workbench (#411)
+        }
         revalidate();
         repaint();
+    }
+
+    /** Adds the bulk-action bar to the stacked workbench and prunes the selection to visible actions. */
+    private void installBulkBar(WorkbenchProjection projection) {
+        if (bulkBar == null) {
+            bulkBar = new BulkActionBar(service, check::ids, () -> { check.clear(); rebuild(); });
+            check.setOnChange(() -> { if (bulkBar != null) bulkBar.setCount(check.count()); });
+        }
+        var visible = new java.util.ArrayList<UUID>();
+        projection.directActions().forEach(a -> visible.add(a.getId()));
+        projection.childSections().forEach(s -> s.directActions().forEach(a -> visible.add(a.getId())));
+        check.retain(visible);
+        add(bulkBar, BorderLayout.SOUTH);
+        bulkBar.setCount(check.count());
     }
 
     // --- breadcrumb ---
@@ -778,6 +798,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private static final int BADGE_WIDTH = 36;
+    private static final int CHECK_WIDTH = 22; // leading bulk-select checkbox zone (#411)
 
     private JList<NamNode> buildActionList(List<NamNode> actions, UUID targetProjectId) {
         var model = new DefaultListModel<NamNode>();
@@ -789,7 +810,8 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 var idx = locationToIndex(e.getPoint());
                 if (idx < 0) return null;
                 var bounds = getCellBounds(idx, idx);
-                if (bounds != null && e.getX() < bounds.x + BADGE_WIDTH) return "Set status";
+                if (bounds != null && e.getX() < bounds.x + CHECK_WIDTH) return "Select";
+                if (bounds != null && e.getX() < bounds.x + CHECK_WIDTH + BADGE_WIDTH) return "Set status";
                 if (bounds != null && e.getX() >= bounds.x + bounds.width - PENCIL_WIDTH)
                     return "Edit: " + model.getElementAt(idx).getTitle();
                 var desc = model.getElementAt(idx).getDescription();
@@ -797,7 +819,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 return desc.length() <= 100 ? desc : desc.substring(0, 100) + "…";
             }
         };
-        list.setCellRenderer(new ActionCellRenderer());
+        list.setCellRenderer(new ActionCellRenderer(check));
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setBorder(BorderFactory.createEmptyBorder(2, 4, 2, 4));
 
@@ -812,8 +834,16 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 var idx = list.locationToIndex(e.getPoint());
                 if (idx < 0) return;
                 var bounds = list.getCellBounds(idx, idx);
+                // Checkbox zone → toggle bulk selection
+                if (bounds != null && e.getX() < bounds.x + CHECK_WIDTH) {
+                    var n = model.getElementAt(idx);
+                    check.set(n.getId(), !check.isChecked(n.getId()));
+                    list.repaint(bounds);
+                    return;
+                }
                 // Badge zone → status popup
-                if (bounds != null && e.getClickCount() == 1 && e.getX() < bounds.x + BADGE_WIDTH) {
+                if (bounds != null && e.getClickCount() == 1
+                        && e.getX() < bounds.x + CHECK_WIDTH + BADGE_WIDTH) {
                     showStatusPopup(list, model.getElementAt(idx), e.getX(), e.getY());
                     return;
                 }
@@ -833,7 +863,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
                 }
                 // Single-click on already-selected title → inline rename
                 if (e.getClickCount() == 1 && idx == lastSelected[0] && bounds != null
-                        && e.getX() >= bounds.x + BADGE_WIDTH
+                        && e.getX() >= bounds.x + CHECK_WIDTH + BADGE_WIDTH
                         && AppSettings.getInstance().isClickToRename()) {
                     startInlineRename(list, model, idx);
                 }
@@ -915,7 +945,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (bounds == null) return;
 
         var field = new JTextField(node.getTitle());
-        int fx = bounds.x + BADGE_WIDTH + 4;
+        int fx = bounds.x + CHECK_WIDTH + BADGE_WIDTH + 4;
         field.setBounds(fx, bounds.y + 1, bounds.width - fx - 2, bounds.height - 2);
         field.selectAll();
         list.setLayout(null);
@@ -1001,6 +1031,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         parentProjectId  = currentProjectId;
         currentProjectId = projectId;
         collapsedSections.clear();
+        check.clear();         // selection doesn't carry across projects
         applyView(projectId);  // each project reopens in its own remembered view this session
         rebuild();
     }
@@ -1593,13 +1624,21 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private static final class ActionCellRenderer implements ListCellRenderer<NamNode> {
         private final JPanel panel     = new JPanel(new BorderLayout(6, 0));
+        private final JCheckBox checkBox = new JCheckBox();
         private final JLabel badge     = new JLabel("", SwingConstants.CENTER);
         private final JLabel label     = new JLabel();
         private final JLabel clip      = new JLabel();
         private final JLabel pencil    = new JLabel(WB_PENCIL_ICON);
+        private final JPanel west      = new JPanel(new BorderLayout());
         private final JPanel east      = new JPanel(new BorderLayout());
+        private final CheckColumn check;
 
-        ActionCellRenderer() {
+        ActionCellRenderer(CheckColumn check) {
+            this.check = check;
+            checkBox.setOpaque(false);
+            checkBox.setBorder(null);
+            checkBox.setPreferredSize(new Dimension(CHECK_WIDTH, 0));
+            checkBox.setHorizontalAlignment(SwingConstants.CENTER);
             badge.setOpaque(true);
             badge.setForeground(Color.WHITE);
             badge.setFont(badge.getFont().deriveFont(Font.BOLD, 10f));
@@ -1614,7 +1653,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
             east.setOpaque(false);
             east.add(clip,   BorderLayout.CENTER);
             east.add(pencil, BorderLayout.EAST);
-            panel.add(badge,  BorderLayout.WEST);
+            west.setOpaque(false);
+            west.add(checkBox, BorderLayout.WEST);
+            west.add(badge,    BorderLayout.CENTER);
+            panel.add(west,   BorderLayout.WEST);
             panel.add(label,  BorderLayout.CENTER);
             panel.add(east,   BorderLayout.EAST);
             panel.setBorder(BorderFactory.createEmptyBorder(1, 2, 1, 2));
@@ -1633,7 +1675,10 @@ public final class ProjectWorkbenchPanel extends JPanel {
             var bg = isSelected ? list.getSelectionBackground() : list.getBackground();
             panel.setBackground(bg);
             east.setBackground(bg);
+            west.setBackground(bg);
             badge.setBackground(bg);
+            checkBox.setSelected(check.isChecked(node.getId()));
+            checkBox.setBackground(bg);
             badge.setForeground(isSelected ? list.getSelectionForeground() : switch (status) {
                 case NEXT    -> BADGE_NEXT;
                 case BACKLOG -> BADGE_BACKLOG;

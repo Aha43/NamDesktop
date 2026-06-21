@@ -179,6 +179,9 @@ public final class ContextPanel extends JPanel {
         tableCard = UiHelper.tableCard(new JScrollPane(table), "No actions match the current filter.");
         add(northPanel,  BorderLayout.NORTH);
         add(tableCard,   BorderLayout.CENTER);
+
+        add(BulkSelect.install(table, ContextTableModel.CHECK_COL, tableModel.check,
+                tableModel::getRowCount, tableModel::rowIds, service, this::refreshResults), BorderLayout.SOUTH);
     }
 
     private void showStatusPopup(int row, UUID id, NodeStatus current, Component comp, int x, int y) {
@@ -296,23 +299,28 @@ public final class ContextPanel extends JPanel {
 
     private final class ContextTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Due", "Tags", ""};
+        private static final String[] COLUMNS = {"Action", "Project", "Due", "Tags", "", ""};
+        static final int CHECK_COL = 5;
         private List<ContextItemRow> rows = List.of();
+        final CheckColumn check = new CheckColumn();
 
         void setRows(List<ContextItemRow> rows) {
             this.rows = rows;
+            check.retain(rows.stream().map(ContextItemRow::id).toList());
             fireTableDataChanged();
         }
 
         ContextItemRow getRow(int index) { return rows.get(index); }
+        List<UUID> rowIds() { return rows.stream().map(ContextItemRow::id).toList(); }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
-        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0 || col == CHECK_COL; }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
+            if (col == CHECK_COL) { if (row < rows.size()) check.set(rows.get(row).id(), Boolean.TRUE.equals(value)); return; }
             if (col != 0 || row >= rows.size()) return;
             var newTitle = value.toString().strip();
             var r = rows.get(row);
@@ -337,6 +345,7 @@ public final class ContextPanel extends JPanel {
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
                 case 4 -> r.hasResources();
+                case CHECK_COL -> check.isChecked(r.id());
                 default -> null;
             };
         }
@@ -345,7 +354,7 @@ public final class ContextPanel extends JPanel {
         public Class<?> getColumnClass(int col) {
             if (col == 2) return java.time.LocalDate.class;
             if (col == 3) return String[].class;
-            if (col == 4) return Boolean.class;
+            if (col == 4 || col == CHECK_COL) return Boolean.class;
             return String.class;
         }
     }

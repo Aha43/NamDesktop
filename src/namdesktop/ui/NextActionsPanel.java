@@ -272,6 +272,9 @@ public final class NextActionsPanel extends JPanel {
         deckWrapper.add(scrollPane,                                                         "table");
         deckWrapper.add(UiHelper.emptyStateLabel("No next actions. Open the Inbox to process items, or add one directly."), "empty");
         add(deckWrapper, BorderLayout.CENTER);
+
+        add(BulkSelect.install(table, NextActionsTableModel.CHECK_COL, tableModel.check,
+                tableModel::getRowCount, tableModel::rowIds, service, this::refresh), BorderLayout.SOUTH);
     }
 
     public void applyColumnVisibility(boolean show) {
@@ -424,24 +427,30 @@ public final class NextActionsPanel extends JPanel {
 
     private final class NextActionsTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project", "Age", "Due", "Tags", "Status", ""};
+        private static final String[] COLUMNS = {"Action", "Project", "Age", "Due", "Tags", "Status", "", ""};
+        static final int CHECK_COL = 7;
         private List<NextActionItemRow> rows = List.of();
+        final CheckColumn check = new CheckColumn();
 
         void setRows(List<NextActionItemRow> rows) {
             this.rows = rows;
+            check.retain(rows.stream().map(NextActionItemRow::id).toList());
             fireTableDataChanged();
         }
 
         NextActionItemRow getRow(int index) { return rows.get(index); }
+        List<UUID> rowIds() { return rows.stream().map(NextActionItemRow::id).toList(); }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
-        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0 || col == CHECK_COL; }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
-            if (col != 0 || row >= rows.size()) return;
+            if (row >= rows.size()) return;
+            if (col == CHECK_COL) { check.set(rows.get(row).id(), Boolean.TRUE.equals(value)); return; }
+            if (col != 0) return;
             var newTitle = value.toString().strip();
             var r = rows.get(row);
             if (newTitle.isEmpty() || newTitle.equals(r.title())) return;
@@ -468,6 +477,7 @@ public final class NextActionsPanel extends JPanel {
                         String.join(", ", r.inheritedTags())};
                 case 5 -> r.status();
                 case 6 -> r.hasResources();
+                case CHECK_COL -> check.isChecked(r.id());
                 default -> null;
             };
         }
@@ -477,7 +487,7 @@ public final class NextActionsPanel extends JPanel {
             if (col == 2) return Long.class;
             if (col == 3) return java.time.LocalDate.class;
             if (col == 4) return String[].class;
-            if (col == 6) return Boolean.class;
+            if (col == 6 || col == CHECK_COL) return Boolean.class;
             return String.class;
         }
     }
