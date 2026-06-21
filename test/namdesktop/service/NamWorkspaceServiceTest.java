@@ -275,6 +275,42 @@ class NamWorkspaceServiceTest {
                 () -> service.deleteLeaf(rootId));
     }
 
+    // --- deleteLeaves (bulk) ---
+
+    @Test
+    void deleteLeaves_removesAllLeavesInOneSave() throws IOException {
+        var a = service.addChild(rootId, "A");
+        var b = service.addChild(rootId, "B");
+        var c = service.addChild(rootId, "C");
+        repository.saveCount = 0;
+        var skipped = service.deleteLeaves(List.of(a, b, c));
+        assertTrue(skipped.isEmpty());
+        assertTrue(workspace.getNode(a).isEmpty());
+        assertTrue(workspace.getNode(b).isEmpty());
+        assertTrue(workspace.getNode(c).isEmpty());
+        assertEquals(1, repository.saveCount);
+    }
+
+    @Test
+    void deleteLeaves_skipsAndReturnsNodesWithChildren() throws IOException {
+        var parentId = service.addChild(rootId, "Parent");
+        service.addChild(parentId, "Child");        // makes Parent a non-leaf
+        var leaf     = service.addChild(rootId, "Leaf");
+        var skipped  = service.deleteLeaves(List.of(parentId, leaf));
+        assertEquals(List.of(parentId), skipped);
+        assertTrue(workspace.getNode(parentId).isPresent());
+        assertTrue(workspace.getNode(leaf).isEmpty());
+    }
+
+    @Test
+    void deleteLeaves_unknownIdSkipped_noSaveWhenNothingRemoved() throws IOException {
+        repository.saveCount = 0;
+        var unknown = UUID.randomUUID();
+        var skipped = service.deleteLeaves(List.of(unknown));
+        assertEquals(List.of(unknown), skipped);
+        assertEquals(0, repository.saveCount);
+    }
+
     // --- addInboxItem ---
 
     @Test

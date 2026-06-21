@@ -46,7 +46,7 @@ public final class InboxPanel extends JPanel {
                 return c;
             }
         };
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         table.setFillsViewportHeight(true);
         table.getColumnModel().getColumn(1).setCellRenderer(UiHelper.ageRenderer(true));
         table.getColumnModel().getColumn(1).setPreferredWidth(50);
@@ -69,7 +69,8 @@ public final class InboxPanel extends JPanel {
         table.getSelectionModel().addListSelectionListener(ev -> {
             if (ev.getValueIsAdjusting()) return;
             var row = table.getSelectedRow();
-            processButton.setEnabled(row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
+            processButton.setEnabled(table.getSelectedRowCount() == 1
+                    && row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
         });
 
         var toolbar = new JToolBar();
@@ -142,7 +143,18 @@ public final class InboxPanel extends JPanel {
     private void showMenu(MouseEvent e) {
         var row = table.rowAtPoint(e.getPoint());
         if (row < 0) return;
-        table.setRowSelectionInterval(row, row);
+        // Right-clicking outside the current selection selects just that row; right-clicking inside
+        // a multi-selection keeps it, so "Delete selected" acts on what's highlighted.
+        if (!table.isRowSelected(row)) table.setRowSelectionInterval(row, row);
+
+        var menu = new JPopupMenu();
+        if (table.getSelectedRowCount() > 1) {
+            var deleteSelected = new JMenuItem("Delete selected (" + table.getSelectedRowCount() + ")");
+            deleteSelected.addActionListener(ev -> deleteSelected());
+            menu.add(deleteSelected);
+            menu.show(table, e.getX(), e.getY());
+            return;
+        }
 
         var selected = tableModel.getRow(row);
         var processItem  = new JMenuItem("Process…");
@@ -159,13 +171,33 @@ public final class InboxPanel extends JPanel {
         markDoneItem.addActionListener(ev -> markDone(selected));
         deleteItem.addActionListener(ev   -> delete(selected));
 
-        var menu = new JPopupMenu();
         menu.add(processItem);
         menu.add(renameItem);
         menu.add(markDoneItem);
         menu.addSeparator();
         menu.add(deleteItem);
         menu.show(table, e.getX(), e.getY());
+    }
+
+    private void deleteSelected() {
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
+        // Resolve ids before deleting — row indices shift as the model changes.
+        var ids = java.util.Arrays.stream(table.getSelectedRows())
+                .mapToObj(r -> tableModel.getRow(r).id())
+                .toList();
+        if (ids.isEmpty()) return;
+        var confirm = JOptionPane.showConfirmDialog(parent(),
+                "Delete " + ids.size() + " items?", "Delete",
+                JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm != JOptionPane.OK_OPTION) return;
+        try {
+            var skipped = service.deleteLeaves(ids);
+            refresh();
+            if (!skipped.isEmpty())
+                showError(skipped.size() + " item(s) had sub-items and were not deleted.");
+        } catch (IOException e) {
+            showError("Failed to save: " + e.getMessage());
+        }
     }
 
     private void process(InboxItemRow row) {
