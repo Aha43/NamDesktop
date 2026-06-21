@@ -98,6 +98,20 @@ public final class BlockedPanel extends JPanel {
         table.getColumnModel().getColumn(0).setPreferredWidth(250);
         UiHelper.fillTableColumn(table, 1);
 
+        // Bulk-select checkbox column — blank on prerequisite (header) rows (#402).
+        var blkBoolRenderer = table.getDefaultRenderer(Boolean.class);
+        table.getColumnModel().getColumn(BlockedTableModel.CHECK_COL).setCellRenderer((t, value, sel, foc, row, col) -> {
+            if (tableModel.getRow(row).header()) {
+                var l = new JLabel();
+                l.setOpaque(true);
+                l.setBackground(sel ? t.getSelectionBackground() : t.getBackground());
+                return l;
+            }
+            return blkBoolRenderer.getTableCellRendererComponent(t, value, sel, foc, row, col);
+        });
+        add(BulkSelect.install(table, BlockedTableModel.CHECK_COL, tableModel.check,
+                tableModel::selectableCount, tableModel::rowIds, service, this::refresh), BorderLayout.SOUTH);
+
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -227,16 +241,36 @@ public final class BlockedPanel extends JPanel {
 
     private final class BlockedTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Action", "Project"};
+        private static final String[] COLUMNS = {"Action", "Project", ""};
+        static final int CHECK_COL = 2;
         private List<FlatRow> rows = List.of();
+        final CheckColumn check = new CheckColumn();
 
-        void setRows(List<FlatRow> rows) { this.rows = rows; fireTableDataChanged(); }
+        void setRows(List<FlatRow> rows) {
+            this.rows = rows;
+            check.retain(rowIds());
+            fireTableDataChanged();
+        }
         FlatRow getRow(int i) { return rows.get(i); }
+
+        /** Ids of the selectable (non-header) rows. */
+        List<UUID> rowIds() {
+            return rows.stream().filter(r -> !r.header()).map(r -> r.node().getId()).toList();
+        }
+        int selectableCount() { return (int) rows.stream().filter(r -> !r.header()).count(); }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
-        @Override public boolean isCellEditable(int row, int col) { return false; }
+        @Override public boolean isCellEditable(int row, int col) {
+            return col == CHECK_COL && !rows.get(row).header();
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != CHECK_COL || row >= rows.size() || rows.get(row).header()) return;
+            check.set(rows.get(row).node().getId(), Boolean.TRUE.equals(value));
+        }
 
         @Override
         public Object getValueAt(int row, int col) {
@@ -244,8 +278,14 @@ public final class BlockedPanel extends JPanel {
             return switch (col) {
                 case 0 -> r.node().getTitle();
                 case 1 -> r.header() ? "" : (r.projectPath() != null ? r.projectPath() : "");
+                case CHECK_COL -> r.header() ? null : check.isChecked(r.node().getId());
                 default -> null;
             };
+        }
+
+        @Override
+        public Class<?> getColumnClass(int col) {
+            return col == CHECK_COL ? Boolean.class : String.class;
         }
     }
 }

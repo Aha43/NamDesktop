@@ -263,6 +263,35 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    /** Sets the same status on several nodes in a single save. Unknown ids are skipped. (#402) */
+    public void setStatusForAll(List<UUID> nodeIds, NodeStatus status) throws IOException {
+        var changed = false;
+        for (var id : nodeIds) {
+            var node = workspace.getNode(id).orElse(null);
+            if (node == null) continue;
+            stampStatus(node, status);
+            changed = true;
+        }
+        if (changed) repository.save(path, workspace);
+    }
+
+    /** Adds {@code tag} (normalised) to several nodes, idempotent per node, in a single save. (#402) */
+    public void addTagToAll(List<UUID> nodeIds, String tag) throws IOException {
+        var normalised = tag != null ? tag.strip().toLowerCase() : "";
+        if (normalised.isEmpty()) return;
+        var changed = false;
+        for (var id : nodeIds) {
+            var node = workspace.getNode(id).orElse(null);
+            if (node == null) continue;
+            if (!node.getTags().contains(normalised)) {
+                node.getTags().add(normalised);
+                node.setUpdatedAt(LocalDateTime.now());
+                changed = true;
+            }
+        }
+        if (changed) repository.save(path, workspace);
+    }
+
     public void updateTags(UUID nodeId, List<String> tags) throws IOException {
         var node = require(nodeId);
         node.setTags(new java.util.ArrayList<>(tags));

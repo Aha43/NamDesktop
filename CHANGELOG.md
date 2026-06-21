@@ -27,6 +27,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Bulk actions on selected actions: a checkbox on each action row (with a header select-all on the
+  tables) across the list panels — Next Actions, Backlog, Done, Context, Saved Views, Due, Blocked —
+  **and the Project Workbench** (ticks shared across a project's own actions and its sub-projects, for
+  tidying up a project). A contextual bar appears when ≥1 action is checked, offering **Set status**
+  (Next/Backlog/Done), **Add tag**, and **Delete** applied to every checked action in one save. Backed
+  by new `setStatusForAll` / `addTagToAll` service primitives (reusing `deleteLeaves`) and a shared
+  `CheckColumn` / `BulkActionBar` / `BulkSelect` core. Parity with NamWeb (Aha43/NamWeb#259, #249,
+  #250). Closes #402, #411.
 - Copy a project summary as Markdown: a copy button in the Project Workbench breadcrumb bar opens a
   summary dialog — a live preview of the project as a Markdown checklist (actions as `- [ ]` / `- [x]`
   with a status suffix, sub-projects as nested headings), an **Include sub-projects** toggle, and a

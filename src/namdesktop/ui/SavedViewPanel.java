@@ -187,6 +187,8 @@ public final class SavedViewPanel extends JPanel {
 
         add(northPanel,  BorderLayout.NORTH);
         add(deckWrapper, BorderLayout.CENTER);
+        add(BulkSelect.install(table, ViewTableModel.CHECK_COL, tableModel.check,
+                tableModel::getRowCount, tableModel::rowIds, service, this::refresh), BorderLayout.SOUTH);
 
         refresh();
     }
@@ -294,19 +296,30 @@ public final class SavedViewPanel extends JPanel {
     }
 
     private final class ViewTableModel extends AbstractTableModel {
-        private static final String[] COLUMNS = {"Action", "Project", "Due", "Tags"};
+        private static final String[] COLUMNS = {"Action", "Project", "Due", "Tags", ""};
+        static final int CHECK_COL = 4;
         private List<ContextItemRow> rows = List.of();
+        final CheckColumn check = new CheckColumn();
 
-        void setRows(List<ContextItemRow> rows) { this.rows = rows; fireTableDataChanged(); }
+        void setRows(List<ContextItemRow> rows) {
+            this.rows = rows;
+            check.retain(rows.stream().map(ContextItemRow::id).toList());
+            fireTableDataChanged();
+        }
         ContextItemRow getRow(int i) { return rows.get(i); }
+        List<UUID> rowIds() { return rows.stream().map(ContextItemRow::id).toList(); }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
         @Override public String getColumnName(int col) { return COLUMNS[col]; }
-        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
+        @Override public boolean isCellEditable(int row, int col) { return col == 0 || col == CHECK_COL; }
 
         @Override
         public void setValueAt(Object value, int row, int col) {
+            if (col == CHECK_COL) {
+                if (row < rows.size()) check.set(rows.get(row).id(), Boolean.TRUE.equals(value));
+                return;
+            }
             if (col != 0 || row >= rows.size()) return;
             var newTitle = value.toString().strip();
             var r = rows.get(row);
@@ -330,6 +343,7 @@ public final class SavedViewPanel extends JPanel {
                 case 3 -> new String[]{
                         String.join(", ", r.tags()),
                         String.join(", ", r.inheritedTags())};
+                case CHECK_COL -> check.isChecked(r.id());
                 default -> null;
             };
         }
@@ -338,6 +352,7 @@ public final class SavedViewPanel extends JPanel {
         public Class<?> getColumnClass(int col) {
             if (col == 2) return java.time.LocalDate.class;
             if (col == 3) return String[].class;
+            if (col == CHECK_COL) return Boolean.class;
             return String.class;
         }
     }
