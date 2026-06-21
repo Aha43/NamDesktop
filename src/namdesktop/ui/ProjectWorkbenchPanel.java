@@ -46,6 +46,11 @@ public final class ProjectWorkbenchPanel extends JPanel {
     private       boolean           columnMode        = false;
     private       LaneMode          laneMode          = LaneMode.ACTIONS;
     private       List<UUID>        currentSectionIds = List.of();
+    // Embedded "board-only" mode: no breadcrumb/trio chrome, a forced view, drilling delegated to a
+    // host callback, and an optional tag filter. Used by the top-level Projects view.
+    private       boolean           boardOnly         = false;
+    private       Consumer<UUID>    drillOverride     = null;
+    private final Set<String>       boardTagFilter    = new HashSet<>();
 
     /** Which lanes each Column-view column shows. */
     private enum LaneMode { ACTIONS, BOTH, PROJECTS }
@@ -139,6 +144,37 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     public void refresh() { rebuild(); }
 
+    /**
+     * Configures this panel as a chromeless, embedded board (no breadcrumb or view trio) showing the
+     * target node's child projects as columns or a readiness grid. Drilling into a project is
+     * delegated to {@code onDrill} (so the host can open that project's full workbench), and the
+     * board is narrowed to projects carrying any of {@code tagFilter}.
+     */
+    public void configureAsBoard(boolean columns, Set<String> tagFilter, Consumer<UUID> onDrill) {
+        this.boardOnly      = true;
+        this.columnMode     = columns;
+        this.mcrMode        = !columns;
+        this.drillOverride  = onDrill;
+        this.boardTagFilter.clear();
+        if (tagFilter != null) this.boardTagFilter.addAll(tagFilter);
+        rebuild();
+    }
+
+    /** Updates the tag filter applied to an embedded board and rebuilds. */
+    public void setBoardTagFilter(Set<String> tags) {
+        boardTagFilter.clear();
+        if (tags != null) boardTagFilter.addAll(tags);
+        rebuild();
+    }
+
+    /** Keeps sections whose project carries at least one of {@code tags} (OR). Empty tags ⇒ all. */
+    static List<ChildSection> filterSections(List<ChildSection> sections, Set<String> tags) {
+        if (tags.isEmpty()) return sections;
+        return sections.stream()
+                .filter(s -> s.project().getTags().stream().anyMatch(tags::contains))
+                .toList();
+    }
+
     /** The project's own direct actions that are still open (not sub-projects, not done). */
     static List<NamNode> focusableDirectActions(NamWorkspace workspace, UUID projectId) {
         return workspace.getChildren(projectId).stream()
@@ -197,18 +233,24 @@ public final class ProjectWorkbenchPanel extends JPanel {
             }
         }
         removeAll();
-        var projection  = new ProjectWorkbenchLens().project(workspace, currentProjectId);
+        var raw = new ProjectWorkbenchLens().project(workspace, currentProjectId);
+        var hasSubProjects = !raw.childSections().isEmpty();
+        // In embedded board mode an optional tag filter narrows the visible child projects.
+        var projection = (boardOnly && !boardTagFilter.isEmpty())
+                ? new WorkbenchProjection(raw.breadcrumb(), raw.directActions(),
+                        filterSections(raw.childSections(), boardTagFilter))
+                : raw;
         var sectionIds  = new java.util.ArrayList<UUID>();
         sectionIds.add(currentProjectId);
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
         currentSectionIds = List.copyOf(sectionIds);
-        var hasSubProjects = !projection.childSections().isEmpty();
-        if (!hasSubProjects && (mcrMode || columnMode)) {
+        if (!boardOnly && !hasSubProjects && (mcrMode || columnMode)) {
             mcrMode = columnMode = false;
             laneMode = LaneMode.ACTIONS;
             rememberView();  // a project that lost its sub-projects falls back to the workbench
         }
-        add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
+        if (!boardOnly)
+            add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
         if (columnMode)   add(new JScrollPane(buildColumnView(projection)), BorderLayout.CENTER);
         else if (mcrMode) add(new JScrollPane(buildMcrGrid()),              BorderLayout.CENTER);
         else              add(new JScrollPane(buildContent(projection)),    BorderLayout.CENTER);
@@ -947,6 +989,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     }
 
     private void navigateTo(UUID projectId) {
+        if (drillOverride != null) { drillOverride.accept(projectId); return; }
         onInternalNavigate.accept(projectId);
         parentProjectId  = currentProjectId;
         currentProjectId = projectId;
@@ -1410,6 +1453,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private JPanel buildMcrGrid() {
         var stations = new MissionControlLens().stations(currentProjectId, workspace);
+        if (boardOnly && !boardTagFilter.isEmpty())
+            stations = stations.stream()
+                    .filter(s -> workspace.getNode(s.id())
+                            .map(n -> n.getTags().stream().anyMatch(boardTagFilter::contains))
+                            .orElse(false))
+                    .toList();
         var grid = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 12));
         grid.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         if (stations.isEmpty()) {

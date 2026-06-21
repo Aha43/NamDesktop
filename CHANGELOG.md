@@ -12,6 +12,13 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Projects view layouts: the top-level **Projects** view now offers the same Column and Readiness
+  layouts as a single project's workbench, via a List / Columns / Readiness toggle in its toolbar.
+  **List** stays the default compact table; **Columns** lays each top-level project out as a column
+  of its actions (drag a card between columns to reparent it); **Readiness** shows a progress
+  heat-map card per project. The existing tag filter narrows all three, drilling into a project opens
+  its full workbench, and the chosen layout is remembered across restarts. The board layouts reuse
+  the workbench renderer in an embedded mode (no duplicate board code). Closes #383.
 - Focus mode in the Project Workbench: a deck (stack-2) button in the breadcrumb bar opens the
   one-card-at-a-time focus deck over the current project's own open direct actions (excludes done
   and sub-project actions), so you can work a single project end to end. Reuses the existing
