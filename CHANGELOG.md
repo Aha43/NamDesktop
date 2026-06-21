@@ -27,6 +27,12 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Copy a project summary as Markdown: a copy button in the Project Workbench breadcrumb bar opens a
+  summary dialog — a live preview of the project as a Markdown checklist (actions as `- [ ]` / `- [x]`
+  with a status suffix, sub-projects as nested headings), an **Include sub-projects** toggle, and a
+  **Copy to clipboard** button. Good for pasting a status snapshot into a chat or AI assistant. Backed by
+  a pure, testable `ProjectSummary` serializer. Parity with NamWeb (Aha43/NamWeb#245, #247, #257).
+  Closes #404.
 - Re-triage in Focus mode: the focus deck now has a secondary button to flip a mis-filed card without
   leaving focus — **Move to Backlog** in the Next Actions deck, **Move to Next** in the Backlog deck. Like
   Done, the card changes status, drops out of the deck, and the next one advances. Omitted on the
