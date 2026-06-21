@@ -191,12 +191,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
-        var projectName = workspace.getNode(currentProjectId).map(NamNode::getTitle).orElse(null);
         var cards = new java.util.ArrayList<MoonCardPanel.Card>();
         for (var a : actions)
-            cards.add(new MoonCardPanel.Card(a.getId(), a.getTitle(), a.getDescription(), projectName));
+            cards.add(new MoonCardPanel.Card(a.getId(), a.getTitle(), a.getDescription(),
+                    ProjectPathSupport.forAction(workspace, a.getId())));
         removeAll();
-        add(new MoonCardPanel(cards, service, this::exitFocusMode), BorderLayout.CENTER);
+        add(new MoonCardPanel(cards, service, this::exitFocusMode, this::navigateTo), BorderLayout.CENTER);
         revalidate();
         repaint();
     }

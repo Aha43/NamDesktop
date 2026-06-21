@@ -97,7 +97,7 @@ public final class MainFrame extends JFrame {
         this.inboxPanel       = new InboxPanel(workspace, service);
         this.projectsPanel    = new ProjectsPanel(workspace, service, this::openProjectWorkbench);
         this.nextActionsPanel = new NextActionsPanel(workspace, service, this::openProjectWorkbench);
-        this.contextPanel     = new ContextPanel(workspace, service, this::rebuildDynamicNavSections);
+        this.contextPanel     = new ContextPanel(workspace, service, this::rebuildDynamicNavSections, this::openProjectWorkbench);
         this.backlogPanel     = new BacklogPanel(workspace, service, this::openProjectWorkbench);
         this.donePanel        = new DonePanel(workspace, service, this::openProjectWorkbench);
         this.blockedPanel       = new BlockedPanel(workspace, service, this::openProjectWorkbench);
@@ -663,7 +663,8 @@ public final class MainFrame extends JFrame {
                             newName -> {
                                 rebuildDynamicNavSections();
                                 navPanel.selectById("saved-view:" + newName);
-                            })));
+                            },
+                            this::openProjectWorkbench)));
             return;
         }
         switch (entry.id()) {

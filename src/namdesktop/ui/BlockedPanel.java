@@ -62,6 +62,7 @@ public final class BlockedPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
 
         table.getColumn("Action").setCellRenderer((t, value, isSelected, hasFocus, row, col) -> {
             var flatRow = tableModel.getRow(row);
@@ -115,8 +116,11 @@ public final class BlockedPanel extends JPanel {
 
                 var item = flatRow.node();
                 if (col == 1) {
-                    if (e.getClickCount() == 1 && flatRow.parentId() != null)
-                        onOpenProject.accept(flatRow.parentId());
+                    if (e.getClickCount() == 1) {
+                        var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                                ProjectPathSupport.forAction(workspace, item.getId()));
+                        if (seg != null) onOpenProject.accept(seg);
+                    }
                     return;
                 }
                 if (col == 0) {

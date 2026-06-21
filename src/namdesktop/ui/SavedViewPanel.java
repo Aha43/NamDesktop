@@ -27,6 +27,7 @@ public final class SavedViewPanel extends JPanel {
     private final NamWorkspaceService service;
     private final Runnable onDeleted;
     private final Consumer<String> onRenamed;
+    private final Consumer<UUID> onOpenProject;
     private final ViewTableModel tableModel;
     private final JScrollPane scrollPane;
     private final JPanel deckWrapper;
@@ -37,14 +38,15 @@ public final class SavedViewPanel extends JPanel {
     private MoonCardPanel moonCardPanel;
 
     public SavedViewPanel(SavedView view, NamWorkspace workspace, NamWorkspaceService service,
-                          Runnable onDeleted, Consumer<String> onRenamed) {
+                          Runnable onDeleted, Consumer<String> onRenamed, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
-        this.view       = view;
-        this.workspace  = workspace;
-        this.service    = service;
-        this.onDeleted  = onDeleted;
-        this.onRenamed  = onRenamed;
-        this.tableModel = new ViewTableModel();
+        this.view          = view;
+        this.workspace     = workspace;
+        this.service       = service;
+        this.onDeleted     = onDeleted;
+        this.onRenamed     = onRenamed;
+        this.onOpenProject = onOpenProject;
+        this.tableModel    = new ViewTableModel();
 
         var nameLabel = new JLabel(view.name());
         nameLabel.setFont(nameLabel.getFont().deriveFont(Font.BOLD));
@@ -106,6 +108,7 @@ public final class SavedViewPanel extends JPanel {
             }
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
         table.setFillsViewportHeight(true);
         table.getColumn("Action").setCellRenderer(UiHelper.actionBadgeRenderer(row -> tableModel.getRow(row).status()));
         var actionEditor = new DefaultCellEditor(new JTextField());
@@ -164,6 +167,12 @@ public final class SavedViewPanel extends JPanel {
                     }
                     return;
                 }
+                if (col == 1 && e.getClickCount() == 1) {
+                    var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                            ProjectPathSupport.forAction(workspace, item.id()));
+                    if (seg != null) onOpenProject.accept(seg);
+                    return;
+                }
                 if (e.getClickCount() == 2) {
                     new ActionDialog(SwingUtilities.getWindowAncestor(SavedViewPanel.this),
                             item.id(), workspace, service, true, SavedViewPanel.this::refresh).setVisible(true);
@@ -219,14 +228,15 @@ public final class SavedViewPanel extends JPanel {
         for (int i = 0; i < count; i++) {
             var row  = tableModel.getRow(i);
             var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
-            rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
+            rows.add(new MoonCardPanel.Card(row.id(), row.title(), desc,
+                    ProjectPathSupport.forAction(workspace, row.id())));
         }
         if (rows.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
-        moonCardPanel = new MoonCardPanel(rows, service, this::exitDeckMode);
+        moonCardPanel = new MoonCardPanel(rows, service, this::exitDeckMode, onOpenProject);
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
         addActionButton.setVisible(false);

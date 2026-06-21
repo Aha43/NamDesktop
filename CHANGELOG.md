@@ -57,6 +57,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- An action's **project path is now a clickable breadcrumb**: each segment is a link that opens that
+  ancestor project. Works everywhere an action lists its path — Next Actions, Backlog, Context, Due,
+  Blocked, Done, saved views, and the focus deck (`MoonCardPanel`). In the tables the path column is
+  link-styled with a hand cursor; clicking a segment resolves which project was hit and navigates to
+  it. Parity with NamWeb (Aha43/NamWeb#167). Closes #382.
 - Newly added actions and sub-projects now **land first** in their parent's list instead of last,
   so a freshly captured item is immediately visible at the top of long lists. Applies to every
   single-node add path — the Workbench/Inbox/Next-Action add buttons and the MCP `add_*` tools —

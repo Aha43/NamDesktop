@@ -99,6 +99,7 @@ public final class DonePanel extends JPanel {
         table.getColumnModel().getColumn(3).setPreferredWidth(18);
         table.getColumnModel().getColumn(3).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
@@ -122,8 +123,11 @@ public final class DonePanel extends JPanel {
                 if (row < 0) return;
                 var item = tableModel.getRow(row);
                 if (col == 1) {
-                    if (e.getClickCount() == 1 && item.parentId() != null)
-                        onOpenProject.accept(item.parentId());
+                    if (e.getClickCount() == 1) {
+                        var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                                ProjectPathSupport.forAction(workspace, item.id()));
+                        if (seg != null) onOpenProject.accept(seg);
+                    }
                     return;
                 }
                 if (col == 0) {
