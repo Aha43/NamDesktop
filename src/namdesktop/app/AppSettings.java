@@ -22,6 +22,8 @@ public final class AppSettings {
     public static void setInstance(AppSettings s) { instance = s; }
 
     private Theme   theme            = Theme.DARK;
+    private int     uiBackgroundLift = 0;     // lighten panel grays by this % toward white (0 = stock)
+    private UiTheme.IconColor iconColor = UiTheme.IconColor.AUTO;
     private boolean dense            = false;
     private String  syncRepoUrl      = "";
     private boolean showStatusColumn = false;
@@ -50,6 +52,10 @@ public final class AppSettings {
 
     public Theme   getTheme()                        { return theme; }
     public void    setTheme(Theme theme)             { this.theme = theme != null ? theme : Theme.DARK; }
+    public int     getUiBackgroundLift()             { return UiTheme.clampLift(uiBackgroundLift); }
+    public void    setUiBackgroundLift(int v)        { this.uiBackgroundLift = UiTheme.clampLift(v); }
+    public UiTheme.IconColor getIconColor()          { return iconColor != null ? iconColor : UiTheme.IconColor.AUTO; }
+    public void    setIconColor(UiTheme.IconColor v) { this.iconColor = v != null ? v : UiTheme.IconColor.AUTO; }
     public boolean isDense()                         { return dense; }
     public void    setDense(boolean dense)           { this.dense = dense; }
     public String  getSyncRepoUrl()                  { return syncRepoUrl != null ? syncRepoUrl : ""; }

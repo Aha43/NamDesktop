@@ -61,7 +61,37 @@ public final class SettingsPanel extends JPanel {
             return combo;
         });
 
-        row(p, gbc, 1, "Dense mode:", () -> {
+        row(p, gbc, 1, "Icon color:", () -> {
+            var combo = new JComboBox<>(namdesktop.app.UiTheme.IconColor.values());
+            combo.setSelectedItem(settings.getIconColor());
+            combo.setToolTipText("Auto = follow theme; Light = white icons; Dark = black icons");
+            combo.addActionListener(e -> {
+                var selected = (namdesktop.app.UiTheme.IconColor) combo.getSelectedItem();
+                if (selected == null) return;
+                settings.setIconColor(selected);
+                applyTheme(settings.getTheme());
+                save(settings);
+                onChanged.run();
+            });
+            return combo;
+        });
+
+        row(p, gbc, 2, "Background brightness:", () -> {
+            var slider = new JSlider(0, namdesktop.app.UiTheme.MAX_BG_LIFT, settings.getUiBackgroundLift());
+            slider.setToolTipText("Lighten the panel grays (a softer dark theme); 0 = stock");
+            slider.setMajorTickSpacing(5);
+            slider.setPaintTicks(true);
+            slider.addChangeListener(e -> {
+                if (slider.getValueIsAdjusting()) return;
+                settings.setUiBackgroundLift(slider.getValue());
+                save(settings);
+                applyTheme(settings.getTheme());
+                onChanged.run();
+            });
+            return slider;
+        });
+
+        row(p, gbc, 3, "Dense mode:", () -> {
             var box = new JCheckBox("Icons only (hide labels)", settings.isDense());
             box.addActionListener(e -> {
                 settings.setDense(box.isSelected());
@@ -72,7 +102,7 @@ public final class SettingsPanel extends JPanel {
             return box;
         });
 
-        row(p, gbc, 2, "Status column:", () -> {
+        row(p, gbc, 4, "Status column:", () -> {
             var box = new JCheckBox("Always show status column in Next Actions and Backlog", settings.isShowStatusColumn());
             box.addActionListener(e -> {
                 settings.setShowStatusColumn(box.isSelected());
@@ -82,7 +112,7 @@ public final class SettingsPanel extends JPanel {
             return box;
         });
 
-        row(p, gbc, 3, "Start maximized:", () -> {
+        row(p, gbc, 5, "Start maximized:", () -> {
             var box = new JCheckBox("Launch app in maximized window", settings.isStartMaximized());
             box.addActionListener(e -> {
                 settings.setStartMaximized(box.isSelected());
@@ -254,7 +284,8 @@ public final class SettingsPanel extends JPanel {
     }
 
     static void applyTheme(Theme theme) {
-        if (theme == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
+        var s = AppSettings.getInstance();
+        namdesktop.app.UiTheme.apply(theme, s.getUiBackgroundLift(), s.getIconColor());
         FlatLaf.updateUI();
         for (var w : Window.getWindows()) SwingUtilities.updateComponentTreeUI(w);
     }

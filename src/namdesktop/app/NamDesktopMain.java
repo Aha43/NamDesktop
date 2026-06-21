@@ -44,7 +44,7 @@ public final class NamDesktopMain {
 
         var settings = AppSettings.load();
         AppSettings.setInstance(settings);
-        if (settings.getTheme() == Theme.LIGHT) FlatLightLaf.setup(); else FlatDarkLaf.setup();
+        UiTheme.apply(settings.getTheme(), settings.getUiBackgroundLift(), settings.getIconColor());
 
         var splash = new SplashDialog();
         splash.setVisible(true);
@@ -70,7 +70,7 @@ public final class NamDesktopMain {
     private static void startE2e() {
         var settings = AppSettings.load();
         AppSettings.setInstance(settings);
-        FlatDarkLaf.setup();
+        UiTheme.apply(Theme.DARK, settings.getUiBackgroundLift(), settings.getIconColor());
         System.setProperty("apple.laf.useScreenMenuBar", "true");
         System.setProperty("apple.awt.application.name", AppInfo.NAME + " E2E");
 
