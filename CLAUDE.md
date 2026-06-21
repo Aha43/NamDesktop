@@ -25,7 +25,7 @@ bash scripts/download-icons.sh
 ```
 
 Icons live in `src/icons/` and are copied to `build/classes/icons/` automatically by `make`.
-Load them with `new FlatSVGIcon("/icons/name.svg")` — `currentColor` strokes adapt to the dark theme automatically.
+Load them with `new FlatSVGIcon("/icons/name.svg")`. The icons use `stroke="currentColor"` (pitch black); `UiTheme` installs a global `FlatSVGIcon.ColorFilter` that recolors pure black to a light gray in dark themes (and near-black in light), so they stay legible — always go through `UiTheme.apply(...)` to set up the look-and-feel.
 To add a new icon, add its name to the `ICONS` array in `scripts/download-icons.sh` and re-run it.
 
 ## Architecture

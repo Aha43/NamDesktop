@@ -27,6 +27,15 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Theme-adaptive icon color: the SVG icons (pitch-black `currentColor` strokes) are now recolored to
+  follow the theme — light gray in dark mode, near-black in light mode — so they're legible against the
+  panels instead of nearly invisible black-on-dark-gray. Done via a global `FlatSVGIcon.ColorFilter` in
+  the new `UiTheme` look-and-feel helper. Closes #398.
+- Settings → Appearance **Background brightness** slider: lightens the panel/surface grays by a chosen
+  percentage toward white for a softer dark theme (0 = stock). Persisted in `AppSettings`, applies live.
+- Settings → Appearance **Icon color** choice: Auto (follow theme), Light (white icons), or Dark (black
+  icons) regardless of theme — pairs with the brightness slider for full control over icon contrast.
+  Persisted in `AppSettings`, applies live.
 - Inbox multi-select and bulk delete: each row has a leading **checkbox** (with a header checkbox to
   select/clear all); tick the items you want and click **Delete checked** in the toolbar to remove them
   all in one step, after a single "Delete N items?" confirmation. Right-clicking a single row still shows
