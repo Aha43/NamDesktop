@@ -63,7 +63,8 @@ Run `pwsh scripts/download-libs.ps1` to download all of the above from Maven Cen
   (e.g. `feature/dark-mode`) before opening a PR.
 - When completing a GitHub issue, update the `## [Unreleased]` section of `CHANGELOG.md`
   before committing. Use `Added`, `Changed`, or `Fixed` as appropriate, and include
-  `Closes #<number>` in the commit message.
+  `Closes #<number>` in the commit message. If the change mirrors NamWeb, cite the
+  counterpart issue in the entry (see **Cross-suite sync** below).
 - **Always run `make run` after every change** — even trivial ones — so the user can test
   before committing. Never skip this step.
 - **Always run `make test` before committing** to confirm existing tests still pass.
@@ -71,6 +72,19 @@ Run `pwsh scripts/download-libs.ps1` to download all of the above from Maven Cen
   before starting the next one — even when multiple issues are planned for the same sprint.
   If a change is purely internal (model/service with full unit test coverage and no UI),
   say so explicitly and still wait for a go-ahead before moving on.
+
+### Cross-suite (NamWeb) sync
+
+NamDesktop and NamWeb (`Aha43/NamWeb`) are one suite sharing **only** the Supabase HTTP
+contract (migrations live here in `supabase/`). Keep them functionally in sync — mirror a
+feature or consciously decline it; web usually leads, desktop occasionally leads.
+
+- Label suite-relevant issues `nam-web`; link the counterpart as `Aha43/NamWeb#NNN` and note
+  which app leads. `gh issue list --label nam-web` is the parity worklist.
+- In a CHANGELOG entry that mirrors the other app, cite the counterpart issue ("Parity with
+  `Aha43/NamWeb#167`") — the two CHANGELOGs are the parity ledger; an entry without a
+  counterpart is drift.
+- Full convention + the per-sprint sync sweep: `docs/practices/issue-management.md`.
 
 ### Definition of Done for feature issues
 

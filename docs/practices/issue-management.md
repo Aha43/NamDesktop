@@ -34,9 +34,14 @@ Every issue carries two labels:
 | `ux-review-1` | Findings from the first critical AI UX review (2026-05-27) |
 | `help` | Help system content, layout, and UX |
 | `ux` | Planned UX improvement sprints (#346–#347 show/hide done) |
+| `nam-web` | Suite feature — mirrors or relates to NamWeb (see Cross-suite coordination) |
+| `archived` | Set aside for reference — superseded or deferred, intentionally not deleted |
 
 When a new coherent feature area appears, create a label for it here and in GitHub at the
 same time. Use a distinct colour so the label is visually distinguishable in the issue list.
+
+`archived` issues are closed as **not planned** (not "completed"), so they drop out of the
+open list but stay recoverable: `gh issue list --label archived --state closed`.
 
 ### Filtering
 
@@ -70,6 +75,35 @@ Issues within a feature group should reference all sibling issues in a "Related 
 section. This makes the dependency chain visible without sub-issues.
 
 We do not use sub-issues. Labels and cross-references are sufficient for grouping.
+
+## Cross-suite (NamWeb) coordination
+
+NamDesktop and **NamWeb** (`Aha43/NamWeb`) are one product suite. They are separate
+repositories that share **only the Supabase HTTP contract** — no application code. The
+database migrations are NamDesktop's single source of truth (`supabase/`). The goal is to
+keep the two apps **functionally in sync**: a capability shipped on one should be mirrored
+on the other, or consciously declined. Web usually leads; desktop occasionally leads
+(heavy/algorithmic work proven here before committing to web).
+
+When an issue has suite relevance:
+
+- Label it `nam-web` — the mirror of NamWeb's `nam-desktop` label.
+- Link the counterpart issue as `Aha43/NamWeb#NNN` in the body, and note which app leads /
+  ship order ("web ships first").
+- `gh issue list --label nam-web` is the desktop parity worklist.
+
+**The CHANGELOG is the parity ledger.** When an entry mirrors the other app, cite the
+counterpart issue in the entry itself (e.g. "Parity with `Aha43/NamWeb#167`"). The two
+CHANGELOGs then cross-check: a parity feature on one side with no counterpart on the other
+is drift you can spot mechanically. When a desktop feature lands that web should mirror,
+file or reference the matching `nam-desktop` issue on NamWeb (and comment the result back
+when the loop closes).
+
+**Suite sync sweep (per sprint).** Reconcile each repo's recently-closed `nam-web` /
+`nam-desktop` issues against the other's CHANGELOG. For each feature shipped on one side
+without a counterpart on the other, either file a mirror issue or close it as won't-follow —
+so drift is always an explicit decision, never silent. Backend/Supabase changes always land
+in NamDesktop first.
 
 ## Issue content
 
