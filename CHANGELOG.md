@@ -57,6 +57,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Changed
 
+- Newly added actions and sub-projects now **land first** in their parent's list instead of last,
+  so a freshly captured item is immediately visible at the top of long lists. Applies to every
+  single-node add path — the Workbench/Inbox/Next-Action add buttons and the MCP `add_*` tools —
+  matching NamWeb's prepend-on-add behavior (Aha43/NamWeb#174). Moves, conversions, and template
+  application keep their existing ordering. Closes #386.
 - Help sidebar cross-lists articles that belong in more than one section: Goal Board now also appears under Projects; Due Actions and Blocked actions also under Finding work; Focus mode also under Daily workflow. Closes #363.
 - Settings dialog restructured: left sidebar (Appearance / Workspace / Sync) replaces the flat single-column layout. Dialog is now resizable. Closes #344.
 
