@@ -8,6 +8,14 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Cloud sync **Pull** now confirms before overwriting a diverging local workspace. Previously Pull
+  saved the remote copy straight over the local file and reloaded, silently discarding any local
+  changes made since the last sync (Push was already guarded by the conflict dialog; Pull was not).
+  Pull now compares the local and incoming-remote content: if they differ it asks "Pulling will
+  replace this workspace with the remote copy. Local changes since your last sync will be lost.
+  Continue?" — Cancel keeps the local workspace untouched; when the two already match it applies
+  silently. Choosing "Keep remote" in the push conflict dialog still pulls without a second prompt
+  (you've already consented to discarding local). Closes #380.
 - Heat-map accuracy on both the Goal Board and the Project Workbench readiness view. An empty
   project (no actions) now shows a **neutral gray** border ("no actions yet") instead of red —
   previously a `0 / 0` project read as "no progress." Backed by a new `HeatLevel { NEUTRAL, RED,

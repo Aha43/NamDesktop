@@ -686,6 +686,15 @@ public final class MainFrame extends JFrame {
     }
 
     private void runCloudSync(boolean push) {
+        runCloudSync(push, true);
+    }
+
+    /**
+     * @param confirmPullOverwrite when true, a pull that would replace diverging local content
+     *        first asks the user. Set false when the user has already consented to discarding
+     *        local changes (e.g. "Keep remote" in the conflict dialog).
+     */
+    private void runCloudSync(boolean push, boolean confirmPullOverwrite) {
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         syncPushButton.setEnabled(false);
         syncPullButton.setEnabled(false);
@@ -707,7 +716,7 @@ public final class MainFrame extends JFrame {
                 var result = cloudSyncService.pull(settings.getCloudSync());
                 SwingUtilities.invokeLater(() -> {
                     cloudSyncDone();
-                    if (result.success())            applyPulledWorkspace(result);
+                    if (result.success())            applyPulledWorkspace(result, confirmPullOverwrite);
                     else if (result.nothingToPull()) showNudge("Nothing to pull — no remote workspace yet. Push first.");
                     else                             showNudge("Sync failed: " + result.error());
                 });
@@ -721,9 +730,36 @@ public final class MainFrame extends JFrame {
         syncPullButton.setEnabled(true);
     }
 
-    private void applyPulledWorkspace(PullResult result) {
+    /**
+     * True when applying {@code remote} over {@code local} would change the workspace — i.e. the
+     * pull is not a no-op and could discard local edits. Compared on serialized content (there is
+     * no stored last-synced snapshot to diff against). If serialization fails we cannot tell, so we
+     * fail safe and report divergence, prompting the user rather than overwriting silently.
+     */
+    static boolean pullWouldOverwriteLocal(namdesktop.persist.JsonWorkspaceRepository repo,
+                                           NamWorkspace local, NamWorkspace remote) {
         try {
-            new namdesktop.persist.JsonWorkspaceRepository().save(workspacePath, result.workspace());
+            return !repo.toJson(local).equals(repo.toJson(remote));
+        } catch (java.io.IOException e) {
+            return true;
+        }
+    }
+
+    private void applyPulledWorkspace(PullResult result, boolean confirm) {
+        var repo = new namdesktop.persist.JsonWorkspaceRepository();
+        if (confirm && pullWouldOverwriteLocal(repo, workspace, result.workspace())) {
+            var choice = JOptionPane.showConfirmDialog(this,
+                    "Pulling will replace this workspace with the remote copy.\n"
+                            + "Local changes since your last sync will be lost.\n\nContinue?",
+                    "Replace local workspace?",
+                    JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (choice != JOptionPane.OK_OPTION) {
+                showNudge("Pull cancelled — local workspace kept.");
+                return;
+            }
+        }
+        try {
+            repo.save(workspacePath, result.workspace());
             service.reloadWorkspace();
             refreshAll();
             saveSession();
@@ -744,7 +780,7 @@ public final class MainFrame extends JFrame {
                 "Workspace conflict",
                 JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE, null, options, options[2]);
         if (choice == 0) {
-            runCloudSync(false);
+            runCloudSync(false, false); // user already chose to discard local — no second prompt
         } else if (choice == 1) {
             settings.getCloudSync().setLastSyncedVersionFor(cloudWorkspaceName, remoteVersion);
             runCloudSync(true);
