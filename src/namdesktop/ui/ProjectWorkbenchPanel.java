@@ -252,7 +252,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
         if (!boardOnly)
             add(buildBreadcrumbBar(projection.breadcrumb(), sectionIds, hasSubProjects), BorderLayout.NORTH);
         if (columnMode)   add(new JScrollPane(buildColumnView(projection)), BorderLayout.CENTER);
-        else if (mcrMode) add(new JScrollPane(buildMcrGrid()),              BorderLayout.CENTER);
+        else if (mcrMode) add(new JScrollPane(buildMcrGrid(projection)),    BorderLayout.CENTER);
         else              add(new JScrollPane(buildContent(projection)),    BorderLayout.CENTER);
         revalidate();
         repaint();
@@ -1447,11 +1447,22 @@ public final class ProjectWorkbenchPanel extends JPanel {
         public int getIconHeight() { return 16; }
     };
 
-    private static final Color MCR_RED   = new Color(180,  60,  60);
-    private static final Color MCR_AMBER = new Color(190, 130,   0);
-    private static final Color MCR_GREEN = new Color( 50, 150,  50);
+    private static final Color MCR_RED     = new Color(180,  60,  60);
+    private static final Color MCR_AMBER   = new Color(190, 130,   0);
+    private static final Color MCR_GREEN   = new Color( 50, 150,  50);
+    private static final Color MCR_NEUTRAL = new Color(110, 110, 110);
 
-    private JPanel buildMcrGrid() {
+    /**
+     * Synthetic readiness station for a project's own direct actions — the "Unsorted" card,
+     * mirroring the Column view's leading column. Counts all direct actions (done over total);
+     * never a real sub-project, so subProjectCount/maxDepth/rolledUp are zero.
+     */
+    static MissionControlStation unsortedStation(UUID projectId, List<NamNode> directActions) {
+        var done = (int) directActions.stream().filter(n -> n.getStatus() == NodeStatus.DONE).count();
+        return new MissionControlStation(projectId, "Unsorted", 0, 0, done, directActions.size(), 0);
+    }
+
+    private JPanel buildMcrGrid(WorkbenchProjection projection) {
         var stations = new MissionControlLens().stations(currentProjectId, workspace);
         if (boardOnly && !boardTagFilter.isEmpty())
             stations = stations.stream()
@@ -1461,21 +1472,25 @@ public final class ProjectWorkbenchPanel extends JPanel {
                     .toList();
         var grid = new JPanel(new WrapLayout(FlowLayout.LEFT, 12, 12));
         grid.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        if (stations.isEmpty()) {
+        // The project's own direct actions get a leading "Unsorted" card — omitted when it has none.
+        var directActions = projection.directActions();
+        if (stations.isEmpty() && directActions.isEmpty()) {
             var lbl = new JLabel("No sub-projects found.", SwingConstants.CENTER);
             lbl.setBorder(BorderFactory.createEmptyBorder(40, 40, 40, 40));
             grid.add(lbl);
         } else {
-            for (var s : stations) grid.add(buildMcrCard(s));
+            if (!directActions.isEmpty())
+                grid.add(buildMcrCard(unsortedStation(currentProjectId, directActions), true));
+            for (var s : stations) grid.add(buildMcrCard(s, false));
         }
         return grid;
     }
 
-    private JPanel buildMcrCard(MissionControlStation s) {
+    private JPanel buildMcrCard(MissionControlStation s, boolean unsorted) {
         var card = new JPanel(new BorderLayout(0, 6));
         card.setPreferredSize(new Dimension(200, 150));
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(mcrHeatColor(s.doneRatio()), 3),
+                BorderFactory.createLineBorder(mcrHeatColor(s.heatLevel()), 3),
                 BorderFactory.createEmptyBorder(10, 12, 10, 12)));
 
         var title = new JLabel("<html><center>" + s.title() + "</center></html>", SwingConstants.CENTER);
@@ -1484,13 +1499,19 @@ public final class ProjectWorkbenchPanel extends JPanel {
         var stats = new JPanel();
         stats.setLayout(new BoxLayout(stats, BoxLayout.PAGE_AXIS));
         stats.setOpaque(false);
-        stats.add(mcrStat(s.subProjectCount() + " sub-project" + (s.subProjectCount() != 1 ? "s" : "")));
-        stats.add(mcrStat("Max depth: " + s.maxDepth()));
+        if (unsorted) {
+            // The parent's loose actions — no sub-project/depth stats apply.
+            stats.add(mcrStat("This project's own actions"));
+        } else {
+            stats.add(mcrStat(s.subProjectCount() + " sub-project" + (s.subProjectCount() != 1 ? "s" : "")));
+            stats.add(mcrStat("Max depth: " + s.maxDepth()));
+        }
         stats.add(mcrStat("Done: " + s.doneCount() + " / " + s.totalActions()));
 
         card.add(title, BorderLayout.NORTH);
         card.add(stats, BorderLayout.CENTER);
-        addMcrClickHandler(card, () -> navigateTo(s.id()));
+        // The Unsorted card represents the current project itself, so there is nothing to drill into.
+        if (!unsorted) addMcrClickHandler(card, () -> navigateTo(s.id()));
         return card;
     }
 
@@ -1512,10 +1533,13 @@ public final class ProjectWorkbenchPanel extends JPanel {
         return label;
     }
 
-    private Color mcrHeatColor(double ratio) {
-        if (ratio >= 0.67) return MCR_GREEN;
-        if (ratio >= 0.33) return MCR_AMBER;
-        return MCR_RED;
+    private Color mcrHeatColor(MissionControlStation.HeatLevel level) {
+        return switch (level) {
+            case GREEN   -> MCR_GREEN;
+            case AMBER   -> MCR_AMBER;
+            case RED     -> MCR_RED;
+            case NEUTRAL -> MCR_NEUTRAL;
+        };
     }
 
     private static final class WrapLayout extends FlowLayout {
