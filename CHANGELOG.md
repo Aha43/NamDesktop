@@ -27,6 +27,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Inbox multi-select and bulk delete: select several rows (click, Shift+click for a range, Cmd/Ctrl+click
+  for individual items) and right-click → **Delete selected (N)** to remove them all in one step, after a
+  single "Delete N items?" confirmation. Right-clicking a single row still shows the full Process / Rename /
+  Mark done / Delete menu. Backed by a new `deleteLeaves` service primitive that removes all selected leaves
+  in one save and reports any skipped (had sub-items). Closes #273.
 - Projects view layouts: the top-level **Projects** view now offers the same Column and Readiness
   layouts as a single project's workbench, via a List / Columns / Readiness toggle in its toolbar.
   **List** stays the default compact table; **Columns** lays each top-level project out as a column

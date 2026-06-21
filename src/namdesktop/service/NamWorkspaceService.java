@@ -170,6 +170,27 @@ public final class NamWorkspaceService {
         repository.save(path, workspace);
     }
 
+    /**
+     * Deletes several leaf nodes in a single save. Nodes that are unknown or still have children
+     * are skipped and returned, so the caller can report them; everything else is removed. Saves
+     * once, only if at least one node was actually removed.
+     */
+    public List<UUID> deleteLeaves(List<UUID> nodeIds) throws IOException {
+        var skipped = new ArrayList<UUID>();
+        var changed = false;
+        for (var id : nodeIds) {
+            var node = workspace.getNode(id).orElse(null);
+            if (node == null || !node.getChildIds().isEmpty()) { skipped.add(id); continue; }
+            var parent = findParent(id);
+            if (parent != null) parent.getChildIds().remove(id);
+            workspace.getNodes().remove(id);
+            sweepBlockedBy(id);
+            changed = true;
+        }
+        if (changed) repository.save(path, workspace);
+        return List.copyOf(skipped);
+    }
+
     public void deleteRecursive(UUID nodeId) throws IOException {
         require(nodeId);
         var toDelete = workspace.collectSubtree(nodeId);
