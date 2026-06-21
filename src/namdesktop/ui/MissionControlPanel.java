@@ -14,9 +14,10 @@ import java.util.function.Consumer;
 
 public final class MissionControlPanel extends JPanel {
 
-    private static final Color COLOR_RED   = new Color(180,  60,  60);
-    private static final Color COLOR_AMBER = new Color(190, 130,   0);
-    private static final Color COLOR_GREEN = new Color( 50, 150,  50);
+    private static final Color COLOR_RED     = new Color(180,  60,  60);
+    private static final Color COLOR_AMBER   = new Color(190, 130,   0);
+    private static final Color COLOR_GREEN   = new Color( 50, 150,  50);
+    private static final Color COLOR_NEUTRAL = new Color(110, 110, 110);
 
     private final MissionControl      mc;
     private final NamWorkspace        workspace;
@@ -77,7 +78,7 @@ public final class MissionControlPanel extends JPanel {
         var card = new JPanel(new BorderLayout(0, 6));
         card.setPreferredSize(new Dimension(200, 160));
         card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(heatColor(s.doneRatio()), 3),
+                BorderFactory.createLineBorder(heatColor(s.heatLevel()), 3),
                 BorderFactory.createEmptyBorder(10, 12, 10, 12)));
 
         var title = new JLabel("<html><center>" + s.title() + "</center></html>", SwingConstants.CENTER);
@@ -102,8 +103,11 @@ public final class MissionControlPanel extends JPanel {
         card.add(title, BorderLayout.NORTH);
         card.add(stats, BorderLayout.CENTER);
         var pct     = (int) Math.round(s.doneRatio() * 100);
-        var tooltip = "<html><b>" + pct + "% of actions done</b>"
-                + "<br>Green ≥ 67% · Amber ≥ 33% · Red &lt; 33%"
+        var heatNote = s.heatLevel() == MissionControlStation.HeatLevel.NEUTRAL
+                ? "<b>No actions yet</b>"
+                : "<b>" + pct + "% of actions done</b>";
+        var tooltip = "<html>" + heatNote
+                + "<br>Green ≥ 67% · Amber ≥ 33% · Red &lt; 33% · Gray = no actions yet"
                 + "<br><i>Click to open workbench</i></html>";
         addClickHandler(card, () -> onOpenProject.accept(s.id()), tooltip);
         return card;
@@ -127,10 +131,13 @@ public final class MissionControlPanel extends JPanel {
         return label;
     }
 
-    private Color heatColor(double ratio) {
-        if (ratio >= 0.67) return COLOR_GREEN;
-        if (ratio >= 0.33) return COLOR_AMBER;
-        return COLOR_RED;
+    private Color heatColor(MissionControlStation.HeatLevel level) {
+        return switch (level) {
+            case GREEN   -> COLOR_GREEN;
+            case AMBER   -> COLOR_AMBER;
+            case RED     -> COLOR_RED;
+            case NEUTRAL -> COLOR_NEUTRAL;
+        };
     }
 
     private void deleteSelf() {
