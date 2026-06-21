@@ -8,9 +8,17 @@
 
 ## What is NamDesktop?
 
-NamDesktop is a desktop application for managing your work through a GTD-inspired system. All data lives in a single node tree stored locally as JSON. There is no cloud account, no subscription, and no mandatory sync — your data is a file on your machine.
+NamDesktop is a desktop application for managing your work through a GTD-inspired system. It is **local-first**: all data lives in a single node tree stored locally as JSON — a file on your machine, with no account required and cloud sync entirely optional.
 
 The same underlying nodes are interpreted differently depending on where they sit in the tree, their status, their tags, and which lens (view) is active. The goal is a small, fast, focused tool that stays out of your way.
+
+## NamDesktop and NamWeb
+
+NamDesktop is part of the **Nam** suite. Its sibling, **[NamWeb](https://github.com/Aha43/NamWeb)**, is a standalone, self-serve web app — live at **[usenam.app](https://usenam.app)** — and is now the **primary product** for most users: sign up and start, nothing to install.
+
+**NamDesktop is the concept lab and power sidekick.** It carries the richer workbench — drag-ordering, the Project Workbench with Column and Readiness layouts, Mission Control / Goal Boards, project templates, the focus deck — where ideas are prototyped before they reach the web. It stays local-first; cloud sync to your Nam account is optional.
+
+The two apps are **separate repositories that share only the Supabase HTTP contract** — the same backend that powers NamWeb and desktop cloud sync. The database **migrations live here**, in this repo's [`supabase/`](supabase/) directory, as the single source of truth for that contract.
 
 ## Features
 
@@ -54,7 +62,7 @@ The same underlying nodes are interpreted differently depending on where they si
 
 **Other**
 - Dark and light themes (FlatLaf)
-- Optional Git-backed sync — push/pull the workspace JSON to a remote repository
+- Optional sync — push/pull the workspace JSON to a Git remote, or to the Supabase cloud backend shared with NamWeb
 - Dev mode — separate workspace for testing without touching production data
 - Keyboard shortcuts (`Cmd+1–5` for panels, `Cmd+F` search, `Cmd+Shift+M` monitoring, `Cmd+/` shortcuts reference)
 
