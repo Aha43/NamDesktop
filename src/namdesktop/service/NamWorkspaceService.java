@@ -275,6 +275,22 @@ public final class NamWorkspaceService {
         if (changed) repository.save(path, workspace);
     }
 
+    /** Archives a project (status → ARCHIVED); it drops out of the active Projects list. (#407) */
+    public void archiveProject(UUID projectId) throws IOException {
+        var node = require(projectId);
+        if (!node.isProject()) throw new IllegalArgumentException("Not a project: " + projectId);
+        stampStatus(node, NodeStatus.ARCHIVED);
+        repository.save(path, workspace);
+    }
+
+    /** Restores an archived project to the active list (status → BACKLOG, the project default). (#407) */
+    public void unarchiveProject(UUID projectId) throws IOException {
+        var node = require(projectId);
+        if (!node.isProject()) throw new IllegalArgumentException("Not a project: " + projectId);
+        stampStatus(node, NodeStatus.BACKLOG);
+        repository.save(path, workspace);
+    }
+
     /** Adds {@code tag} (normalised) to several nodes, idempotent per node, in a single save. (#402) */
     public void addTagToAll(List<UUID> nodeIds, String tag) throws IOException {
         var normalised = tag != null ? tag.strip().toLowerCase() : "";

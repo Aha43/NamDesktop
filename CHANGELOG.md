@@ -27,6 +27,12 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Archive finished projects: right-click a top-level project in the Projects list → **Archive** to drop
+  it out of the active list (only live work stays visible); a **Show archived** toolbar toggle reveals
+  archived projects (shown muted, marked _(archived)_) where right-click → **Unarchive** restores them.
+  Nothing is deleted — archiving sets the project's status to `ARCHIVED` (previously an unused status) and
+  `ProjectsLens` filters it out by default. Backed by `archiveProject` / `unarchiveProject` service
+  methods. Parity with NamWeb (Aha43/NamWeb#261). Closes #407.
 - Bulk actions on selected actions: a checkbox on each action row (with a header select-all on the
   tables) across the list panels — Next Actions, Backlog, Done, Context, Saved Views, Due, Blocked —
   **and the Project Workbench** (ticks shared across a project's own actions and its sub-projects, for
