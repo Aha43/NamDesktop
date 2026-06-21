@@ -309,6 +309,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
         editButton.addActionListener(e ->
                 new ProjectDialog(parent, currentProjectId, workspace, service, this::rebuild).setVisible(true));
 
+        var copySummaryButton = UiHelper.iconButton("Copy summary",
+                new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/copy.svg")).derive(16, 16));
+        copySummaryButton.setToolTipText("Show a Markdown summary of " + projectName + " to copy");
+        copySummaryButton.addActionListener(e ->
+                ProjectSummaryDialog.show(parent, workspace, currentProjectId, projectName));
+
         var collapseAllIcon = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-up.svg")).derive(16, 16);
         var expandAllIcon   = new FlatSVGIcon(ProjectWorkbenchPanel.class.getResource("/icons/chevron-down.svg")).derive(16, 16);
         var allCollapsed    = !sectionIds.isEmpty() && collapsedSections.containsAll(sectionIds);
@@ -396,6 +402,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
             for (var b : buildProjectPowerButtons(currentProjectId, projectName))
                 buttons.add(b);
         }
+        buttons.add(copySummaryButton);
         buttons.add(editButton);
 
         bar.add(crumbs,   BorderLayout.CENTER);
