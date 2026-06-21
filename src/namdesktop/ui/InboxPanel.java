@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
 public final class InboxPanel extends JPanel {
 
@@ -27,6 +28,7 @@ public final class InboxPanel extends JPanel {
     private final InboxTableModel tableModel;
     private JTable table;
     private JButton processButton;
+    private JButton deleteCheckedButton;
     private JPanel tableCard;
     private String sortOrder;
 
@@ -46,19 +48,42 @@ public final class InboxPanel extends JPanel {
                 return c;
             }
         };
-        table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
-        table.getColumnModel().getColumn(1).setCellRenderer(UiHelper.ageRenderer(true));
-        table.getColumnModel().getColumn(1).setPreferredWidth(50);
-        table.getColumnModel().getColumn(1).setMaxWidth(50);
-        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.paperclipRenderer());
-        table.getColumnModel().getColumn(2).setPreferredWidth(18);
-        table.getColumnModel().getColumn(2).setMaxWidth(18);
+        // Commit an in-progress checkbox edit as soon as focus leaves the table (e.g. the toolbar).
+        table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
+        // Column 0 is a selection checkbox; Title, Age, paperclip follow.
+        table.getColumnModel().getColumn(0).setPreferredWidth(28);
+        table.getColumnModel().getColumn(0).setMaxWidth(28);
+        table.getColumnModel().getColumn(0).setHeaderRenderer((tbl, value, sel, focus, r, c) -> {
+            var box = new JCheckBox();
+            box.setHorizontalAlignment(SwingConstants.CENTER);
+            box.setSelected(tableModel.allChecked());
+            box.setToolTipText("Select / clear all");
+            return box;
+        });
+        table.getColumnModel().getColumn(2).setCellRenderer(UiHelper.ageRenderer(true));
+        table.getColumnModel().getColumn(2).setPreferredWidth(50);
+        table.getColumnModel().getColumn(2).setMaxWidth(50);
+        table.getColumnModel().getColumn(3).setCellRenderer(UiHelper.paperclipRenderer());
+        table.getColumnModel().getColumn(3).setPreferredWidth(18);
+        table.getColumnModel().getColumn(3).setMaxWidth(18);
+
+        var header = table.getTableHeader();
+        header.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) {
+                if (table.columnAtPoint(e.getPoint()) == 0) {
+                    tableModel.setAllChecked(!tableModel.allChecked());
+                    header.repaint();
+                }
+            }
+        });
+
         table.addMouseListener(new MouseAdapter() {
             @Override public void mousePressed(MouseEvent e)  { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseReleased(MouseEvent e) { if (e.isPopupTrigger()) showMenu(e); }
             @Override public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() == 2) {
+                if (e.getClickCount() == 2 && table.columnAtPoint(e.getPoint()) != 0) {
                     var row = table.rowAtPoint(e.getPoint());
                     if (row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE)
                         process(tableModel.getRow(row));
@@ -69,8 +94,7 @@ public final class InboxPanel extends JPanel {
         table.getSelectionModel().addListSelectionListener(ev -> {
             if (ev.getValueIsAdjusting()) return;
             var row = table.getSelectedRow();
-            processButton.setEnabled(table.getSelectedRowCount() == 1
-                    && row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
+            processButton.setEnabled(row >= 0 && tableModel.getRow(row).status() != NodeStatus.DONE);
         });
 
         var toolbar = new JToolBar();
@@ -92,6 +116,14 @@ public final class InboxPanel extends JPanel {
         addButton.setToolTipText("Add new inbox item (" + modifier + "+I)");
         addButton.addActionListener(e -> addItem());
         toolbar.add(addButton);
+        toolbar.addSeparator();
+        deleteCheckedButton = UiHelper.iconButton("Delete checked",
+                new FlatSVGIcon(InboxPanel.class.getResource("/icons/trash.svg")).derive(16, 16));
+        deleteCheckedButton.setToolTipText("Delete checked items");
+        deleteCheckedButton.setEnabled(false);
+        deleteCheckedButton.addActionListener(e -> deleteChecked());
+        toolbar.add(deleteCheckedButton);
+        tableModel.setOnCheckChanged(this::onChecksChanged);
         toolbar.add(Box.createHorizontalGlue());
         var clockUpIcon   = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-up.svg")).derive(16, 16);
         var clockDownIcon = new FlatSVGIcon(InboxPanel.class.getResource("/icons/clock-down.svg")).derive(16, 16);
@@ -143,18 +175,7 @@ public final class InboxPanel extends JPanel {
     private void showMenu(MouseEvent e) {
         var row = table.rowAtPoint(e.getPoint());
         if (row < 0) return;
-        // Right-clicking outside the current selection selects just that row; right-clicking inside
-        // a multi-selection keeps it, so "Delete selected" acts on what's highlighted.
-        if (!table.isRowSelected(row)) table.setRowSelectionInterval(row, row);
-
-        var menu = new JPopupMenu();
-        if (table.getSelectedRowCount() > 1) {
-            var deleteSelected = new JMenuItem("Delete selected (" + table.getSelectedRowCount() + ")");
-            deleteSelected.addActionListener(ev -> deleteSelected());
-            menu.add(deleteSelected);
-            menu.show(table, e.getX(), e.getY());
-            return;
-        }
+        table.setRowSelectionInterval(row, row);
 
         var selected = tableModel.getRow(row);
         var processItem  = new JMenuItem("Process…");
@@ -171,27 +192,42 @@ public final class InboxPanel extends JPanel {
         markDoneItem.addActionListener(ev -> markDone(selected));
         deleteItem.addActionListener(ev   -> delete(selected));
 
+        var menu = new JPopupMenu();
         menu.add(processItem);
         menu.add(renameItem);
         menu.add(markDoneItem);
         menu.addSeparator();
         menu.add(deleteItem);
+        // When boxes are ticked, also offer the bulk delete here — the single-item Delete above
+        // only removes the one row you right-clicked.
+        var checkedCount = tableModel.checkedCount();
+        if (checkedCount > 0) {
+            var deleteCheckedItem = new JMenuItem("Delete checked (" + checkedCount + ")");
+            deleteCheckedItem.addActionListener(ev -> deleteChecked());
+            menu.add(deleteCheckedItem);
+        }
         menu.show(table, e.getX(), e.getY());
     }
 
-    private void deleteSelected() {
-        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
-        // Resolve ids before deleting — row indices shift as the model changes.
-        var ids = java.util.Arrays.stream(table.getSelectedRows())
-                .mapToObj(r -> tableModel.getRow(r).id())
-                .toList();
+    private void onChecksChanged() {
+        var n = tableModel.checkedCount();
+        deleteCheckedButton.setEnabled(n > 0);
+        deleteCheckedButton.setToolTipText(n > 0 ? "Delete " + n + " checked item(s)" : "Delete checked items");
+        if (table != null) table.getTableHeader().repaint();
+    }
+
+    private void deleteChecked() {
+        if (table.isEditing()) table.getCellEditor().stopCellEditing(); // commit a pending checkbox click
+        var ids = tableModel.checkedIds();
         if (ids.isEmpty()) return;
+        if (!MonitoringModeGuard.checkAndConfirm(parent())) return;
         var confirm = JOptionPane.showConfirmDialog(parent(),
                 "Delete " + ids.size() + " items?", "Delete",
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm != JOptionPane.OK_OPTION) return;
         try {
             var skipped = service.deleteLeaves(ids);
+            tableModel.clearChecked();
             refresh();
             if (!skipped.isEmpty())
                 showError(skipped.size() + " item(s) had sub-items and were not deleted.");
@@ -338,15 +374,41 @@ public final class InboxPanel extends JPanel {
 
     private static final class InboxTableModel extends AbstractTableModel {
 
-        private static final String[] COLUMNS = {"Title", "Age", ""};
+        private static final String[] COLUMNS = {"", "Title", "Age", ""};
         private List<InboxItemRow> rows = List.of();
+        private final java.util.LinkedHashSet<UUID> checked = new java.util.LinkedHashSet<>();
+        private Runnable onCheckChanged = () -> {};
+
+        void setOnCheckChanged(Runnable r) { this.onCheckChanged = r != null ? r : () -> {}; }
 
         void setRows(List<InboxItemRow> rows) {
             this.rows = rows;
+            // Drop checks for rows that no longer exist (e.g. after a delete or refilter).
+            var live = rows.stream().map(InboxItemRow::id).collect(java.util.stream.Collectors.toSet());
+            checked.retainAll(live);
             fireTableDataChanged();
+            onCheckChanged.run();
         }
 
         InboxItemRow getRow(int index) { return rows.get(index); }
+
+        List<UUID> checkedIds()  { return List.copyOf(checked); }
+        int        checkedCount() { return checked.size(); }
+        boolean    allChecked()  { return !rows.isEmpty() && checked.size() == rows.size(); }
+
+        void clearChecked() {
+            if (checked.isEmpty()) return;
+            checked.clear();
+            fireTableDataChanged();
+            onCheckChanged.run();
+        }
+
+        void setAllChecked(boolean all) {
+            checked.clear();
+            if (all) rows.forEach(r -> checked.add(r.id()));
+            fireTableDataChanged();
+            onCheckChanged.run();
+        }
 
         @Override public int getRowCount()    { return rows.size(); }
         @Override public int getColumnCount() { return COLUMNS.length; }
@@ -354,20 +416,34 @@ public final class InboxPanel extends JPanel {
 
         @Override
         public Class<?> getColumnClass(int col) {
-            if (col == 1) return Long.class;
-            if (col == 2) return Boolean.class;
-            return String.class;
+            return switch (col) {
+                case 0, 3 -> Boolean.class;
+                case 2    -> Long.class;
+                default   -> String.class;
+            };
         }
+
+        @Override public boolean isCellEditable(int row, int col) { return col == 0; }
 
         @Override
         public Object getValueAt(int row, int col) {
             var r = rows.get(row);
             return switch (col) {
-                case 0 -> r.title();
-                case 1 -> UiHelper.ageDays(r.updatedAt(), r.createdAt());
-                case 2 -> r.hasResources();
+                case 0 -> checked.contains(r.id());
+                case 1 -> r.title();
+                case 2 -> UiHelper.ageDays(r.updatedAt(), r.createdAt());
+                case 3 -> r.hasResources();
                 default -> null;
             };
+        }
+
+        @Override
+        public void setValueAt(Object value, int row, int col) {
+            if (col != 0) return;
+            var id = rows.get(row).id();
+            if (Boolean.TRUE.equals(value)) checked.add(id); else checked.remove(id);
+            fireTableCellUpdated(row, 0);
+            onCheckChanged.run();
         }
     }
 }
