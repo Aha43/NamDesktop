@@ -6,32 +6,40 @@ import namdesktop.service.NamWorkspaceService;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class MoonCardPanel extends JPanel {
 
-    public record Card(UUID id, String title, String description, String projectPath) {}
+    /** {@code projectSegments} is the clickable breadcrumb to the action's project (#382), root→leaf. */
+    public record Card(UUID id, String title, String description,
+                       List<ProjectPathSupport.Segment> projectSegments) {}
 
     private final List<Card>           cards;
     private final NamWorkspaceService  service;
     private final Runnable             onExit;
+    private final Consumer<UUID>       onOpenProject;
     private       int                  index = 0;
 
     private final JLabel    counterLabel;
     private final JLabel    titleLabel;
     private final JTextArea descArea;
-    private final JLabel    pathLabel;
+    private final JPanel    pathPanel;
     private final JButton   prevButton;
     private final JButton   nextButton;
     private final JButton   doneButton;
 
-    public MoonCardPanel(List<Card> cards, NamWorkspaceService service, Runnable onExit) {
+    public MoonCardPanel(List<Card> cards, NamWorkspaceService service, Runnable onExit,
+                         Consumer<UUID> onOpenProject) {
         super(new BorderLayout(0, 0));
-        this.cards   = new ArrayList<>(cards);
-        this.service = service;
-        this.onExit  = onExit;
+        this.cards         = new ArrayList<>(cards);
+        this.service       = service;
+        this.onExit        = onExit;
+        this.onOpenProject = onOpenProject != null ? onOpenProject : id -> {};
 
         counterLabel = new JLabel("", SwingConstants.CENTER);
         counterLabel.setFont(counterLabel.getFont().deriveFont(Font.PLAIN, 12f));
@@ -58,9 +66,8 @@ public final class MoonCardPanel extends JPanel {
         descArea.setBorder(BorderFactory.createEmptyBorder(12, 0, 12, 0));
         descArea.setFocusable(false);
 
-        pathLabel = new JLabel("", SwingConstants.CENTER);
-        pathLabel.setFont(pathLabel.getFont().deriveFont(Font.ITALIC, 12f));
-        pathLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        pathPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        pathPanel.setOpaque(false);
 
         var cardContent = new JPanel(new BorderLayout(0, 4));
         cardContent.setBorder(BorderFactory.createCompoundBorder(
@@ -68,7 +75,7 @@ public final class MoonCardPanel extends JPanel {
                 BorderFactory.createEmptyBorder(28, 36, 28, 36)));
         cardContent.add(titleLabel, BorderLayout.NORTH);
         cardContent.add(descArea,   BorderLayout.CENTER);
-        cardContent.add(pathLabel,  BorderLayout.SOUTH);
+        cardContent.add(pathPanel,  BorderLayout.SOUTH);
 
         var centerWrapper = new JPanel(new GridBagLayout());
         var gbc = new GridBagConstraints();
@@ -129,8 +136,7 @@ public final class MoonCardPanel extends JPanel {
             counterLabel.setText("0 / 0");
             titleLabel.setText("All done!");
             descArea.setText("");
-            pathLabel.setText("");
-            pathLabel.setVisible(false);
+            setPath(List.of());
             prevButton.setEnabled(false);
             nextButton.setEnabled(false);
             doneButton.setEnabled(false);
@@ -140,17 +146,45 @@ public final class MoonCardPanel extends JPanel {
         counterLabel.setText((index + 1) + " / " + cards.size());
         titleLabel.setText(card.title());
         descArea.setText(card.description() != null ? card.description() : "");
-        var path = card.projectPath();
-        if (path != null && !path.isBlank()) {
-            pathLabel.setText(path);
-            pathLabel.setVisible(true);
-        } else {
-            pathLabel.setText("");
-            pathLabel.setVisible(false);
-        }
+        setPath(card.projectSegments());
         prevButton.setEnabled(cards.size() > 1);
         nextButton.setEnabled(cards.size() > 1);
         doneButton.setEnabled(true);
+    }
+
+    /** Rebuilds the breadcrumb as clickable segment links separated by {@code " > "}. */
+    private void setPath(List<ProjectPathSupport.Segment> segs) {
+        pathPanel.removeAll();
+        if (segs == null || segs.isEmpty()) {
+            pathPanel.setVisible(false);
+        } else {
+            pathPanel.setVisible(true);
+            for (int i = 0; i < segs.size(); i++) {
+                if (i > 0) pathPanel.add(separatorLabel());
+                pathPanel.add(linkLabel(segs.get(i)));
+            }
+        }
+        pathPanel.revalidate();
+        pathPanel.repaint();
+    }
+
+    private JLabel linkLabel(ProjectPathSupport.Segment seg) {
+        var lbl = new JLabel(seg.title());
+        lbl.setFont(lbl.getFont().deriveFont(Font.ITALIC, 12f));
+        lbl.setForeground(ProjectPathSupport.linkColor());
+        lbl.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        lbl.setToolTipText("Open project: " + seg.title());
+        lbl.addMouseListener(new MouseAdapter() {
+            @Override public void mouseClicked(MouseEvent e) { onOpenProject.accept(seg.id()); }
+        });
+        return lbl;
+    }
+
+    private JLabel separatorLabel() {
+        var sep = new JLabel(ProjectPathSupport.SEPARATOR);
+        sep.setFont(sep.getFont().deriveFont(Font.ITALIC, 12f));
+        sep.setForeground(UIManager.getColor("Label.disabledForeground"));
+        return sep;
     }
 
     private void navigate(int delta) {

@@ -177,6 +177,7 @@ public final class BacklogPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
 
         table.getSelectionModel().addListSelectionListener(e -> {
             if (e.getValueIsAdjusting()) return;
@@ -200,8 +201,11 @@ public final class BacklogPanel extends JPanel {
                 if (row < 0) return;
                 var item = tableModel.getRow(row);
                 if (col == 1) {
-                    if (e.getClickCount() == 1 && item.parentId() != null)
-                        onOpenProject.accept(item.parentId());
+                    if (e.getClickCount() == 1) {
+                        var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                                ProjectPathSupport.forAction(workspace, item.id()));
+                        if (seg != null) onOpenProject.accept(seg);
+                    }
                     return;
                 }
                 if (col == 0) {
@@ -460,14 +464,15 @@ public final class BacklogPanel extends JPanel {
         for (int i = 0; i < tableModel.getRowCount(); i++) {
             var row = tableModel.getRow(i);
             var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
-            cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc, row.projectPath()));
+            cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc,
+                    ProjectPathSupport.forAction(workspace, row.id())));
         }
         if (cards.isEmpty()) {
             JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
         if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
-        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject);
         deckWrapper.add(moonCardPanel, "moon");
         deckCards.show(deckWrapper, "moon");
         toolbar.setVisible(false);

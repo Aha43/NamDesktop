@@ -73,6 +73,7 @@ public final class DueActionsPanel extends JPanel {
         };
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.setFillsViewportHeight(true);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
 
         table.getColumn("Action").setCellRenderer((t, value, sel, foc, row, col) -> {
             var flatRow = tableModel.getRow(row);
@@ -137,8 +138,12 @@ public final class DueActionsPanel extends JPanel {
                 if (flatRow.header()) { table.clearSelection(); return; }
                 var item = flatRow.item();
                 var col  = table.columnAtPoint(e.getPoint());
-                if (col == 1 && e.getClickCount() == 1 && item.parentId() != null) {
-                    onOpenProject.accept(item.parentId());
+                if (col == 1) {
+                    if (e.getClickCount() == 1) {
+                        var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                                ProjectPathSupport.forAction(workspace, item.id()));
+                        if (seg != null) onOpenProject.accept(seg);
+                    }
                     return;
                 }
                 if (col == 0) {

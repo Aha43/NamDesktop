@@ -24,6 +24,7 @@ public final class ContextPanel extends JPanel {
     private final NamWorkspace workspace;
     private final NamWorkspaceService service;
     private final Runnable onViewCreated;
+    private final java.util.function.Consumer<java.util.UUID> onOpenProject;
     private final ContextTableModel tableModel;
     private JPanel tableCard;
     private final JPanel tagSelectorPanel;
@@ -33,11 +34,13 @@ public final class ContextPanel extends JPanel {
     private JButton saveViewButton;
     private JButton clearButton;
 
-    public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated) {
+    public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated,
+                        java.util.function.Consumer<java.util.UUID> onOpenProject) {
         super(new BorderLayout());
         this.workspace      = workspace;
         this.service        = service;
         this.onViewCreated  = onViewCreated;
+        this.onOpenProject  = onOpenProject;
         this.tableModel     = new ContextTableModel();
 
         matchLabel = new JLabel("0 matches");
@@ -109,6 +112,7 @@ public final class ContextPanel extends JPanel {
         table.getColumnModel().getColumn(4).setPreferredWidth(18);
         table.getColumnModel().getColumn(4).setMaxWidth(18);
         UiHelper.fillTableColumn(table, 1);
+        ProjectPathSupport.installLinkColumn(table, 1); // clickable project path (#382)
 
         table.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT)
                 .put(KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_ENTER, 0), "openDialog");
@@ -153,6 +157,12 @@ public final class ContextPanel extends JPanel {
                         new ActionDialog(SwingUtilities.getWindowAncestor(ContextPanel.this),
                                 item.id(), workspace, service, true, ContextPanel.this::refreshResults).setVisible(true);
                     }
+                    return;
+                }
+                if (col == 1 && e.getClickCount() == 1) {
+                    var seg = ProjectPathSupport.segmentAt(table, row, col, e.getX(),
+                            ProjectPathSupport.forAction(workspace, item.id()));
+                    if (seg != null) onOpenProject.accept(seg);
                     return;
                 }
                 if (e.getClickCount() == 2) {
