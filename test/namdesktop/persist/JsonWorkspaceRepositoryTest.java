@@ -23,6 +23,26 @@ class JsonWorkspaceRepositoryTest {
     private final JsonWorkspaceRepository repo = new JsonWorkspaceRepository();
 
     @Test
+    void fromJson_ignoresUnknownProperties() throws Exception {
+        // Simulates a NamWeb-written (or newer) document carrying fields this version doesn't know.
+        var ws = NamWorkspace.createDefault();
+        var node = new NamNode(UUID.randomUUID(), "Task");
+        ws.getNodes().put(node.getId(), node);
+        ws.getNode(ws.getNextActionsNodeId()).orElseThrow().getChildIds().add(node.getId());
+
+        var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+        var tree = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(repo.toJson(ws));
+        tree.put("futureTopLevelField", "from-web");
+        var nodes = (com.fasterxml.jackson.databind.node.ObjectNode) tree.get("nodes");
+        var firstNodeId = nodes.fieldNames().next();
+        ((com.fasterxml.jackson.databind.node.ObjectNode) nodes.get(firstNodeId)).put("futureNodeField", 42);
+
+        var loaded = repo.fromJson(mapper.writeValueAsString(tree));  // must not throw
+        assertEquals(ws.getNodes().size(), loaded.getNodes().size());
+        assertTrue(loaded.getNode(node.getId()).isPresent());
+    }
+
+    @Test
     void load_returnsFreshDefaultWhenFileAbsent(@TempDir Path dir) throws IOException {
         var ws = repo.load(dir.resolve("missing.json"));
         assertNotNull(ws.getRootNodeId());

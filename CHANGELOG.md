@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Workspace loading/cloud-pull now **tolerates unknown JSON fields** (`FAIL_ON_UNKNOWN_PROPERTIES`
+  disabled on the workspace mapper). The `workspaces.document` is a shared cross-app contract — NamWeb
+  writes the same shape and tends to lead on features — so this keeps a Pull (or an on-disk
+  `workspace.json`) from a newer/web-written workspace from throwing on a field this version doesn't
+  know yet. Forward-compat for connecting desktop to a hosted NamWeb workspace. Closes #414.
 - Cloud sync **Pull** now confirms before overwriting a diverging local workspace. Previously Pull
   saved the remote copy straight over the local file and reloaded, silently discarding any local
   changes made since the last sync (Push was already guarded by the conflict dialog; Pull was not).
