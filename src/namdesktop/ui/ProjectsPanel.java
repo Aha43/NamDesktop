@@ -249,6 +249,7 @@ public final class ProjectsPanel extends JPanel {
             board = new ProjectWorkbenchPanel(SwingUtilities.getWindowAncestor(this),
                     workspace, service, workspace.getProjectsNodeId(), () -> {});
             board.configureAsBoard("COLUMNS".equals(viewMode), activeTags(), onOpenProject);
+            board.setBoardShowArchived(showArchived);  // #417 — board honors Show archived too
             center.add(board, BorderLayout.CENTER);
         } else {
             board = null;
@@ -330,7 +331,10 @@ public final class ProjectsPanel extends JPanel {
             matchLabel.setText(rows.size() + (rows.size() == 1 ? " project" : " projects"));
         }
         UiHelper.setTableEmpty(tableCard, tableModel.getRowCount() == 0);
-        if (board != null) board.setBoardTagFilter(activeTags());  // narrow the live board too
+        if (board != null) {
+            board.setBoardShowArchived(showArchived);  // keep the live board's archive state in sync (#417)
+            board.setBoardTagFilter(activeTags());     // and its tag filter
+        }
     }
 
     public void triggerAdd() { addProject(); }

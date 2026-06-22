@@ -2,6 +2,7 @@ package namdesktop.ui;
 
 import namdesktop.lens.ChildSection;
 import namdesktop.model.NamNode;
+import namdesktop.model.NodeStatus;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Covers the tag filter applied to the embedded board (top-level Columns/Readiness views). */
+/** Covers the tag + archive filters applied to the embedded board (top-level Columns/Readiness views). */
 class ProjectWorkbenchFilterTest {
 
     private ChildSection section(String title, String... tags) {
@@ -18,6 +19,25 @@ class ProjectWorkbenchFilterTest {
         node.setProject(true);
         node.setTags(List.of(tags));
         return new ChildSection(node, List.of());
+    }
+
+    private ChildSection archivedSection(String title) {
+        var s = section(title);
+        s.project().setStatus(NodeStatus.ARCHIVED);
+        return s;
+    }
+
+    @Test
+    void filterArchived_dropsArchivedByDefault() {
+        var active = section("Active");
+        var result = ProjectWorkbenchPanel.filterArchivedSections(List.of(active, archivedSection("Old")), false);
+        assertEquals(List.of(active), result);
+    }
+
+    @Test
+    void filterArchived_keepsArchivedWhenShown() {
+        var all = List.of(section("Active"), archivedSection("Old"));
+        assertSame(all, ProjectWorkbenchPanel.filterArchivedSections(all, true));
     }
 
     @Test

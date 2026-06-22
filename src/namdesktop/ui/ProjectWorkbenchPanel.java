@@ -51,6 +51,7 @@ public final class ProjectWorkbenchPanel extends JPanel {
     // Embedded "board-only" mode: no breadcrumb/trio chrome, a forced view, drilling delegated to a
     // host callback, and an optional tag filter. Used by the top-level Projects view.
     private       boolean           boardOnly         = false;
+    private       boolean           boardShowArchived = false;  // #417
     private       Consumer<UUID>    drillOverride     = null;
     private final Set<String>       boardTagFilter    = new HashSet<>();
 
@@ -169,11 +170,25 @@ public final class ProjectWorkbenchPanel extends JPanel {
         rebuild();
     }
 
+    /** Whether the embedded board includes archived child projects, and rebuilds (#417). */
+    public void setBoardShowArchived(boolean show) {
+        boardShowArchived = show;
+        rebuild();
+    }
+
     /** Keeps sections whose project carries at least one of {@code tags} (OR). Empty tags ⇒ all. */
     static List<ChildSection> filterSections(List<ChildSection> sections, Set<String> tags) {
         if (tags.isEmpty()) return sections;
         return sections.stream()
                 .filter(s -> s.project().getTags().stream().anyMatch(tags::contains))
+                .toList();
+    }
+
+    /** Drops archived child projects from board sections unless {@code showArchived} (#417). */
+    static List<ChildSection> filterArchivedSections(List<ChildSection> sections, boolean showArchived) {
+        if (showArchived) return sections;
+        return sections.stream()
+                .filter(s -> s.project().getStatus() != NodeStatus.ARCHIVED)
                 .toList();
     }
 
@@ -238,11 +253,14 @@ public final class ProjectWorkbenchPanel extends JPanel {
         removeAll();
         var raw = new ProjectWorkbenchLens().project(workspace, currentProjectId);
         var hasSubProjects = !raw.childSections().isEmpty();
-        // In embedded board mode an optional tag filter narrows the visible child projects.
-        var projection = (boardOnly && !boardTagFilter.isEmpty())
-                ? new WorkbenchProjection(raw.breadcrumb(), raw.directActions(),
-                        filterSections(raw.childSections(), boardTagFilter))
-                : raw;
+        // In embedded board mode the visible child projects are narrowed by the archive state (#417)
+        // and an optional tag filter.
+        var projection = raw;
+        if (boardOnly) {
+            var sections = filterArchivedSections(raw.childSections(), boardShowArchived);
+            sections = filterSections(sections, boardTagFilter);
+            projection = new WorkbenchProjection(raw.breadcrumb(), raw.directActions(), sections);
+        }
         var sectionIds  = new java.util.ArrayList<UUID>();
         sectionIds.add(currentProjectId);
         projection.childSections().stream().map(s -> s.project().getId()).forEach(sectionIds::add);
@@ -1502,6 +1520,12 @@ public final class ProjectWorkbenchPanel extends JPanel {
 
     private JPanel buildMcrGrid(WorkbenchProjection projection) {
         var stations = new MissionControlLens().stations(currentProjectId, workspace);
+        if (boardOnly && !boardShowArchived)  // hide archived projects in Readiness too (#417)
+            stations = stations.stream()
+                    .filter(s -> workspace.getNode(s.id())
+                            .map(n -> n.getStatus() != NodeStatus.ARCHIVED)
+                            .orElse(true))
+                    .toList();
         if (boardOnly && !boardTagFilter.isEmpty())
             stations = stations.stream()
                     .filter(s -> workspace.getNode(s.id())
