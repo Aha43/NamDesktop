@@ -1,10 +1,17 @@
 package namdesktop.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 public final class Resource {
 
     private ResourceType type;
     private String value;
     private String description;
+    private final Map<String, Object> unknownFields = new LinkedHashMap<>();  // preserve foreign fields (#416)
 
     public Resource() {}
 
@@ -22,6 +29,12 @@ public final class Resource {
 
     public String getDescription()       { return description; }
     public void setDescription(String d) { this.description = d; }
+
+    @JsonAnyGetter
+    public Map<String, Object> unknownFields() { return unknownFields; }
+
+    @JsonAnySetter
+    public void putUnknownField(String name, Object value) { unknownFields.put(name, value); }
 
     @Override
     public boolean equals(Object o) {

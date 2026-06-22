@@ -8,6 +8,11 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Unknown workspace fields are now **preserved** across load/save and cloud pull→edit→push, not just
+  tolerated. The lenient parser (below) stopped Pull from throwing but discarded fields this version
+  doesn't model, so a later save or push could overwrite newer NamWeb data with a lossy document. Foreign
+  fields at the document, node, and resource levels are now captured (`@JsonAnyGetter`/`@JsonAnySetter`,
+  carried on `NamWorkspace`/`NamNode`/`Resource`) and round-tripped intact. Closes #416.
 - Workspace loading/cloud-pull now **tolerates unknown JSON fields** (`FAIL_ON_UNKNOWN_PROPERTIES`
   disabled on the workspace mapper). The `workspaces.document` is a shared cross-app contract — NamWeb
   writes the same shape and tends to lead on features — so this keeps a Pull (or an on-disk
