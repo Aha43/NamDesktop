@@ -229,7 +229,7 @@ public final class MoonCardPanel extends JPanel {
             return;
         }
         cards.remove(index);
-        if (index >= cards.size()) index = Math.max(0, cards.size() - 1);
+        index = indexAfterRemoval(index, cards.size());
         showCard();
     }
 
@@ -249,7 +249,17 @@ public final class MoonCardPanel extends JPanel {
             return;
         }
         cards.remove(index);
-        if (index >= cards.size()) index = Math.max(0, cards.size() - 1);
+        index = indexAfterRemoval(index, cards.size());
         showCard();
+    }
+
+    /**
+     * The card index to show after removing the card at {@code removedIndex}, given {@code remaining}
+     * cards left. Removing a middle/first card keeps the index (the next card slid into that slot);
+     * removing the last card wraps to the first (0), matching the deck's circular Next and the
+     * "…and advance" behavior (#418). Returns 0 when nothing remains (the empty state).
+     */
+    static int indexAfterRemoval(int removedIndex, int remaining) {
+        return removedIndex >= remaining ? 0 : removedIndex;
     }
 }
