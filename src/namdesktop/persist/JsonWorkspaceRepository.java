@@ -1,5 +1,6 @@
 package namdesktop.persist;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -27,6 +28,9 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         mapper.registerModule(new JavaTimeModule());
         mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // The workspace document is a shared cross-app contract (NamWeb writes the same shape, and
+        // leads on features); ignore unknown fields so a newer/web-written document still loads. (#414)
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
 
     @Override
