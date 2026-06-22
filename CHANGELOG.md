@@ -8,6 +8,10 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Archived projects are now hidden consistently across **all three** Projects layouts. Previously archiving
+  a project hid it in the List view but it still appeared as a column/card in the Columns and Readiness
+  views (the embedded board never received the archive filter). The board now honors the same **Show
+  archived** state. Closes #417.
 - Focus deck: removing the **last** card (Mark done or re-triage flip) now wraps to the **first**
   remaining card instead of stepping backward to the previous one — matching the deck's circular Next
   and the "…and advance" behavior. Closes #418.
