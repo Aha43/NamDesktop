@@ -8,6 +8,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Focus deck: removing the **last** card (Mark done or re-triage flip) now wraps to the **first**
+  remaining card instead of stepping backward to the previous one — matching the deck's circular Next
+  and the "…and advance" behavior. Closes #418.
 - Unknown workspace fields are now **preserved** across load/save and cloud pull→edit→push, not just
   tolerated. The lenient parser (below) stopped Pull from throwing but discarded fields this version
   doesn't model, so a later save or push could overwrite newer NamWeb data with a lossy document. Foreign
