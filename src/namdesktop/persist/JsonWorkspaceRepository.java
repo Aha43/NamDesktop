@@ -58,6 +58,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         workspace.setMissionControls(file.missionControls);
         workspace.setTemplates(file.templates);
         workspace.setViewOrders(file.viewOrders);
+        workspace.setUnknownFields(file.extra);
         migrate(workspace, "Inbox",        workspace.getInboxNodeId(),        workspace::setInboxNodeId);
         migrate(workspace, "Projects",     workspace.getProjectsNodeId(),     workspace::setProjectsNodeId);
         migrate(workspace, "Actions",      workspace.getNextActionsNodeId(),  workspace::setNextActionsNodeId);
@@ -89,6 +90,7 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         file.missionControls    = workspace.getMissionControls();
         file.templates          = workspace.getTemplates();
         file.viewOrders         = workspace.getViewOrders();
+        file.extra.putAll(workspace.getUnknownFields());
         return file;
     }
 
@@ -113,5 +115,16 @@ public final class JsonWorkspaceRepository implements WorkspaceRepository {
         public java.util.List<MissionControl> missionControls;
         public java.util.List<ProjectTemplate> templates;
         public java.util.Map<String, java.util.List<UUID>> viewOrders;
+
+        // Document-level fields this version doesn't model (e.g. from a newer NamWeb); preserved
+        // across load/save and cloud push so cross-app data isn't silently dropped (#416).
+        @com.fasterxml.jackson.annotation.JsonIgnore
+        public final Map<String, Object> extra = new java.util.LinkedHashMap<>();
+
+        @com.fasterxml.jackson.annotation.JsonAnyGetter
+        public Map<String, Object> extra() { return extra; }
+
+        @com.fasterxml.jackson.annotation.JsonAnySetter
+        public void putExtra(String name, Object value) { extra.put(name, value); }
     }
 }

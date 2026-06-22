@@ -1,9 +1,14 @@
 package namdesktop.model;
 
+import com.fasterxml.jackson.annotation.JsonAnyGetter;
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public final class NamNode {
@@ -21,6 +26,9 @@ public final class NamNode {
     private LocalDateTime updatedAt;
     private LocalDateTime statusChangedAt;
     private LocalDate dueAt;
+    // Fields written by a newer/other app (e.g. NamWeb) that this version doesn't model — kept so a
+    // save or cloud push doesn't drop them (#416). Spread back at the node's top level on serialize.
+    private final Map<String, Object> unknownFields = new LinkedHashMap<>();
 
     public NamNode() {}
 
@@ -67,6 +75,12 @@ public final class NamNode {
 
     public LocalDate getDueAt()                            { return dueAt; }
     public void setDueAt(LocalDate dueAt)                  { this.dueAt = dueAt; }
+
+    @JsonAnyGetter
+    public Map<String, Object> unknownFields() { return unknownFields; }
+
+    @JsonAnySetter
+    public void putUnknownField(String name, Object value) { unknownFields.put(name, value); }
 
     @Override
     public String toString() { return title; }

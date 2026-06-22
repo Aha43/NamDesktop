@@ -23,8 +23,9 @@ class JsonWorkspaceRepositoryTest {
     private final JsonWorkspaceRepository repo = new JsonWorkspaceRepository();
 
     @Test
-    void fromJson_ignoresUnknownProperties() throws Exception {
-        // Simulates a NamWeb-written (or newer) document carrying fields this version doesn't know.
+    void unknownFields_surviveLoadSaveRoundTrip() throws Exception {
+        // Simulates a NamWeb-written (or newer) document carrying fields this version doesn't model:
+        // they must not throw on load AND must still be present after re-serializing (#416).
         var ws = NamWorkspace.createDefault();
         var node = new NamNode(UUID.randomUUID(), "Task");
         ws.getNodes().put(node.getId(), node);
@@ -33,13 +34,13 @@ class JsonWorkspaceRepositoryTest {
         var mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         var tree = (com.fasterxml.jackson.databind.node.ObjectNode) mapper.readTree(repo.toJson(ws));
         tree.put("futureTopLevelField", "from-web");
-        var nodes = (com.fasterxml.jackson.databind.node.ObjectNode) tree.get("nodes");
-        var firstNodeId = nodes.fieldNames().next();
-        ((com.fasterxml.jackson.databind.node.ObjectNode) nodes.get(firstNodeId)).put("futureNodeField", 42);
+        ((com.fasterxml.jackson.databind.node.ObjectNode) tree.get("nodes").get(node.getId().toString()))
+                .put("futureNodeField", 42);
 
-        var loaded = repo.fromJson(mapper.writeValueAsString(tree));  // must not throw
-        assertEquals(ws.getNodes().size(), loaded.getNodes().size());
-        assertTrue(loaded.getNode(node.getId()).isPresent());
+        // load (must not throw) then re-serialize, as a save or cloud push would.
+        var roundTrip = mapper.readTree(repo.toJson(repo.fromJson(mapper.writeValueAsString(tree))));
+        assertEquals("from-web", roundTrip.path("futureTopLevelField").asText());
+        assertEquals(42, roundTrip.path("nodes").path(node.getId().toString()).path("futureNodeField").asInt());
     }
 
     @Test

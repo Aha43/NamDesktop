@@ -21,6 +21,9 @@ public final class NamWorkspace {
     private List<MissionControl> missionControls = new ArrayList<>();
     private List<ProjectTemplate> templates = new ArrayList<>();
     private Map<String, List<UUID>> viewOrders = new LinkedHashMap<>();
+    // Document-level fields from a newer/other app (e.g. NamWeb) that this version doesn't model;
+    // carried so a save or cloud push doesn't drop them (#416).
+    private Map<String, Object> unknownFields = new LinkedHashMap<>();
 
     public NamWorkspace() {}
 
@@ -134,6 +137,9 @@ public final class NamWorkspace {
 
     public Map<String, List<UUID>> getViewOrders() { return viewOrders; }
     public void setViewOrders(Map<String, List<UUID>> viewOrders) { this.viewOrders = viewOrders != null ? viewOrders : new LinkedHashMap<>(); }
+
+    public Map<String, Object> getUnknownFields() { return unknownFields; }
+    public void setUnknownFields(Map<String, Object> unknownFields) { this.unknownFields = unknownFields != null ? unknownFields : new LinkedHashMap<>(); }
 
     public List<UUID> collectSubtree(UUID rootId) {
         var result = new ArrayList<UUID>();
