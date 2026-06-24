@@ -1,5 +1,6 @@
 package namdesktop.ui;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import namdesktop.lens.DueItemRow;
 import namdesktop.lens.DueLens;
 import namdesktop.model.NamWorkspace;
@@ -33,6 +34,10 @@ public final class DueActionsPanel extends JPanel {
     private final DueTableModel tableModel;
     private final JTable table;
     private final JPanel tableCard;
+    private JButton focusButton;
+    private JPanel deckWrapper;
+    private CardLayout deckCards;
+    private MoonCardPanel moonCardPanel;
 
     public DueActionsPanel(NamWorkspace workspace, NamWorkspaceService service, Consumer<UUID> onOpenProject) {
         super(new BorderLayout());
@@ -177,8 +182,51 @@ public final class DueActionsPanel extends JPanel {
             }
         });
 
+        focusButton = UiHelper.iconButton("Focus",
+                new FlatSVGIcon(DueActionsPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
+        focusButton.setToolTipText("Focus mode — flip through due actions one at a time");
+        focusButton.addActionListener(e -> enterDeckMode());
+        var toolbar = new JToolBar();
+        toolbar.setFloatable(false);
+        toolbar.add(focusButton);
+
         tableCard = UiHelper.tableCard(new JScrollPane(table), "No actions with a due date set.");
-        add(tableCard, BorderLayout.CENTER);
+        deckCards   = new CardLayout();
+        deckWrapper = new JPanel(deckCards);
+        deckWrapper.add(tableCard, "table");
+        add(toolbar,     BorderLayout.NORTH);
+        add(deckWrapper, BorderLayout.CENTER);
+    }
+
+    private void enterDeckMode() {
+        var cards = new ArrayList<MoonCardPanel.Card>();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            var flatRow = tableModel.getRow(i);
+            if (flatRow.header()) continue;  // skip section headers
+            var item = flatRow.item();
+            var desc = workspace.getNode(item.id()).map(n -> n.getDescription()).orElse(null);
+            cards.add(new MoonCardPanel.Card(item.id(), item.title(), desc,
+                    ProjectPathSupport.forAction(workspace, item.id())));
+        }
+        if (cards.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject);
+        deckWrapper.add(moonCardPanel, "moon");
+        deckCards.show(deckWrapper, "moon");
+        focusButton.setVisible(false);
+    }
+
+    private void exitDeckMode() {
+        if (moonCardPanel == null) return;
+        deckCards.show(deckWrapper, "table");
+        focusButton.setVisible(true);
+        refresh();
+        var old = moonCardPanel;
+        moonCardPanel = null;
+        SwingUtilities.invokeLater(() -> deckWrapper.remove(old));
     }
 
     public void refresh() {

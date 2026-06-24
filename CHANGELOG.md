@@ -44,6 +44,9 @@ The format is inspired by [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+- Focus mode is now reachable from more lists: the deck (stack-2) button is added to the **Context** and
+  **Due** panels, so you can flip through your context list or what's due one card at a time — same deck,
+  just more entry points. (Blocked, Done, and Search are intentionally left out.) Closes #422.
 - Archive finished projects: right-click a top-level project in the Projects list → **Archive** to drop
   it out of the active list (only live work stays visible); a **Show archived** toolbar toggle reveals
   archived projects (shown muted, marked _(archived)_) where right-click → **Unarchive** restores them.

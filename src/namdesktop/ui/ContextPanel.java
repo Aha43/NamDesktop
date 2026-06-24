@@ -33,6 +33,10 @@ public final class ContextPanel extends JPanel {
     private JButton addActionButton;
     private JButton saveViewButton;
     private JButton clearButton;
+    private JButton focusButton;
+    private JPanel deckWrapper;
+    private CardLayout deckCards;
+    private MoonCardPanel moonCardPanel;
 
     public ContextPanel(NamWorkspace workspace, NamWorkspaceService service, Runnable onViewCreated,
                         java.util.function.Consumer<java.util.UUID> onOpenProject) {
@@ -64,7 +68,13 @@ public final class ContextPanel extends JPanel {
         saveViewButton.setEnabled(false);
         saveViewButton.addActionListener(e -> saveCurrentView());
 
+        focusButton = UiHelper.iconButton("Focus",
+                new FlatSVGIcon(ContextPanel.class.getResource("/icons/stack-2.svg")).derive(16, 16));
+        focusButton.setToolTipText("Focus mode — flip through these actions one at a time");
+        focusButton.addActionListener(e -> enterDeckMode());
+
         var eastButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
+        eastButtons.add(focusButton);
         eastButtons.add(addActionButton);
         eastButtons.add(saveViewButton);
         eastButtons.add(clearButton);
@@ -177,11 +187,43 @@ public final class ContextPanel extends JPanel {
         northPanel.add(tagSelectorPanel, BorderLayout.CENTER);
 
         tableCard = UiHelper.tableCard(new JScrollPane(table), "No actions match the current filter.");
-        add(northPanel,  BorderLayout.NORTH);
-        add(tableCard,   BorderLayout.CENTER);
+        deckCards   = new CardLayout();
+        deckWrapper = new JPanel(deckCards);
+        deckWrapper.add(tableCard, "table");
+        add(northPanel,    BorderLayout.NORTH);
+        add(deckWrapper,   BorderLayout.CENTER);
 
         add(BulkSelect.install(table, ContextTableModel.CHECK_COL, tableModel.check,
                 tableModel::getRowCount, tableModel::rowIds, service, this::refreshResults), BorderLayout.SOUTH);
+    }
+
+    private void enterDeckMode() {
+        var cards = new ArrayList<MoonCardPanel.Card>();
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            var row  = tableModel.getRow(i);
+            var desc = workspace.getNode(row.id()).map(n -> n.getDescription()).orElse(null);
+            cards.add(new MoonCardPanel.Card(row.id(), row.title(), desc,
+                    ProjectPathSupport.forAction(workspace, row.id())));
+        }
+        if (cards.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "No actions to show.", "Focus mode", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+        if (moonCardPanel != null) deckWrapper.remove(moonCardPanel);
+        moonCardPanel = new MoonCardPanel(cards, service, this::exitDeckMode, onOpenProject);
+        deckWrapper.add(moonCardPanel, "moon");
+        deckCards.show(deckWrapper, "moon");
+        focusButton.setVisible(false);
+    }
+
+    private void exitDeckMode() {
+        if (moonCardPanel == null) return;
+        deckCards.show(deckWrapper, "table");
+        focusButton.setVisible(true);
+        refreshResults();
+        var old = moonCardPanel;
+        moonCardPanel = null;
+        SwingUtilities.invokeLater(() -> deckWrapper.remove(old));
     }
 
     private void showStatusPopup(int row, UUID id, NodeStatus current, Component comp, int x, int y) {
